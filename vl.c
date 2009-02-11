@@ -165,6 +165,7 @@ int main(int argc, char **argv)
 #include "disas.h"
 
 #include "exec-all.h"
+#include "qemu-traces.h"
 
 #include "qemu_socket.h"
 
@@ -5621,6 +5622,9 @@ int main(int argc, char **argv, char **envp)
                 xen_mode = XEN_ATTACH;
                 break;
 #endif
+	    case QEMU_OPTION_trace:
+		trace_init(optarg);
+		break;
             }
         }
     }

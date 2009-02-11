@@ -46,10 +46,18 @@
 #define env cpu_single_env
 #endif
 
+#include "qemu-traces.h"
+#include "qemu-decision_map.h"
+
+static void trace_before_exec(TranslationBlock *);
+static void trace_after_exec(TranslationBlock *, unsigned long);
+static void trace_at_fault(CPUState *e);
+
 int tb_invalidated_flag;
 
-//#define DEBUG_EXEC
+#define DEBUG_EXEC
 //#define DEBUG_SIGNAL
+//#define DEBUG_TRACE
 
 int qemu_cpu_has_work(CPUState *env)
 {
@@ -618,11 +626,13 @@ int cpu_exec(CPUState *env1)
                              (long)tb->tc_ptr, tb->pc,
                              lookup_symbol(tb->pc));
 #endif
+
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
                    jump. */
                 {
                     if (next_tb != 0 &&
+		        !tracefile_history_for_tb (tb) &&
 #ifdef CONFIG_KQEMU
                         (env->kqemu_enabled != 2) &&
 #endif
@@ -641,6 +651,9 @@ int cpu_exec(CPUState *env1)
                     env->current_tb = NULL;
 
                 while (env->current_tb) {
+		  if (tracefile_enabled)
+		    trace_before_exec(tb);
+
                     tc_ptr = tb->tc_ptr;
                 /* execute the generated code */
 #if defined(__sparc__) && !defined(HOST_SOLARIS)
@@ -650,6 +663,10 @@ int cpu_exec(CPUState *env1)
 #endif
                     next_tb = tcg_qemu_tb_exec(tc_ptr);
                     env->current_tb = NULL;
+
+		    if (tracefile_enabled)
+		      trace_after_exec (tb, next_tb);
+
                     if ((next_tb & 3) == 2) {
                         /* Instruction counter expired.  */
                         int insns_left;
@@ -689,6 +706,8 @@ int cpu_exec(CPUState *env1)
 #endif
             } /* for(;;) */
         } else {
+	    if (tracefile_enabled)
+		trace_at_fault (env);
             env_to_regs();
         }
     } /* for(;;) */
@@ -1615,3 +1634,98 @@ int cpu_signal_handler(int host_signum, void *pinfo,
 #endif
 
 #endif /* !defined(CONFIG_SOFTMMU) */
+
+static TranslationBlock *trace_current_tb;
+
+static void trace_before_exec(TranslationBlock *tb)
+{
+#ifdef DEBUG_TRACE
+    printf("From " TARGET_FMT_lx " - "
+	   TARGET_FMT_lx "\n", tb->pc, tb->pc + tb->size - 1);
+#endif
+    trace_current_tb = tb;
+}
+
+/* TB is the tb we jumped to, LAST_TB (if not null) is the last executed tb.  */
+static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
+{
+    TranslationBlock *last_tb = (TranslationBlock*)(next_tb & ~3);
+    int br = next_tb & 3;
+
+#ifdef DEBUG_TRACE
+    printf("... to " TARGET_FMT_lx " (" TARGET_FMT_lx ")",
+	    tb->pc + tb->size - 1, env->nip);
+    if (last_tb)
+	printf(" (last_ip=" TARGET_FMT_lx ", targ=%d)",
+		last_tb ? last_tb->pc + last_tb->size - 1 : 0, br);
+    printf("[tb->tflags=%04x, op=%04x]\n", tb->tflags, trace_current->op);
+#endif
+
+    /* Note: if last_tb is not set, we don't know if we exited from tb or not.
+     */
+    if (last_tb) {
+	if (last_tb == tb) {
+	    /* Block fully executed with a static branch.  */
+	    trace_current->pc = tb->pc;
+	    trace_current->size = tb->size;
+	    trace_current->op = TRACE_OP_BLOCK + (1 << br);
+	}
+	else {
+	    /* Threaded execution.  The block has already be executed.  */
+	    trace_current->pc = last_tb->pc + last_tb->size - 1;
+	    trace_current->size = 1;
+	    trace_current->op = (1 << br);
+	}
+
+	if ((last_tb->tflags & trace_current->op) == trace_current->op) {
+	    if (!tracefile_history_for_tb (last_tb))
+		return;
+	}
+	last_tb->tflags |= trace_current->op;
+    }
+    else {
+	/* Non-static branch.  */
+	if (!tracefile_history_for_tb (tb) && (tb->tflags & TRACE_OP_DYN))
+	    return;
+	trace_current->pc = tb->pc;
+	trace_current->size = tb->size;
+	trace_current->op = TRACE_OP_BLOCK;
+	tb->tflags |= TRACE_OP_DYN | TRACE_OP_BLOCK;
+    }
+    trace_push_entry ();
+}
+
+static void trace_at_fault(CPUState *e)
+{
+    target_ulong cs_base, pc;
+    int flags;
+
+    cpu_get_tb_cpu_state(e, &pc, &cs_base, &flags);
+
+#ifdef DEBUG_TRACE
+    printf("... fault at " TARGET_FMT_lx "\n", pc);
+#endif
+    if (trace_current_tb
+	&& pc >= trace_current_tb->pc
+	&& pc < trace_current_tb->pc + trace_current_tb->size) {
+	if (!tracefile_history_for_tb (trace_current_tb)
+            && trace_current_tb->tflags & TRACE_OP_BLOCK)
+	    return;
+	trace_current->pc = trace_current_tb->pc;
+	trace_current->op = TRACE_OP_FAULT;
+	trace_current->size = pc - trace_current->pc;
+	if (trace_current->size == trace_current_tb->size)
+	    trace_current->op = TRACE_OP_FAULT | TRACE_OP_BLOCK;
+    }
+    else {
+	if (!tracefile_history_for_tb (trace_current_tb)) {
+	    /* Discard single fault.  */
+	    return;
+	}
+	trace_current->pc = pc;
+	trace_current->size = 0;
+	trace_current->op = TRACE_OP_FAULT;
+    }
+
+    trace_push_entry ();
+}

@@ -1644,6 +1644,13 @@ Immediately before starting guest execution, drop root privileges, switching
 to the specified user.
 ETEXI
 
+DEF("trace", HAS_ARG, QEMU_OPTION_trace, \
+    "-trace filename  Enable traces generation to filename.\n")
+STEXI
+@item -trace filename
+Write execution traces to filename.
+ETEXI
+
 STEXI
 @end table
 ETEXI
