@@ -1679,7 +1679,11 @@ void cpu_abort(CPUState *env, const char *fmt, ...)
     }
     va_end(ap2);
     va_end(ap);
+#if 1
+    exit (2);
+#else
     abort();
+#endif
 }
 
 CPUState *cpu_copy(CPUState *env)
