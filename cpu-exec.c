@@ -19,6 +19,8 @@
 #include "config.h"
 #include "exec.h"
 #include "disas.h"
+#include "elf.h"
+#include <stdlib.h>
 #include "tcg.h"
 #include "kvm.h"
 
