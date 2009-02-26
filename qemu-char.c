@@ -1735,17 +1735,21 @@ static void win_stdio_wait_func(void *opaque)
 
     ret = ReadConsoleInput(Input, buf, sizeof(buf)/sizeof(*buf), &size);
     if (!ret) {
+	/* Avoid error storm.  */
 	qemu_del_wait_object(Input, NULL, NULL);
+	return;
     }
 
     for (i = 0; i < size; i++) {
 	KEY_EVENT_RECORD *kev = &buf[i].Event.KeyEvent;
 	if (buf[i].EventType == KEY_EVENT && kev->bKeyDown) {
 	    int j;
+#if 0
 	    fprintf (stderr,
 		     "win_stdio_wait_func: ascii=%02x repeat=%d vk=%02x\n",
 		     kev->uChar.AsciiChar, kev->wRepeatCount,
 		     kev->wVirtualKeyCode);
+#endif
 	    if (kev->uChar.AsciiChar != 0)
 		for (j = 0; j < kev->wRepeatCount; j++)
 		    if (qemu_chr_can_read(chr)) {
@@ -1762,7 +1766,6 @@ static char InputBuf;
 
 static DWORD WINAPI win_stdio_thread(LPVOID param)
 {
-    /*fprintf(stderr, "win_stdio_thread: started\n"); */
     while (1) {	
 	int ret;
 	DWORD size;
@@ -1780,13 +1783,17 @@ static DWORD WINAPI win_stdio_thread(LPVOID param)
 	if (!size)
 	    continue;
 
+	/* Some terminal emulator returns \r\n for Enter.  Just pass \n.  */
+	if (InputBuf == '\r')
+	    continue;
+
 	/* Signal the main thread and wait until the byte was eaten.  */
 	if (!SetEvent(InputReadyEvent))
 	    break;
 	if (WaitForSingleObject(InputDoneEvent, INFINITE) != WAIT_OBJECT_0)
 	    break;
     }
-    qemu_del_wait_object(Input, NULL, NULL);
+    qemu_del_wait_object(InputReadyEvent, NULL, NULL);
     return 0;
 }
 
@@ -1797,6 +1804,7 @@ static void win_stdio_thread_wait_func(void *opaque)
 #if 0
     fprintf(stderr, "got %02x (%c)\n",
 	    InputBuf, InputBuf > 31 ? InputBuf : '.');
+    fflush(stderr);
 #endif
     if (qemu_chr_can_read(chr))
       qemu_chr_read(chr, &InputBuf, 1);
@@ -1810,8 +1818,10 @@ static CharDriverState *qemu_chr_open_win_stdio(void)
     int is_console = 0;
 
     Input = GetStdHandle(STD_INPUT_HANDLE);
-    if (Input == INVALID_HANDLE_VALUE)
+    if (Input == INVALID_HANDLE_VALUE) {
 	fprintf(stderr, "cannot open stdio: invalid handle\n");
+	exit(1);
+    }
     is_console = GetConsoleMode(Input, &mode) != 0;
 
     if (stdio_nb_clients >= STDIO_MAX_CLIENTS
@@ -1844,7 +1854,8 @@ static CharDriverState *qemu_chr_open_win_stdio(void)
 		fprintf(stderr, "cannot create stdio thread or event\n");
 		exit(1);
 	    }
-	    if (qemu_add_wait_object(Input, win_stdio_thread_wait_func, chr))
+	    if (qemu_add_wait_object(InputReadyEvent,
+                                     win_stdio_thread_wait_func, chr))
 		fprintf(stderr, "qemu_add_wait_object: failed\n");
 	}
     }
