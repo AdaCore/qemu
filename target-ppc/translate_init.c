@@ -2925,7 +2925,7 @@ static void init_excp_7x0 (CPUPPCState *env)
     env->excp_vectors[POWERPC_EXCP_THERM]    = 0x00001700;
     env->hreset_excp_prefix = 0x00000000UL;
     /* Hardware reset vector */
-    env->hreset_vector = 0xFFFFFFFCUL;
+    env->hreset_vector = 0xFFF00100UL;
 #endif
 }
 
