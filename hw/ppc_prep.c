@@ -611,10 +611,18 @@ static void ppc_prep_init (ram_addr_t ram_size,
     }
 
     if (linux_boot) {
-        kernel_base = KERNEL_LOAD_ADDR;
-        /* now we can load the kernel */
-        kernel_size = load_image_targphys(kernel_filename, kernel_base,
-                                          ram_size - kernel_base);
+	int res;
+	uint64_t entry, lowaddr, highaddr;
+
+	res = load_elf(kernel_filename, 0, &entry, &lowaddr, &highaddr);
+	if (res < 0) {
+            kernel_base = KERNEL_LOAD_ADDR;
+            /* now we can load the kernel */
+            kernel_size = load_image_targphys(kernel_filename, kernel_base,
+                                              ram_size - kernel_base);
+	} else {
+	    kernel_size = highaddr - lowaddr;
+	}
         if (kernel_size < 0) {
             hw_error("qemu: could not load kernel '%s'\n", kernel_filename);
             exit(1);
