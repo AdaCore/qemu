@@ -3385,7 +3385,7 @@ static always_inline uint32_t efscmpeq (uint32_t op1, uint32_t op2)
 #define HELPER_SINGLE_SPE_CMP(name)                                           \
 uint32_t helper_e##name (uint32_t op1, uint32_t op2)                          \
 {                                                                             \
-    return e##name(op1, op2) << 2;                                            \
+    return e##name(op1, op2)/* << 2 */;                                            \
 }
 /* efststlt */
 HELPER_SINGLE_SPE_CMP(fststlt);
