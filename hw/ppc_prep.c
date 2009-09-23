@@ -558,7 +558,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
     ram_addr_t ram_offset, bios_offset;
     uint32_t kernel_base, kernel_size, initrd_base, initrd_size;
     PCIBus *pci_bus;
-    qemu_irq *i8259;
+    qemu_irq *i8259, cpu_irq;
     int ppc_boot_device;
     int index;
     BlockDriverState *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
@@ -671,10 +671,14 @@ static void ppc_prep_init (ram_addr_t ram_size,
     }
 
     isa_mem_base = 0xc0000000;
-    if (PPC_INPUT(env) != PPC_FLAGS_INPUT_6xx) {
-        hw_error("Only 6xx bus is supported on PREP machine\n");
+    if (PPC_INPUT(env) == PPC_FLAGS_INPUT_6xx)
+	cpu_irq = first_cpu->irq_inputs[PPC6xx_INPUT_INT];
+    else if (PPC_INPUT(env) == PPC_FLAGS_INPUT_BookE)
+	cpu_irq = NULL;
+    else {
+        hw_error(env, "Only 6xx or BookE bus is supported on PREP machine\n");
     }
-    i8259 = i8259_init(first_cpu->irq_inputs[PPC6xx_INPUT_INT]);
+    i8259 = i8259_init(cpu_irq);
     pci_bus = pci_prep_init(i8259);
     //    pci_bus = i440fx_init();
     /* Register 8 MB of ISA IO space (needed for non-contiguous map) */
@@ -741,7 +745,8 @@ static void ppc_prep_init (ram_addr_t ram_size,
     register_ioport_read(0x61, 1, 1, speaker_ioport_read, NULL);
     register_ioport_write(0x61, 1, 1, speaker_ioport_write, NULL);
     /* Register fake IO ports for PREP */
-    sysctrl->reset_irq = first_cpu->irq_inputs[PPC6xx_INPUT_HRESET];
+    if (PPC_INPUT(env) == PPC_FLAGS_INPUT_6xx)
+	sysctrl->reset_irq = first_cpu->irq_inputs[PPC6xx_INPUT_HRESET];
     register_ioport_read(0x398, 2, 1, &PREP_io_read, sysctrl);
     register_ioport_write(0x398, 2, 1, &PREP_io_write, sysctrl);
     /* System control ports */
