@@ -219,7 +219,7 @@ fi
 case $targetos in
 CYGWIN*)
 mingw32="yes"
-OS_CFLAGS="-mno-cygwin"
+OS_CFLAGS="-mno-cygwin -Wno-format"
 OS_LDFLAGS="-mno-cygwin"
 if [ "$cpu" = "i386" ] ; then
     kqemu="yes"
@@ -228,6 +228,7 @@ audio_possible_drivers="sdl"
 ;;
 MINGW32*)
 mingw32="yes"
+OS_CFLAGS="-Wno-format"
 if [ "$cpu" = "i386" ] ; then
     kqemu="yes"
 fi
