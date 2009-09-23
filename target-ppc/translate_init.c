@@ -4029,6 +4029,16 @@ static void init_proc_G2LE (CPUPPCState *env)
                               POWERPC_FLAG_BUS_CLK)
 #define check_pow_e200       check_pow_hid0
 
+#define POWERPC_INSNS_e200_nommu   POWERPC_INSNS_e200
+#define POWERPC_MSRM_e200_nommu    POWERPC_MSRM_e200
+#define POWERPC_MMU_e200_nommu     (POWERPC_MMU_REAL)
+#define POWERPC_EXCP_e200_nommu    POWERPC_EXCP_e200
+#define POWERPC_INPUT_e200_nommu   POWERPC_INPUT_e200
+#define POWERPC_BFDM_e200_nommu    POWERPC_BFDM_e200
+#define POWERPC_FLAG_e200_nommu    POWERPC_FLAG_e200
+#define check_pow_e200_nommu       check_pow_e200
+#define init_proc_e200_nommu	   init_proc_e200
+
 __attribute__ (( unused ))
 static void init_proc_e200 (CPUPPCState *env)
 {
@@ -7850,6 +7860,8 @@ static const ppc_def_t ppc_defs[] = {
     /* e200 family                                                           */
     /* Generic PowerPC e200 core                                             */
     POWERPC_DEF("e200",          CPU_POWERPC_e200,                   e200),
+    /* Generic PowerPC e200 core without MMU                                 */
+    POWERPC_DEF("e200_nommu",    CPU_POWERPC_e200,                   e200_nommu),
     /* Generic MPC55xx core                                                  */
 #if defined (TODO)
     POWERPC_DEF_SVR("MPC55xx",
@@ -9031,10 +9043,12 @@ static void init_ppc_proc (CPUPPCState *env, const ppc_def_t *def)
         /* Pre-compute some useful values */
         env->tlb_per_way = env->nb_tlb / env->nb_ways;
     }
+#if 0
     if (env->irq_inputs == NULL) {
         fprintf(stderr, "WARNING: no internal IRQ controller registered.\n"
                 " Attempt Qemu to crash very soon !\n");
     }
+#endif
 #endif
     if (env->check_pow == NULL) {
         fprintf(stderr, "WARNING: no power management check handler "
