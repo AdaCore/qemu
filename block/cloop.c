@@ -45,7 +45,7 @@ static int cloop_probe(const uint8_t *buf, int buf_size, const char *filename)
 	"modprobe cloop file=$0 && mount -r -t iso9660 /dev/cloop $1\n";
     int length=strlen(magic_version_2_0);
     if(length>buf_size)
-	length=buf_size;
+	return 0;
     if(!memcmp(magic_version_2_0,buf,length))
 	return 2;
     return 0;
