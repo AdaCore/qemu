@@ -4409,10 +4409,12 @@ int main(int argc, char **argv, char **envp)
 
     linux_boot = (kernel_filename != NULL);
 
+#if 0
     if (!linux_boot && *kernel_cmdline != '\0') {
         error_report("-append only allowed with -kernel option");
         exit(1);
     }
+#endif
 
     if (!linux_boot && initrd_filename != NULL) {
         error_report("-initrd only allowed with -kernel option");
