@@ -5724,10 +5724,12 @@ int main(int argc, char **argv, char **envp)
     }
     linux_boot = (kernel_filename != NULL);
 
+#if 0
     if (!linux_boot && *kernel_cmdline != '\0') {
         fprintf(stderr, "-append only allowed with -kernel option\n");
         exit(1);
     }
+#endif
 
     if (!linux_boot && initrd_filename != NULL) {
         fprintf(stderr, "-initrd only allowed with -kernel option\n");
