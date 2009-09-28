@@ -318,6 +318,9 @@ cscope:
 %.dvi: %.texi
 	$(call quiet-command,texi2dvi -I . $<,"  GEN   $@")
 
+%.pdf: %.texi
+	texi2pdf $<
+
 qemu-options.texi: $(SRC_PATH)/qemu-options.hx
 	$(call quiet-command,sh $(SRC_PATH)/hxtool -t < $< > $@,"  GEN   $@")
 
@@ -348,6 +351,8 @@ qemu-nbd.8: qemu-nbd.texi
 info: qemu-doc.info qemu-tech.info
 
 dvi: qemu-doc.dvi qemu-tech.dvi
+
+pdf: qemu-doc.pdf qemu-tech.pdf
 
 html: qemu-doc.html qemu-tech.html
 
