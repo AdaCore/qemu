@@ -1507,6 +1507,7 @@ static void sun4c_hw_init(const struct sun4c_hwdef *hwdef, ram_addr_t RAM_size,
         cpu_model = hwdef->default_cpu_model;
 
     env = cpu_devinit(cpu_model, 0, hwdef->slavio_base, &cpu_irqs);
+    cpu_sparc_set_intctl (env, intctl_sun4c);
 
     /* set up devices */
     ram_init(0, RAM_size, hwdef->max_mem);
