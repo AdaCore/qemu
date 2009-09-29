@@ -44,6 +44,10 @@
 #define MCFG2 0x04
 #define MCFG3 0x08
 
+#define CCR   0x14
+#define CCR_MASK 0x00e13fff
+#define CCR_INIT 0xf7100000
+
 #define TIMC1 0x40
 #define TIMR1 0x44
 #define TIMCTR1 0x48
@@ -143,6 +147,7 @@ typedef struct LeonIoState
 
     struct LeonIntState intctl;
 
+    uint32_t ccr;
     uint32_t scar;
     uint32_t wdg;
     uint32_t iodata;
@@ -370,6 +375,9 @@ static uint32_t leon_io_readl(void *opaque, target_phys_addr_t addr)
     case MCFG3:
 	ret = s->mcfg[(addr - MCFG1) >> 2];
 	break;
+    case CCR:
+        ret = s->ccr;
+        break;
     case ITMP:
 	ret = s->intctl.itmp;
 	break;
@@ -453,6 +461,9 @@ static void leon_io_writel(void *opaque, target_phys_addr_t addr,
     case MCFG3:
 	s->mcfg[(addr - MCFG1) >> 2] = val;
 	break;
+    case CCR:
+        s->ccr = (val & CCR_MASK) | (s->ccr & ~CCR_MASK);
+        break;
     case ITMP:
 	s->intctl.itmp = val;
 	break;
@@ -560,6 +571,7 @@ static void at697_hw_init(ram_addr_t ram_size,
     s = qemu_mallocz(sizeof(struct LeonIoState));
     leon_intctl = &s->intctl;
     leon_intctl->env = env;
+    s->ccr = CCR_INIT;
 
     cpu_irqs = qemu_allocate_irqs(leon_set_irq, leon_intctl, MAX_PILS);
 
