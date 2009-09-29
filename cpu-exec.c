@@ -631,7 +631,7 @@ int cpu_exec(CPUState *env1)
                    spans two pages, we cannot safely do a direct
                    jump. */
                 {
-                    if (next_tb != 0 &&
+                    if ((next_tb & ~3) != 0 &&
 		        !tracefile_history_for_tb (tb) &&
 #ifdef CONFIG_KQEMU
                         (env->kqemu_enabled != 2) &&
@@ -1689,7 +1689,7 @@ static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
 	    return;
 	trace_current->pc = tb->pc;
 	trace_current->size = tb->size;
-	trace_current->op = TRACE_OP_BLOCK;
+	trace_current->op = TRACE_OP_BLOCK + (1 << br);
 	tb->tflags |= TRACE_OP_DYN | TRACE_OP_BLOCK;
     }
     trace_push_entry ();

@@ -3314,7 +3314,7 @@ static always_inline void gen_goto_tb (DisasContext *ctx, int n,
                 gen_debug_exception(ctx);
             }
         }
-        tcg_gen_exit_tb(0);
+        tcg_gen_exit_tb(n);
     }
 }
 
