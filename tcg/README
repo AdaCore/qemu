@@ -325,7 +325,7 @@ Write 8, 16, 32 or 64 bits to host memory.
 
 ********* QEMU specific operations
 
-* tb_exit t0
+* exit_tb t0
 
 Exit the current TB and return the value t0 (word type).
 
