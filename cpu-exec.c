@@ -1658,7 +1658,8 @@ static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
     if (last_tb)
 	printf(" (last_ip=" TARGET_FMT_lx ", targ=%d)",
 		last_tb ? last_tb->pc + last_tb->size - 1 : 0, br);
-    printf("[tb->tflags=%04x, op=%04x]\n", tb->tflags, trace_current->op);
+    printf("[br=%d tb->tflags=%04x, op=%04x]\n",
+           br, tb->tflags, trace_current->op);
 #endif
 
     /* Note: if last_tb is not set, we don't know if we exited from tb or not.
@@ -1671,7 +1672,7 @@ static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
 	    trace_current->op = TRACE_OP_BLOCK + (1 << br);
 	}
 	else {
-	    /* Threaded execution.  The block has already be executed.  */
+	    /* Threaded execution.  The block has already been executed.  */
 	    trace_current->pc = last_tb->pc + last_tb->size - 1;
 	    trace_current->size = 1;
 	    trace_current->op = (1 << br);
@@ -1684,7 +1685,9 @@ static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
 	last_tb->tflags |= trace_current->op;
     }
     else {
-	/* Non-static branch.  */
+	/* Non-static branch.
+           This can be a dynamic conditionnal branch, or even a fully
+           static branch to a different page.  */
 	if (!tracefile_history_for_tb (tb) && (tb->tflags & TRACE_OP_DYN))
 	    return;
 	trace_current->pc = tb->pc;
