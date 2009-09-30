@@ -121,7 +121,7 @@ static void cpu_exec_nocache(int max_cycles, TranslationBlock *orig_tb)
     /* execute the generated code */
     next_tb = tcg_qemu_tb_exec(tb->tc_ptr);
 
-    if ((next_tb & 3) == 2) {
+    if ((next_tb & 7) == 2) {
         /* Restore PC.  This may happen if async event occurs before
            the TB starts executing.  */
         cpu_pc_from_tb(env, tb);
@@ -666,6 +666,8 @@ int cpu_exec(CPUState *env1)
 
 		    if (tracefile_enabled)
 		      trace_after_exec (tb, next_tb);
+                    if (next_tb & 4)
+                        next_tb = 0;
 
                     if ((next_tb & 3) == 2) {
                         /* Instruction counter expired.  */
@@ -1649,7 +1651,7 @@ static void trace_before_exec(TranslationBlock *tb)
 /* TB is the tb we jumped to, LAST_TB (if not null) is the last executed tb.  */
 static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
 {
-    TranslationBlock *last_tb = (TranslationBlock*)(next_tb & ~3);
+    TranslationBlock *last_tb = (TranslationBlock*)(next_tb & ~7);
     int br = next_tb & 3;
 
 #ifdef DEBUG_TRACE
@@ -1685,15 +1687,13 @@ static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
 	last_tb->tflags |= trace_current->op;
     }
     else {
-	/* Non-static branch.
-           This can be a dynamic conditionnal branch, or even a fully
-           static branch to a different page.  */
-	if (!tracefile_history_for_tb (tb) && (tb->tflags & TRACE_OP_DYN))
+        /* Not a branch.  */
+	if (!tb->tflags & TRACE_OP_BLOCK)
 	    return;
 	trace_current->pc = tb->pc;
 	trace_current->size = tb->size;
-	trace_current->op = TRACE_OP_BLOCK + (1 << br);
-	tb->tflags |= TRACE_OP_DYN | TRACE_OP_BLOCK;
+	trace_current->op = TRACE_OP_BLOCK;
+	tb->tflags |= TRACE_OP_BLOCK;
     }
     trace_push_entry ();
 }

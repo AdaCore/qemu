@@ -92,11 +92,8 @@ struct trace_entry64
 /* _BLOCK means pc .. pc+size-1 was executed.  */
 #define TRACE_OP_BLOCK 0x10 /* Block fully executed.  */
 #define TRACE_OP_FAULT 0x20 /* Fault at pc.  */
-#define TRACE_OP_DYN   0x40 /* Dynamic branch.  */
 #define TRACE_OP_BR0 0x01 /* Branch 0 taken at pc.  */
 #define TRACE_OP_BR1 0x02
-#define TRACE_OP_BR2 0x04
-#define TRACE_OP_BR3 0x08
 
 /*
  * Decision map operations
