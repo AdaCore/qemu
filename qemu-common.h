@@ -3,9 +3,6 @@
 #define QEMU_COMMON_H
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#undef  WINVER
-#define WINVER 0x0501  /* needed for ipv6 bits */
 #include <windows.h>
 #endif
 
