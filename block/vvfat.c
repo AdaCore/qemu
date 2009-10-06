@@ -2819,7 +2819,6 @@ static int enable_write_target(BDRVVVFATState *s)
     BlockDriver *bdrv_qcow;
     QEMUOptionParameter *options;
     int size = sector2cluster(s, s->sector_count);
-    char backup_filename[128];
     s->used_clusters = calloc(size, 1);
 
     array_init(&(s->commits), sizeof(commit_t));
@@ -2840,7 +2839,6 @@ static int enable_write_target(BDRVVVFATState *s)
 
 #ifndef _WIN32
     unlink(s->qcow_filename);
-    unlink(backup_filename);
 #endif
 
     s->bs->backing_hd = calloc(sizeof(BlockDriverState), 1);
