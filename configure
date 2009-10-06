@@ -982,7 +982,7 @@ int main(void)
     return 0;
 }
 EOF
-if $cc $ARCH_CFLAGS -o $TMPE $TMPC > /dev/null 2> /dev/null ; then
+if $cc $ARCH_CFLAGS $OS_CFLAGS -o $TMPE $TMPC > /dev/null 2> /dev/null ; then
    fnmatch="yes"
 fi
 
@@ -1101,10 +1101,10 @@ if test "$curses" = "yes" ; then
 #endif
 int main(void) { resize_term(0, 0); return curses_version(); }
 EOF
-  if $cc $ARCH_CFLAGS -o $TMPE $TMPC -lncurses > /dev/null 2> /dev/null ; then
+  if $cc $ARCH_CFLAGS $OS_CFLAGS -o $TMPE $TMPC -lncurses > /dev/null 2> /dev/null ; then
     curses=yes
     ncurses=yes
-  elif $cc $ARCH_CFLAGS -o $TMPE $TMPC -lcurses > /dev/null 2> /dev/null ; then
+  elif $cc $ARCH_CFLAGS $OS_CFLAGS -o $TMPE $TMPC -lcurses > /dev/null 2> /dev/null ; then
     curses=yes
   fi
 fi # test "$curses"
