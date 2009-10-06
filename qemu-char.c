@@ -1762,7 +1762,7 @@ static void win_stdio_wait_func(void *opaque)
 
 static HANDLE InputReadyEvent;
 static HANDLE InputDoneEvent;
-static char InputBuf;
+static uint8_t InputBuf;
 
 static DWORD WINAPI win_stdio_thread(LPVOID param)
 {
@@ -1825,7 +1825,7 @@ static CharDriverState *qemu_chr_open_win_stdio(void)
     is_console = GetConsoleMode(Input, &mode) != 0;
 
     if (stdio_nb_clients >= STDIO_MAX_CLIENTS
-	|| (!nographic && stdio_nb_clients != 0))
+	|| (display_type != DT_NOGRAPHIC && stdio_nb_clients != 0))
 	return NULL;
 
     chr = qemu_mallocz(sizeof(CharDriverState));
