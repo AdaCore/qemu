@@ -677,7 +677,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
     else if (PPC_INPUT(env) == PPC_FLAGS_INPUT_BookE)
 	cpu_irq = NULL;
     else {
-        hw_error(env, "Only 6xx or BookE bus is supported on PREP machine\n");
+        hw_error("Only 6xx or BookE bus is supported on PREP machine\n");
     }
     i8259 = i8259_init(cpu_irq);
     pci_bus = pci_prep_init(i8259);
