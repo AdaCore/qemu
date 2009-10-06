@@ -631,6 +631,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
             kernel_size = load_image_targphys(kernel_filename, kernel_base,
                                               ram_size - kernel_base);
 	} else {
+            kernel_base = 0;
 	    kernel_size = highaddr - lowaddr;
 	}
         if (kernel_size < 0) {
