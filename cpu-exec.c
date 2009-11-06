@@ -1664,30 +1664,27 @@ static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
            br, tb->tflags, trace_current->op);
 #endif
 
-    /* Note: if last_tb is not set, we don't know if we exited from tb or not.
-     */
     if (last_tb) {
-	if (last_tb == tb) {
-	    /* Block fully executed with a static branch.  */
-	    trace_current->pc = tb->pc;
-	    trace_current->size = tb->size;
-	    trace_current->op = TRACE_OP_BLOCK + (1 << br);
-	}
-	else {
-	    /* Threaded execution.  The block has already been executed.  */
-	    trace_current->pc = last_tb->pc + last_tb->size - 1;
-	    trace_current->size = 1;
-	    trace_current->op = (1 << br);
-	}
+        /* Last instruction is a branch (because last_tb is set).  */
+        /* If last_tb != tb, then this is a threaded execution and the block
+           has already been executed.  */
+        unsigned char op = (1 << br);
 
-	if ((last_tb->tflags & trace_current->op) == trace_current->op) {
-	    if (!tracefile_history_for_tb (last_tb))
+	if (last_tb == tb)
+	    op |= TRACE_OP_BLOCK;
+
+	if ((last_tb->tflags & op) == op
+            && !tracefile_history_for_tb (last_tb))
 		return;
-	}
-	last_tb->tflags |= trace_current->op;
+        trace_current->pc = last_tb->pc;
+        trace_current->size = last_tb->size;
+        trace_current->op = op;
+	last_tb->tflags |= op;
     }
     else {
-        /* Not a branch.  */
+        /* Note: if last_tb is not set, we don't know if we exited from tb
+           or not.  We just know that tb has been executed and the last
+           instruction was not a branch.  */
 	if (!tb->tflags & TRACE_OP_BLOCK)
 	    return;
 	trace_current->pc = tb->pc;
