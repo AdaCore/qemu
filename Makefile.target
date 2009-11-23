@@ -77,7 +77,7 @@ all: $(PROGS)
 #########################################################
 # cpu emulator library
 libobj-y = exec.o translate-all.o cpu-exec.o translate.o host-utils.o
-libobj-y += qemu-traces.o qemu-decision_map.o
+libobj-y += qemu-traces.o
 libobj-$(CONFIG_KQEMU) += kqemu.o
 # TCG code generator
 libobj-y += tcg/tcg.o tcg/tcg-runtime.o
