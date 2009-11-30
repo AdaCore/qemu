@@ -33,5 +33,5 @@ void tracefile_history_for_tb_search (TranslationBlock *);
 static inline int tracefile_history_for_tb (TranslationBlock *tb) {
     if (!tb->tflags & TRACE_OP_HIST_CACHE)
         tracefile_history_for_tb_search (tb);
-    return tb->tflags & TRACE_OP_HIST_CACHE;
+    return tb->tflags & TRACE_OP_HIST_SET;
 }
