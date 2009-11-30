@@ -234,7 +234,7 @@ static void leon_set_irq(void *opaque, int irq, int level)
 
     if (level) {
         DPRINTF("Raise CPU IRQ %d\n", irq);
-	s->itp = 1 << irq;
+	s->itp |= 1 << irq;
         leon_check_irqs(s);
     } else {
         DPRINTF("Lower CPU IRQ %d\n", irq);
