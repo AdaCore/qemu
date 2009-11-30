@@ -197,6 +197,7 @@ static void leon_check_irqs(struct LeonIntState *s)
 
     if (num && (env->interrupt_index == 0 ||
 		(env->interrupt_index & ~15) == TT_EXTINT)) {
+        /* Either no interrupt in service or external interrupt pending.  */
 	int old_interrupt = env->interrupt_index;
 
 	env->interrupt_index = TT_EXTINT | num;
@@ -205,6 +206,7 @@ static void leon_check_irqs(struct LeonIntState *s)
 	    cpu_interrupt(env, CPU_INTERRUPT_HARD);
 	}
     } else if (!num && (env->interrupt_index & ~15) == TT_EXTINT) {
+        /* Interrupt reset before being serviced by CPU.  */
         DPRINTF("Reset CPU IRQ %d\n", env->interrupt_index & 15);
         env->interrupt_index = 0;
         cpu_reset_interrupt(env, CPU_INTERRUPT_HARD);
