@@ -31,7 +31,7 @@
 
 #ifdef DEBUG_IO
 #define DPRINTF(fmt, args...)                           \
-    do { printf("Leon: " fmt , ##args); } while (0)
+    do { fprintf(stderr, "Leon: " fmt , ##args); fflush (stderr); } while (0)
 #else
 #define DPRINTF(fmt, args...)
 #endif
