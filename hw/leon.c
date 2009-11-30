@@ -31,7 +31,7 @@
 
 #ifdef DEBUG_IO
 #define DPRINTF(fmt, args...)                           \
-    do { printf("Leon: " fmt , ##args); } while (0)
+    do { fprintf(stderr, "Leon: " fmt , ##args); fflush (stderr); } while (0)
 #else
 #define DPRINTF(fmt, args...)
 #endif
@@ -191,9 +191,10 @@ static void leon_check_irqs(struct LeonIntState *s)
     }
 
 #if 0
-    printf ("Leon2 check interrupt: num=%d int_index=0x%02x "
-	    "pend=%04x itp=%04x, itmp=%04x\n",
-	    num, env->interrupt_index, pend, s->itp, s->itmp);
+    fprintf (stderr,
+	     "Leon2 check interrupt: num=%d int_index=0x%02x psrpil=%d "
+	     "pend=%04x itp=%04x, itmp=%04x\n",
+	     num, env->interrupt_index, env->psrpil, pend, s->itp, s->itmp);
 #endif
 
     if (num && (env->interrupt_index == 0 ||
@@ -234,7 +235,7 @@ static void leon_set_irq(void *opaque, int irq, int level)
 
     if (level) {
         DPRINTF("Raise CPU IRQ %d\n", irq);
-	s->itp = 1 << irq;
+	s->itp |= 1 << irq;
         leon_check_irqs(s);
     } else {
         DPRINTF("Lower CPU IRQ %d\n", irq);
