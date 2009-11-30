@@ -191,9 +191,10 @@ static void leon_check_irqs(struct LeonIntState *s)
     }
 
 #if 0
-    printf ("Leon2 check interrupt: num=%d int_index=0x%02x "
-	    "pend=%04x itp=%04x, itmp=%04x\n",
-	    num, env->interrupt_index, pend, s->itp, s->itmp);
+    fprintf (stderr,
+	     "Leon2 check interrupt: num=%d int_index=0x%02x psrpil=%d "
+	     "pend=%04x itp=%04x, itmp=%04x\n",
+	     num, env->interrupt_index, env->psrpil, pend, s->itp, s->itmp);
 #endif
 
     if (num && (env->interrupt_index == 0 ||
