@@ -22,13 +22,16 @@
  * THE SOFTWARE.
  */
 
-#include <sys/types.h>
-#include "dyngen-exec.h"
 #include "cpu.h"
 #include "exec-all.h"
 
-int tracefile_history_for_tb (TranslationBlock *);
-/*
- * True when full history is desired, either for all instructions or for
- * the conditional jump instruction at the end of the tb.
- */
+/* Set TRACE_OP_HIST_CACHE and maybe TRACE_OP_HIST_SET.  */
+void tracefile_history_for_tb_search (TranslationBlock *);
+
+/* True when full history is desired, either for all instructions or for
+   the conditional jump instruction at the end of the tb.  */
+static inline int tracefile_history_for_tb (TranslationBlock *tb) {
+    if (!tb->tflags & TRACE_OP_HIST_CACHE)
+        tracefile_history_for_tb_search (tb);
+    return tb->tflags & TRACE_OP_HIST_SET;
+}

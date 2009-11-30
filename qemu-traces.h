@@ -95,11 +95,16 @@ struct trace_entry64
 #define TRACE_OP_BR0 0x01 /* Branch 0 taken at pc.  */
 #define TRACE_OP_BR1 0x02
 
+/* Only used internally in cpu-exec.c.  */
+#define TRACE_OP_HIST_SET 0x100		/* Set in the map file.  */
+#define TRACE_OP_HIST_CACHE 0x200	/* Has already been searched.  */
+
 /*
  * Decision map operations
  */
-#define TRACE_OP_TRACE_CONDITIONAL 1
+
 /* Trace conditional jump instruction at address */
+#define TRACE_OP_TRACE_CONDITIONAL 1
 
 extern struct trace_entry *trace_current;
 extern int tracefile_enabled;
