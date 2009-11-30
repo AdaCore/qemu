@@ -30,8 +30,7 @@
 //#define DEBUG_IO
 
 #ifdef DEBUG_IO
-#define DPRINTF(fmt, args...)                           \
-    do { fprintf(stderr, "Leon: " fmt , ##args); fflush (stderr); } while (0)
+#define DPRINTF(fmt, args...)  qemu_log("Leon: " fmt , ##args)
 #else
 #define DPRINTF(fmt, args...)
 #endif
@@ -191,8 +190,7 @@ static void leon_check_irqs(struct LeonIntState *s)
     }
 
 #if 0
-    fprintf (stderr,
-	     "Leon2 check interrupt: num=%d int_index=0x%02x psrpil=%d "
+    qemu_log("Leon2 check interrupt: num=%d int_index=0x%02x psrpil=%d "
 	     "pend=%04x itp=%04x, itmp=%04x\n",
 	     num, env->interrupt_index, env->psrpil, pend, s->itp, s->itmp);
 #endif
