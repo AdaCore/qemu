@@ -104,7 +104,7 @@ static void read_map_file(char **poptarg)
     *efilename = 0;
     *poptarg = efilename + 1;
 
-    histfile = fopen(optarg, filename);
+    histfile = fopen(filename, "rb");
     if (histfile == NULL) {
 	fprintf(stderr, "cannot open histmap file '%s': %m\n", filename);
 	exit(1);
@@ -144,7 +144,9 @@ static void read_map_file(char **poptarg)
 	exit(1);
     }
     nbr_histmap_entries = length / ent_sz;
-    histmap_entries = qemu_malloc (nbr_histmap_entries * sizeof(target_ulong));
+    if (nbr_histmap_entries)
+      histmap_entries =
+	qemu_malloc (nbr_histmap_entries * sizeof(target_ulong));
 
 #ifdef WORDS_BIGENDIAN
     my_endian = 1;
@@ -201,6 +203,7 @@ void trace_init(const char *optarg)
     static struct trace_header hdr = { QEMU_TRACE_MAGIC };
     static int opt_trace_seen = 0;
     int noappend = 0;
+    int kind = QEMU_TRACE_KIND_RAW;
 
     if (opt_trace_seen) {
 	fprintf(stderr, "option -trace already specified\n");
@@ -211,12 +214,16 @@ void trace_init(const char *optarg)
     while (1) {
         if (strstart(optarg, "nobuf,", &optarg))
             tracefile_nobuf = 1;
-        else if (strstart(optarg, "history,", &optarg))
+        else if (strstart(optarg, "history,", &optarg)) {
             tracefile_history = 1;
+	    kind = QEMU_TRACE_KIND_HISTORY;
+	}
         else if (strstart(optarg, "noappend,", &optarg))
             noappend = 1;
-        else if (strstart(optarg, "histmap=", &optarg))
+        else if (strstart(optarg, "histmap=", &optarg)) {
             read_map_file ((char **)&optarg);
+	    kind = QEMU_TRACE_KIND_HISTORY;
+	}
         else
             break;
     }
@@ -230,8 +237,7 @@ void trace_init(const char *optarg)
 
     hdr.version = QEMU_TRACE_VERSION;
     hdr.sizeof_target_pc = sizeof(target_ulong);
-    hdr.kind = tracefile_history ?
-	QEMU_TRACE_KIND_HISTORY : QEMU_TRACE_KIND_RAW;
+    hdr.kind = kind;
 #ifdef WORDS_BIGENDIAN
     hdr.big_endian = 1;
 #else
