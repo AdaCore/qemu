@@ -63,7 +63,7 @@ void tracefile_history_for_tb_search (TranslationBlock *tb)
                 tb->tflags |= TRACE_OP_HIST_SET;
                 return;
             }
-            if (pc < tb->pc)
+            if (tb->pc < pc)
                 high = mid - 1;
             else
                 low = mid + 1;

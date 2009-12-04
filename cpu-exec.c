@@ -632,7 +632,7 @@ int cpu_exec(CPUState *env1)
                    jump. */
                 {
                     if ((next_tb & ~3) != 0 &&
-		        !tracefile_history_for_tb (tb) &&
+		        !tracefile_history_for_tb ((TranslationBlock *)(next_tb & ~3)) &&
 #ifdef CONFIG_KQEMU
                         (env->kqemu_enabled != 2) &&
 #endif
@@ -1685,7 +1685,7 @@ static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
         /* Note: if last_tb is not set, we don't know if we exited from tb
            or not.  We just know that tb has been executed and the last
            instruction was not a branch.  */
-	if (!tb->tflags & TRACE_OP_BLOCK)
+	if (!(tb->tflags & TRACE_OP_BLOCK))
 	    return;
 	trace_current->pc = tb->pc;
 	trace_current->size = tb->size;
@@ -1709,7 +1709,7 @@ static void trace_at_fault(CPUState *e)
 	&& pc >= trace_current_tb->pc
 	&& pc < trace_current_tb->pc + trace_current_tb->size) {
 	if (!tracefile_history_for_tb (trace_current_tb)
-            && trace_current_tb->tflags & TRACE_OP_BLOCK)
+            && (trace_current_tb->tflags & TRACE_OP_BLOCK))
 	    return;
 	trace_current->pc = trace_current_tb->pc;
 	trace_current->op = TRACE_OP_FAULT;
