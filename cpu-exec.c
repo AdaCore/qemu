@@ -1658,16 +1658,16 @@ static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
     printf("... to " TARGET_FMT_lx " (" TARGET_FMT_lx ")",
 	    tb->pc + tb->size - 1, env->nip);
     if (last_tb)
-	printf(" (last_ip=" TARGET_FMT_lx ", targ=%d)",
-		last_tb ? last_tb->pc + last_tb->size - 1 : 0, br);
+	printf(" (last_ip=" TARGET_FMT_lx ", tflags=%04x)",
+               last_tb->pc + last_tb->size - 1, last_tb->tflags);
     printf("[br=%d tb->tflags=%04x, op=%04x]\n",
            br, tb->tflags, trace_current->op);
 #endif
 
     if (last_tb) {
         /* Last instruction is a branch (because last_tb is set).  */
-        /* If last_tb != tb, then this is a threaded execution and the block
-           has already been executed.  */
+        /* If last_tb != tb, then this is a threaded execution and tb has
+           already been executed.  */
         unsigned char op = (1 << br);
 
 	if (last_tb == tb)

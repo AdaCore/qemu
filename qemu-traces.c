@@ -253,6 +253,12 @@ void trace_init(const char *optarg)
 
 void trace_push_entry(void)
 {
+#ifdef DEBUG_TRACE
+    printf ("trace: %08x-%08x op=%04x\n",
+            trace_current->pc, trace_current->pc + trace_current->size - 1,
+            trace_current->op);
+#endif
+
     if (++trace_current == trace_entries + MAX_TRACE_ENTRIES
         || tracefile_nobuf)
         trace_flush();
