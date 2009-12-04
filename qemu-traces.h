@@ -108,8 +108,6 @@ struct trace_entry64
 
 extern struct trace_entry *trace_current;
 extern int tracefile_enabled;
-extern int tracefile_nobuf;
-extern int tracefile_history;
 
 void trace_init (const char *optarg);
 void trace_push_entry (void);

@@ -37,8 +37,8 @@ static struct trace_entry trace_entries[MAX_TRACE_ENTRIES];
 
 struct trace_entry *trace_current = trace_entries;
 int tracefile_enabled = 0;
-int tracefile_nobuf = 0;
-int tracefile_history = 0;
+static int tracefile_nobuf = 0;
+static int tracefile_history = 0;
 
 static int nbr_histmap_entries;
 static target_ulong *histmap_entries;
