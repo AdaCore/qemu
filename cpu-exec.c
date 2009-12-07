@@ -1718,7 +1718,8 @@ static void trace_at_fault(CPUState *e)
 	    trace_current->op = TRACE_OP_FAULT | TRACE_OP_BLOCK;
     }
     else {
-	if (!tracefile_history_for_tb (trace_current_tb)) {
+	if (trace_current_tb &&
+            !tracefile_history_for_tb (trace_current_tb)) {
 	    /* Discard single fault.  */
 	    return;
 	}
