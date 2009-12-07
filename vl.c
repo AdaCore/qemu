@@ -303,7 +303,7 @@ void hw_error(const char *fmt, ...)
 #endif
     }
     va_end(ap);
-    abort();
+    exit(4);
 }
 
 static void set_proc_name(const char *s)
