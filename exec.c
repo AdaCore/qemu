@@ -212,6 +212,8 @@ typedef struct subpage_t {
     ram_addr_t region_offset[TARGET_PAGE_SIZE][2][4];
 } subpage_t;
 
+static TranslationBlock *tb_alloc(target_ulong pc);
+
 #ifdef _WIN32
 static void map_exec(void *addr, long size)
 {
@@ -1156,7 +1158,7 @@ static inline void tb_alloc_page(TranslationBlock *tb,
 
 /* Allocate a new translation block. Flush the translation buffer if
    too many translation blocks or too much generated code. */
-TranslationBlock *tb_alloc(target_ulong pc)
+static TranslationBlock *tb_alloc(target_ulong pc)
 {
     TranslationBlock *tb;
 
