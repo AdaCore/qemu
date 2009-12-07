@@ -631,13 +631,14 @@ int cpu_exec(CPUState *env1)
                    spans two pages, we cannot safely do a direct
                    jump. */
                 {
-                    if ((next_tb & ~3) != 0 &&
-		        !tracefile_history_for_tb ((TranslationBlock *)(next_tb & ~3)) &&
+                    TranslationBlock *patch_tb = (TranslationBlock *)(next_tb & ~7);
+                    if (patch_tb != NULL &&
+		        !tracefile_history_for_tb (patch_tb) &&
 #ifdef CONFIG_KQEMU
                         (env->kqemu_enabled != 2) &&
 #endif
                         tb->page_addr[1] == -1) {
-                    tb_add_jump((TranslationBlock *)(next_tb & ~3), next_tb & 3, tb);
+                    tb_add_jump(patch_tb, next_tb & 3, tb);
                 }
                 }
                 spin_unlock(&tb_lock);
