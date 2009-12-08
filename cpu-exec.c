@@ -72,6 +72,17 @@ void cpu_loop_exit(void)
     longjmp(env->jmp_env, 1);
 }
 
+/* exit the current TB from an exception. The host registers are
+   restored in a state compatible with the CPU emulator
+ */
+void cpu_resume_from_exception(CPUState *env1, int excp)
+{
+    env = env1;
+
+    env->exception_index = excp;
+    longjmp(env->jmp_env, 1);
+}
+
 /* exit the current TB from a signal handler. The host registers are
    restored in a state compatible with the CPU emulator
  */
@@ -83,13 +94,7 @@ void cpu_resume_from_signal(CPUState *env1, void *puc)
 #elif defined(__OpenBSD__)
     struct sigcontext *uc = puc;
 #endif
-#endif
 
-    env = env1;
-
-    /* XXX: restore cpu registers saved in host registers */
-
-#if !defined(CONFIG_SOFTMMU)
     if (puc) {
         /* XXX: use siglongjmp ? */
 #ifdef __linux__
@@ -99,8 +104,7 @@ void cpu_resume_from_signal(CPUState *env1, void *puc)
 #endif
     }
 #endif
-    env->exception_index = -1;
-    longjmp(env->jmp_env, 1);
+    cpu_resume_from_exception (env, -1);
 }
 
 /* Execute the code without caching the generated code. An interpreter
