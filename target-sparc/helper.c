@@ -367,6 +367,77 @@ void dump_mmu(CPUState *env)
 }
 #endif /* DEBUG_MMU */
 
+/* In order to make gdb happy, we automatically read/write registers in
+   other windows.
+   We assume that the sparc ABI is followed.  */
+int sparc_cpu_memory_rw_debug(CPUState *env, target_ulong addr,
+                              uint8_t *buf, int len, int is_write)
+{
+    int i;
+    int len1;
+    int cwp = env->cwp;
+
+    for (i = 0; i < env->nwindows; i++) {
+        int off;
+        target_ulong fp = env->regbase[cwp * 16 + 22];
+
+        /* Assume fp == 0 means end of frame.  */
+        if (fp == 0)
+            break;
+
+        cwp = cpu_cwp_inc (env, cwp + 1);
+
+        /* Invalid window ? */
+        if (env->wim & (1 << cwp))
+            break;
+
+        /* According to the ABI, the stack is growing downward.  */
+        if (addr + len < fp)
+            break;
+        /* Not in this frame.  */
+        if (addr > fp + 64)
+            continue;
+
+        /* Handle access before this window.  */
+        if (addr < fp) {
+            len1 = fp - addr;
+            if (cpu_memory_rw_debug (env, addr, buf, len1, is_write) != 0)
+                return -1;
+            addr += len1;
+            len -= len1;
+            buf += len1;
+        }
+
+        /* Access byte per byte to registers.  Not very efficient but speed
+           is not critical.  */
+        off = addr - fp;
+        len1 = 64 - off;
+        if (len1 > len)
+            len1 = len;
+        for (; len1; len1--) {
+            int reg = cwp * 16 + 8 + (off >> 2);
+            union {
+                uint32_t v;
+                uint8_t c[4];
+            } u;
+            u.v = cpu_to_be32 (env->regbase[reg]);
+            if (is_write) {
+                u.c[off & 3] = *buf++;
+                env->regbase[reg] = be32_to_cpu (u.v);
+            }
+            else {
+                *buf++ = u.c[off & 3];
+            }
+            addr++;
+            len--;
+            off++;
+        }
+        if (len == 0)
+            return 0;
+    }
+    return cpu_memory_rw_debug (env, addr, buf, len, is_write);
+}
+
 #else /* !TARGET_SPARC64 */
 
 // 41 bit physical address space

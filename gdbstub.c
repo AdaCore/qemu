@@ -40,6 +40,9 @@
 #include "qemu_socket.h"
 #include "kvm.h"
 
+#ifndef TARGET_CPU_MEMORY_RW_DEBUG
+#define TARGET_CPU_MEMORY_RW_DEBUG cpu_memory_rw_debug
+#endif
 
 enum {
     GDB_SIGNAL_0 = 0,
@@ -1786,7 +1789,7 @@ static int gdb_handle_packet(GDBState *s, const char *line_buf)
         if (*p == ',')
             p++;
         len = strtoull(p, NULL, 16);
-        if (cpu_memory_rw_debug(s->g_cpu, addr, mem_buf, len, 0) != 0) {
+        if (TARGET_CPU_MEMORY_RW_DEBUG(s->g_cpu, addr, mem_buf, len, 0) != 0) {
             put_packet (s, "E14");
         } else {
             memtohex(buf, mem_buf, len);
@@ -1801,7 +1804,7 @@ static int gdb_handle_packet(GDBState *s, const char *line_buf)
         if (*p == ':')
             p++;
         hextomem(mem_buf, p, len);
-        if (cpu_memory_rw_debug(s->g_cpu, addr, mem_buf, len, 1) != 0)
+        if (TARGET_CPU_MEMORY_RW_DEBUG(s->g_cpu, addr, mem_buf, len, 1) != 0)
             put_packet(s, "E14");
         else
             put_packet(s, "OK");
