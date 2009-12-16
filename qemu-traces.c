@@ -30,6 +30,8 @@
 #include "qemu-decision_map.h"
 #include "elf.h"
 
+//#define DEBUG_TRACE
+
 static FILE *tracefile;
 
 #define MAX_TRACE_ENTRIES 1024
