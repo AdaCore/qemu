@@ -34,6 +34,7 @@ LIBS+=$(CLOCKLIBS)
 
 ifdef CONFIG_SOLARIS
 LIBS+=-lsocket -lnsl -lresolv
+CPPFLAGS+=-D_XOPEN_SOURCE=600 -D__EXTENSIONS__
 endif
 
 ifdef CONFIG_WIN32
