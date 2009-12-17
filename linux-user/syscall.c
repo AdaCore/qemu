@@ -57,6 +57,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <qemu-common.h>
+#include "qemu-traces.h"
 #ifdef HAVE_GPROF
 #include <sys/gmon.h>
 #endif
@@ -4165,6 +4166,8 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #ifdef HAVE_GPROF
         _mcleanup();
 #endif
+        if (tracefile_enabled)
+            trace_cleanup();
         gdb_exit(cpu_env, arg1);
         _exit(arg1);
         ret = 0; /* avoid warning */
@@ -5679,6 +5682,8 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #ifdef HAVE_GPROF
         _mcleanup();
 #endif
+        if (tracefile_enabled)
+            trace_cleanup();
         gdb_exit(cpu_env, arg1);
         ret = get_errno(exit_group(arg1));
         break;

@@ -82,10 +82,12 @@ static void trace_flush(void)
 	fflush(tracefile);
 }
 
-static void trace_cleanup(void)
+void trace_cleanup(void)
 {
-    trace_flush();
-    fclose(tracefile);
+    if (tracefile_enabled) {
+        trace_flush();
+        fclose(tracefile);
+    }
 }
 
 static void read_map_file(char **poptarg)
