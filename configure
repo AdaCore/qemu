@@ -1383,23 +1383,17 @@ if test "$rt" = "yes" ; then
   CLOCKLIBS="-lrt"
 fi
 
-if test "$mingw32" = "yes" ; then
-  if test -z "$prefix" ; then
-      prefix="c:/Program Files/Qemu"
+if test -z "$prefix" ; then
+  if test "$mingw32" = "yes" ; then
+    prefix="c:/Program Files/Qemu"
+  else
+    prefix="/usr/local"
   fi
-  mansuffix=""
-  datasuffix=""
-  docsuffix=""
-  binsuffix=""
-else
-  if test -z "$prefix" ; then
-      prefix="/usr/local"
-  fi
-  mansuffix="/share/man"
-  datasuffix="/share/qemu"
-  docsuffix="/share/doc/qemu"
-  binsuffix="/bin"
 fi
+mansuffix="/share/man"
+datasuffix="/share/qemu"
+docsuffix="/share/doc/qemu"
+binsuffix="/bin"
 
 echo "Install prefix    $prefix"
 echo "BIOS directory    $prefix$datasuffix"
