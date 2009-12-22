@@ -51,7 +51,7 @@
 #include "sysemu.h"
 #include "qemu_socket.h"
 
-#if !defined(_POSIX_C_SOURCE) || defined(_WIN32)
+#if !defined(_POSIX_C_SOURCE) || defined(_WIN32) || defined (HOST_SOLARIS)
 static void *oom_check(void *ptr)
 {
     if (ptr == NULL) {
