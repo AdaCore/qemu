@@ -367,7 +367,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num,
         /* jump to another page: currently not optimized */
         tcg_gen_movi_tl(cpu_pc, pc);
         tcg_gen_movi_tl(cpu_npc, npc);
-        tcg_gen_exit_tb(NULL, 0);
+        tcg_gen_exit_tb(s->base.tb, tb_num | TB_EXIT_NOPATCH);
     }
 }
 
