@@ -1044,6 +1044,7 @@ static inline void flush_cond(DisasContext *dc)
     if (dc->npc == JUMP_PC) {
         gen_generic_branch(dc);
         dc->npc = DYNAMIC_PC;
+	abort(); /* TG: shouldn't happen.  */
     }
 }
 
