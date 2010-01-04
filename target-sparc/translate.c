@@ -5335,8 +5335,12 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
             if (dc->pc != DYNAMIC_PC) {
                 tcg_gen_movi_tl(cpu_pc, dc->pc);
             }
-            save_npc(dc);
-            tcg_gen_exit_tb(0);
+            if (dc->npc == JUMP_PC) {
+                gen_branch2(dc, dc->jump_pc[0], dc->jump_pc[1], cpu_cond);
+            } else {
+                save_npc(dc);
+                tcg_gen_exit_tb(0);
+            }
         }
     }
     gen_tb_end(tb, num_insns);
