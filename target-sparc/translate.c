@@ -1123,6 +1123,7 @@ static inline void flush_cond(DisasContext *dc, TCGv cond)
     if (dc->npc == JUMP_PC) {
         gen_generic_branch(dc->jump_pc[0], dc->jump_pc[1], cond);
         dc->npc = DYNAMIC_PC;
+	abort(); /* TG: shouldn't happen.  */
     }
 }
 
