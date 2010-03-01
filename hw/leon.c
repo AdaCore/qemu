@@ -546,6 +546,7 @@ static void at697_hw_init(ram_addr_t ram_size,
 {
     CPUState *env;
     ram_addr_t ram_offset, prom_offset;
+    ram_addr_t ram2_size, ram2_offset;
     int ret;
     char *filename;
     qemu_irq *cpu_irqs;
@@ -585,6 +586,11 @@ static void at697_hw_init(ram_addr_t ram_size,
     }
     ram_offset = qemu_ram_alloc(ram_size);
     cpu_register_physical_memory(0x40000000, ram_size, ram_offset);
+
+    /* Allocate RAM2.  */
+    ram2_size = 8 << 20;
+    ram2_offset = qemu_ram_alloc(ram2_size);
+    cpu_register_physical_memory(0x20000000, ram2_size, ram2_offset);
 
     /* load boot prom */
     if (bios_name == NULL)
