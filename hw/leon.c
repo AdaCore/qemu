@@ -42,6 +42,7 @@
 #define MCFG1 0x00
 #define MCFG2 0x04
 #define MCFG3 0x08
+#define FAILAR 0x10
 
 #define CCR   0x14
 #define CCR_MASK 0x00e13fff
@@ -376,6 +377,9 @@ static uint32_t leon_io_readl(void *opaque, target_phys_addr_t addr)
     case MCFG3:
 	ret = s->mcfg[(addr - MCFG1) >> 2];
 	break;
+    case FAILAR:
+        ret = 0;
+        break;
     case CCR:
         ret = s->ccr;
         break;
@@ -462,6 +466,8 @@ static void leon_io_writel(void *opaque, target_phys_addr_t addr,
     case MCFG3:
 	s->mcfg[(addr - MCFG1) >> 2] = val;
 	break;
+    case FAILAR:
+        break;
     case CCR:
         s->ccr = (val & CCR_MASK) | (s->ccr & ~CCR_MASK);
         break;
