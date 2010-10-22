@@ -694,6 +694,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
     rtc_init(0x70, i8259[8], 2000);
 
     serial_init(0x3f8, i8259[4], 115200, serial_hds[0]);
+    serial_init(0x2f8, i8259[3], 115200, serial_hds[1]);
     nb_nics1 = nb_nics;
     if (nb_nics1 > NE2000_NB_MAX)
         nb_nics1 = NE2000_NB_MAX;
