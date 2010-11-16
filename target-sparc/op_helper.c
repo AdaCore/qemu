@@ -3542,6 +3542,10 @@ void do_interrupt(CPUState *env)
       if ((intno & ~15) == TT_EXTINT)
 	leon2_intctl_ack (env, intno);
       break;
+    case intctl_erc32:
+      if ((intno & ~15) == TT_EXTINT)
+	erc32_intctl_ack (env, intno);
+      break;
     default:
       break;
     }

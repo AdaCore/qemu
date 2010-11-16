@@ -217,7 +217,8 @@ typedef enum intctl_model {
   intctl_sun4c,
   intctl_sun4m,
   intctl_sun4u,
-  intctl_leon2
+  intctl_leon2,
+  intctl_erc32
 } intctl_model;
 
 #if !defined(TARGET_SPARC64)
@@ -569,6 +570,9 @@ void cpu_check_irqs(CPUSPARCState *env);
 
 /* leon.c */
 void leon2_intctl_ack(CPUSPARCState *env, int intno);
+
+/* erc32.c */
+void erc32_intctl_ack(CPUSPARCState *env, int intno);
 
 #ifdef TARGET_SPARC64
 /* sun4u.c */
