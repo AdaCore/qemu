@@ -119,7 +119,8 @@ static uint32_t pl190_read(void *opaque, target_phys_addr_t offset)
            current priority level to that of the current interrupt.  */
         for (i = 0; i < s->priority; i++)
           {
-            if ((s->level | s->soft_level) & s->prio_mask[i])
+            /* printf ("prio_mask[%d]=0x%x\n", i, s->prio_mask[i]); */
+            if ((s->level | s->soft_level) & s->prio_mask[i + 1])
               break;
           }
         /* Reading this value with no pending interrupts is undefined.
