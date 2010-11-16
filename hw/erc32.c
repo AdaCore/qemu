@@ -587,7 +587,7 @@ static CPUWriteMemoryFunc *erc32_io_write[3] = {
     erc32_io_writel,
 };
 
-static void stc695_hw_init(ram_addr_t ram_size,
+static void tsc695_hw_init(ram_addr_t ram_size,
                            const char *boot_device,
                            const char *kernel_filename,
                            const char *kernel_cmdline,
@@ -688,16 +688,16 @@ static void stc695_hw_init(ram_addr_t ram_size,
     }
 }
 
-QEMUMachine stc695_machine = {
-    .name = "stc695",
+QEMUMachine tsc695_machine = {
+    .name = "tsc695",
     .desc = "ERC32 Atmel 695",
-    .init = stc695_hw_init,
+    .init = tsc695_hw_init,
     .use_scsi = 0,
 };
 
 static void erc32_machine_init(void)
 {
-    qemu_register_machine(&stc695_machine);
+    qemu_register_machine(&tsc695_machine);
 }
 
 machine_init(erc32_machine_init);
