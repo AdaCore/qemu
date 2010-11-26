@@ -3536,18 +3536,22 @@ void do_interrupt(CPUState *env)
     switch (env->intctl) {
     case intctl_sun4c:
     case intctl_sun4m:
-      cpu_check_irqs(env);
-      break;
+        cpu_check_irqs(env);
+        break;
     case intctl_leon2:
-      if ((intno & ~15) == TT_EXTINT)
-	leon2_intctl_ack (env, intno);
-      break;
+        if ((intno & ~15) == TT_EXTINT)
+            leon2_intctl_ack (env, intno);
+        break;
+    case intctl_grlib_irqmp:
+        if ((intno & ~15) == TT_EXTINT)
+            grlib_irqmp_ack (env, intno);
+        break;
     case intctl_erc32:
-      if ((intno & ~15) == TT_EXTINT)
-	erc32_intctl_ack (env, intno);
-      break;
+        if ((intno & ~15) == TT_EXTINT)
+            erc32_intctl_ack (env, intno);
+        break;
     default:
-      break;
+        break;
     }
 #endif
 }

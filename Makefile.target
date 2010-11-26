@@ -575,6 +575,10 @@ else
 obj-sparc-y = sun4m.o tcx.o iommu.o slavio_intctl.o
 obj-sparc-y += slavio_timer.o slavio_misc.o fdc.o sparc32_dma.o
 obj-sparc-y += cs4231.o eccmemctl.o sbi.o sun4c_intctl.o leon.o erc32.o
+
+# GRLIB
+obj-sparc-y += grlib_gptimer.o grlib_irqmp.o grlib_apbuart.o
+
 endif
 
 obj-arm-y = integratorcp.o versatilepb.o smc91c111.o arm_pic.o arm_timer.o
