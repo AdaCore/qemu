@@ -575,6 +575,9 @@ void leon2_intctl_ack(CPUSPARCState *env, int intno);
 /* erc32.c */
 void erc32_intctl_ack(CPUSPARCState *env, int intno);
 
+/* leon3.c */
+void leon3_shutdown(void);
+
 /* grlib_irqmp.c */
 void grlib_irqmp_ack(CPUSPARCState *env, int intno);
 

@@ -44,6 +44,11 @@
 
 #define MAX_PILS 16
 
+void leon3_shutdown(void)
+{
+    qemu_system_shutdown_request();
+}
+
 static void main_cpu_reset(void *opaque)
 {
     CPUState *env = opaque;

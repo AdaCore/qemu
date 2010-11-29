@@ -3477,6 +3477,11 @@ void do_interrupt(CPUState *env)
 {
     int cwp, intno = env->exception_index;
 
+    /* Leon3 shutdown */
+    if (intno == 0x80 && env->intctl == intctl_grlib_irqmp) {
+        leon3_shutdown();
+    }
+
 #ifdef DEBUG_PCALL
     if (qemu_loglevel_mask(CPU_LOG_INT)) {
         static int count;
