@@ -1271,8 +1271,13 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
 
     helper_check_align(addr, size - 1);
     switch (asi) {
-    case 2: /* SuperSparc MXCC registers */
+    case 2: /* SuperSparc MXCC registers and Leon3 cache control */
         switch (addr) {
+        case 0x00:          /* Leon3 Cache Control */
+        case 0x08:          /* Leon3 Instruction Cache config */
+        case 0x0C:          /* Leon3 Date Cache config */
+            ret = leon3_cache_control_ld(addr, size);
+            break;
         case 0x01c00a00: /* MXCC control register */
             if (size == 8)
                 ret = env->mxccregs[3];
@@ -1500,8 +1505,14 @@ void helper_st_asi(target_ulong addr, uint64_t val, int asi, int size)
 {
     helper_check_align(addr, size - 1);
     switch(asi) {
-    case 2: /* SuperSparc MXCC registers */
+    case 2: /* SuperSparc MXCC registers and Leon3 cache control */
         switch (addr) {
+        case 0x00:          /* Leon3 Cache Control */
+        case 0x08:          /* Leon3 Instruction Cache config */
+        case 0x0C:          /* Leon3 Date Cache config */
+            leon3_cache_control_st(addr, val, size);
+            break;
+
         case 0x01c00000: /* MXCC stream data register 0 */
             if (size == 8)
                 env->mxccdata[0] = val;
@@ -3477,10 +3488,12 @@ void do_interrupt(CPUState *env)
 {
     int cwp, intno = env->exception_index;
 
+#if !defined(CONFIG_USER_ONLY)
     /* Leon3 shutdown */
-    if (intno == 0x80 && env->intctl == intctl_grlib_irqmp) {
+    if (intno == 0x80 && env->version == 0xf3000000) {
         leon3_shutdown();
     }
+#endif
 
 #ifdef DEBUG_PCALL
     if (qemu_loglevel_mask(CPU_LOG_INT)) {
@@ -3557,6 +3570,11 @@ void do_interrupt(CPUState *env)
         break;
     default:
         break;
+    }
+
+    /* Leon3 cache control interrupt */
+    if (((intno & ~15) == TT_EXTINT) && (env->version == 0xf3000000)) {
+        leon3_cache_control_int();
     }
 #endif
 }

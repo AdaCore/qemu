@@ -576,7 +576,10 @@ void leon2_intctl_ack(CPUSPARCState *env, int intno);
 void erc32_intctl_ack(CPUSPARCState *env, int intno);
 
 /* leon3.c */
-void leon3_shutdown(void);
+void     leon3_shutdown(void);
+void     leon3_cache_control_st(target_ulong addr, uint64_t val, int size);
+uint64_t leon3_cache_control_ld(target_ulong addr, int size);
+void     leon3_cache_control_int(void);
 
 /* grlib_irqmp.c */
 void grlib_irqmp_ack(CPUSPARCState *env, int intno);

@@ -111,7 +111,7 @@ void grlib_irqmp_ack(CPUSPARCState *env, int intno)
     intno &= 15;
     mask = 1 << intno;
 
-    DPRINTF ("grlib_irqmp_ack %d\n", intno);
+    DPRINTF("grlib_irqmp_ack %d\n", intno);
 
     /* Clear registers */
     grlib_irqmp_state.pending  &= ~mask;
