@@ -58,6 +58,7 @@ static TCGv cpu_hintp, cpu_htba, cpu_hver, cpu_ssr, cpu_ver;
 static TCGv_i32 cpu_softint;
 #else
 static TCGv cpu_wim;
+static TCGv cpu_asr17;
 #endif
 /* local register indexes (only used inside old micro ops) */
 static TCGv cpu_tmp0;
@@ -1846,6 +1847,8 @@ static void disas_sparc_insn(DisasContext * dc)
                 rs1 = GET_FIELD(insn, 13, 17);
                 switch(rs1) {
                 case 0: /* rdy */
+                    gen_movl_TN_reg(rd, cpu_y);
+                    break;
 #ifndef TARGET_SPARC64
                 case 0x01 ... 0x0e: /* undefined in the SPARCv8
                                        manual, rdy on the microSPARC
@@ -1855,6 +1858,11 @@ static void disas_sparc_insn(DisasContext * dc)
                 case 0x10 ... 0x1f: /* implementation-dependent in the
                                        SPARCv8 manual, rdy on the
                                        microSPARC II */
+
+                    if (rs1 == 0x11) { /* Read %asr17 */
+                        gen_movl_TN_reg(rd, cpu_asr17);
+                        break;
+                    }
 #endif
                     gen_movl_TN_reg(rd, cpu_y);
                     break;
@@ -4851,6 +4859,8 @@ void gen_intermediate_code_init(CPUSPARCState *env)
 #else
         cpu_wim = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, wim),
                                      "wim");
+        cpu_asr17 = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, asr17),
+                                     "asr17");
 #endif
         cpu_cond = tcg_global_mem_new(TCG_AREG0, offsetof(CPUState, cond),
                                       "cond");

@@ -269,6 +269,12 @@ static void leon3_generic_hw_init(ram_addr_t  ram_size,
         }
     }
 
+    /* Asr17 for Leon3 mono-processor */
+    env->asr17 &= 0 << 28;          /* CPU id */
+    env->asr17 &= 1 << 8;           /* SPARC V8 multiply and divide available */
+    env->asr17 &= env->nwindows -1; /* Number of implemented registers
+                                       windows */
+
     /* Allocate timers */
     grlib_gptimer_create(0x80000300, 2, CPU_CLK, cpu_irqs, 6);
 

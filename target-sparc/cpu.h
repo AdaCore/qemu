@@ -306,6 +306,7 @@ typedef struct CPUSPARCState {
                           from PSR) */
 #if !defined(TARGET_SPARC64) || defined(TARGET_ABI32)
     uint32_t wim;      /* window invalid mask */
+    uint32_t asr17;    /* asr17 */
 #endif
     target_ulong tbr;  /* trap base register */
     int      psrs;     /* supervisor mode (extracted from PSR) */
