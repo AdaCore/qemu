@@ -36,7 +36,7 @@
 #endif
 
 /* Default system clock.  */
-#define CPU_CLK (80 * 1000 * 1000)
+#define CPU_CLK (50 * 1000 * 1000)
 
 /* Leon registers.  */
 #define MCFG1 0x00
