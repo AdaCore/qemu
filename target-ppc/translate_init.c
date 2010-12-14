@@ -4842,6 +4842,21 @@ static void init_proc_603E (CPUPPCState *env)
                               POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK)
 #define check_pow_604        check_pow_nocheck
 
+/* PowerPC 604 NOFPU                                                         */
+
+/* 13th bit of msr mask cleared to disable the FPU */
+#define POWERPC_MSRM_604NOFPU  (0x000000000005DF77ULL)
+
+#define POWERPC_INSNS_604NOFPU POWERPC_INSNS_604
+#define POWERPC_INSNS2_604NOFPU POWERPC_INSNS2_604
+#define POWERPC_MMU_604NOFPU   POWERPC_MMU_604
+#define POWERPC_EXCP_604NOFPU  POWERPC_EXCP_604
+#define POWERPC_INPUT_604NOFPU POWERPC_INPUT_604
+#define POWERPC_BFDM_604NOFPU  POWERPC_BFDM_604
+#define POWERPC_FLAG_604NOFPU  POWERPC_FLAG_604
+#define check_pow_604NOFPU     check_pow_604
+#define init_proc_604NOFPU     init_proc_604
+
 static void init_proc_604 (CPUPPCState *env)
 {
     gen_spr_ne_601(env);
@@ -8806,6 +8821,8 @@ static const ppc_def_t ppc_defs[] = {
     POWERPC_DEF("Goldeneye",     CPU_POWERPC_603R,                   603E),
     /* PowerPC 604                                                           */
     POWERPC_DEF("604",           CPU_POWERPC_604,                    604),
+    /* PowerPC 604                                                           */
+    POWERPC_DEF("604NOFPU",      CPU_POWERPC_604,                    604NOFPU),
     /* PowerPC 604e (aka PID9)                                               */
     POWERPC_DEF("604e",          CPU_POWERPC_604E,                   604E),
     /* Code name for PowerPC 604e                                            */
