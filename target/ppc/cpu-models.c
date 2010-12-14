@@ -495,6 +495,8 @@
                 "PowerPC 603p (aka PID7v)")
     POWERPC_DEF("604",           CPU_POWERPC_604,                    604,
                 "PowerPC 604")
+    POWERPC_DEF("604NOFPU",      CPU_POWERPC_604,                    604NOFPU,
+                "PowerPC 604 NO-FPU")
     POWERPC_DEF("604e_v1.0",     CPU_POWERPC_604E_v10,               604E,
                 "PowerPC 604e v1.0")
     POWERPC_DEF("604e_v2.2",     CPU_POWERPC_604E_v22,               604E,
