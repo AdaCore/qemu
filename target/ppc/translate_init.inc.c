@@ -5606,6 +5606,33 @@ POWERPC_FAMILY(604)(ObjectClass *oc, void *data)
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
 
+POWERPC_FAMILY(604NOFPU)(ObjectClass *oc, void *data)
+{
+    DeviceClass *dc = DEVICE_CLASS(oc);
+    PowerPCCPUClass *pcc = POWERPC_CPU_CLASS(oc);
+
+    dc->desc = "PowerPC 604 NO FPU";
+    pcc->init_proc = init_proc_604;
+    pcc->check_pow = check_pow_nocheck;
+    pcc->insns_flags = PPC_INSNS_BASE | PPC_STRING | PPC_MFTB |
+                       PPC_FLOAT | PPC_FLOAT_FSEL | PPC_FLOAT_FRES |
+                       PPC_FLOAT_FRSQRTE | PPC_FLOAT_STFIWX |
+                       PPC_CACHE | PPC_CACHE_ICBI | PPC_CACHE_DCBZ |
+                       PPC_MEM_SYNC | PPC_MEM_EIEIO |
+                       PPC_MEM_TLBIE | PPC_MEM_TLBSYNC |
+                       PPC_SEGMENT | PPC_EXTERN;
+    pcc->msr_mask = 0x000000000005DF77ULL;
+    pcc->mmu_model = POWERPC_MMU_32B;
+#if defined(CONFIG_SOFTMMU)
+    pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
+#endif
+    pcc->excp_model = POWERPC_EXCP_604;
+    pcc->bus_model = PPC_FLAGS_INPUT_6xx;
+    pcc->bfd_mach = bfd_mach_ppc_604;
+    pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
+                 POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
+}
+
 static void init_proc_604E(CPUPPCState *env)
 {
     gen_spr_ne_601(env);
