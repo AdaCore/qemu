@@ -2476,6 +2476,9 @@ static void gdb_sigterm_handler(int signal)
 static void gdbserver_exit(void)
 {
   put_packet(gdbserver_state, "W00");
+  if (gdbserver_state->chr) {
+    qemu_chr_close(gdbserver_state->chr);
+  }
 }
 
 int gdbserver_start(const char *device)
