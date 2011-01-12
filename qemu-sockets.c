@@ -101,7 +101,7 @@ int inet_listen(const char *str, char *ostr, int olen,
 
     memset(&ai,0, sizeof(ai));
     ai.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
-    ai.ai_family = PF_UNSPEC;
+    ai.ai_family = PF_INET; /* IPv4 is the default address family */
     ai.ai_socktype = socktype;
 
     /* parse address */
@@ -235,7 +235,7 @@ int inet_connect(const char *str, int socktype)
 
     memset(&ai,0, sizeof(ai));
     ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
-    ai.ai_family = PF_UNSPEC;
+    ai.ai_family = PF_INET; /* IPv4 is the default address family */
     ai.ai_socktype = socktype;
 
     /* parse address */
