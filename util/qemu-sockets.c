@@ -124,7 +124,7 @@ static int inet_ai_family_from_address(InetSocketAddress *addr,
     if ((addr->has_ipv4 && addr->ipv4) || (addr->has_ipv6 && !addr->ipv6)) {
         return PF_INET;
     }
-    return PF_UNSPEC;
+    return PF_INET;
 }
 
 static int inet_listen_saddr(InetSocketAddress *saddr,
