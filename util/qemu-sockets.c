@@ -115,7 +115,7 @@ int inet_listen_opts(QemuOpts *opts, int port_offset, Error **errp)
 
     memset(&ai,0, sizeof(ai));
     ai.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
-    ai.ai_family = PF_UNSPEC;
+    ai.ai_family = PF_INET;
     ai.ai_socktype = SOCK_STREAM;
 
     if ((qemu_opt_get(opts, "host") == NULL) ||
@@ -309,7 +309,7 @@ static struct addrinfo *inet_parse_connect_opts(QemuOpts *opts, Error **errp)
     memset(&ai, 0, sizeof(ai));
 
     ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
-    ai.ai_family = PF_UNSPEC;
+    ai.ai_family = PF_INET;
     ai.ai_socktype = SOCK_STREAM;
 
     addr = qemu_opt_get(opts, "host");
@@ -405,7 +405,7 @@ int inet_dgram_opts(QemuOpts *opts, Error **errp)
     /* lookup peer addr */
     memset(&ai,0, sizeof(ai));
     ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
-    ai.ai_family = PF_UNSPEC;
+    ai.ai_family = PF_INET;
     ai.ai_socktype = SOCK_DGRAM;
 
     addr = qemu_opt_get(opts, "host");
