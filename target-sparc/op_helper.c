@@ -1855,6 +1855,7 @@ uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)
             break;
         }
         break;
+    case 0x1: /* Leon2 forced cache miss */
     case 0xb: /* Supervisor data access */
         switch(size) {
         case 1:
