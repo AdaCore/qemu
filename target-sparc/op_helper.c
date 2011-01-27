@@ -324,6 +324,12 @@ void HELPER(raise_exception)(int tt)
     raise_exception(tt);
 }
 
+void HELPER(trap_always)(int tt)
+{
+    env->exception_index = tt;
+    do_interrupt(env);
+}
+
 void helper_shutdown(void)
 {
 #if !defined(CONFIG_USER_ONLY)
