@@ -570,6 +570,19 @@ static const sparc_def_t sparc_defs[] = {
         .features = CPU_DEFAULT_FEATURES,
     },
     {
+        .name = "ERC32",
+        .iu_version = 0x68000000,
+        .fpu_version = 4 << 17, /* FPU version 4 (Meiko) */
+        .mmu_version = 0xf2000000,
+        .mmu_bm = 0x00000000,
+        .mmu_ctpr_mask = 0x007ffff0,
+        .mmu_cxr_mask = 0x0000003f,
+        .mmu_sfsr_mask = 0xffffffff,
+        .mmu_trcr_mask = 0xffffffff,
+        .nwindows = 8,
+        .features = CPU_DEFAULT_FEATURES | CPU_FEATURE_TA0_SHUTDOWN,
+    },
+    {
         .name = "LEON2",
         .iu_version = 0xf2000000,
         .fpu_version = 4 << 17, /* FPU version 4 (Meiko) */
