@@ -119,6 +119,8 @@ int main(int argc, char **argv)
 #include "qom/object_interfaces.h"
 #include "qapi-event.h"
 
+#include "qemu-traces.h"
+
 #define DEFAULT_RAM_SIZE 128
 
 #define MAX_VIRTIO_CONSOLES 1
@@ -3952,6 +3954,9 @@ int main(int argc, char **argv, char **envp)
                     fprintf(stderr, "open %s: %s\n", optarg, strerror(errno));
                     exit(1);
                 }
+                break;
+            case QEMU_OPTION_exec_trace:
+                trace_init(optarg);
                 break;
             default:
                 os_parse_cmd_args(popt->index, optarg);
