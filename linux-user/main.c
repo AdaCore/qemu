@@ -30,6 +30,7 @@
 #include "qemu-common.h"
 #include "qemu/cache-utils.h"
 #include "cpu.h"
+#include "qemu-traces.h"
 #include "tcg.h"
 #include "qemu/timer.h"
 #include "qemu/envlist.h"
@@ -3623,6 +3624,11 @@ static void handle_arg_strace(const char *arg)
     do_strace = 1;
 }
 
+static void handle_arg_exec_trace(const char *arg)
+{
+    trace_init(arg);
+}
+
 static void handle_arg_version(const char *arg)
 {
     printf("qemu-" TARGET_NAME " version " QEMU_VERSION QEMU_PKGVERSION
@@ -3675,6 +3681,8 @@ static const struct qemu_argument arg_table[] = {
      "",           "run in singlestep mode"},
     {"strace",     "QEMU_STRACE",      false, handle_arg_strace,
      "",           "log system calls"},
+    {"exec-trace", "QEMU_EXEC_TRACE",  true,  handle_arg_exec_trace,
+     "",           "log execution trace"},
     {"version",    "QEMU_VERSION",     false, handle_arg_version,
      "",           "display version information and exit"},
     {NULL, NULL, false, NULL, NULL, NULL}
