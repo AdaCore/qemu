@@ -3125,6 +3125,15 @@ STEXI
 prepend a timestamp to each log message.(default:on)
 ETEXI
 
+DEF("exec-trace", HAS_ARG, QEMU_OPTION_exec_trace, \
+    "-exec-trace filename"
+    "                Enable execution traces generation to filename.\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -exec-trace filename
+Write execution traces to filename.
+ETEXI
+
 HXCOMM This is the last statement. Insert new options before this line!
 STEXI
 @end table
