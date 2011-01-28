@@ -3453,7 +3453,7 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
                 gen_debug_exception(ctx);
             }
         }
-        tcg_gen_exit_tb(0);
+        tcg_gen_exit_tb((long)tb + 4 + n);
     }
 }
 
@@ -3566,7 +3566,7 @@ static inline void gen_bcond(DisasContext *ctx, int type)
         else
 #endif
             tcg_gen_andi_tl(cpu_nip, target, ~3);
-        tcg_gen_exit_tb(0);
+        tcg_gen_exit_tb((long)ctx->tb + 4);
         gen_set_label(l1);
 #if defined(TARGET_PPC64)
         if (!(ctx->sf_mode))

@@ -22,10 +22,17 @@
 #include "tcg.h"
 #include "qemu-barrier.h"
 #include "qtest.h"
+#include "qemu-traces.h"
+#include "qemu-decision_map.h"
+
+static void trace_before_exec(TranslationBlock *);
+static void trace_after_exec(TranslationBlock *, unsigned long);
+static void trace_at_fault(CPUArchState *e);
 
 int tb_invalidated_flag;
 
 //#define CONFIG_DEBUG_EXEC
+//#define DEBUG_TRACE
 
 bool qemu_cpu_has_work(CPUArchState *env)
 {
@@ -71,7 +78,7 @@ static void cpu_exec_nocache(CPUArchState *env, int max_cycles,
     next_tb = tcg_qemu_tb_exec(env, tb->tc_ptr);
     env->current_tb = NULL;
 
-    if ((next_tb & 3) == 2) {
+    if ((next_tb & 7) == 2) {
         /* Restore PC.  This may happen if async event occurs before
            the TB starts executing.  */
         cpu_pc_from_tb(env, tb);
@@ -548,8 +555,11 @@ int cpu_exec(CPUArchState *env)
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
                    jump. */
-                if (next_tb != 0 && tb->page_addr[1] == -1) {
-                    tb_add_jump((TranslationBlock *)(next_tb & ~3), next_tb & 3, tb);
+                TranslationBlock *patch_tb = (TranslationBlock *)(next_tb & ~7);
+                if ((patch_tb != NULL) && tb->page_addr[1] == -1 &&
+                    !tracefile_history_for_tb(patch_tb)) {
+
+                    tb_add_jump(patch_tb, next_tb & 3, tb);
                 }
                 spin_unlock(&tb_lock);
 
@@ -561,8 +571,22 @@ int cpu_exec(CPUArchState *env)
                 barrier();
                 if (likely(!env->exit_request)) {
                     tc_ptr = tb->tc_ptr;
+
+                    if (tracefile_enabled) {
+                        trace_before_exec(tb);
+                    }
+
                     /* execute the generated code */
+
                     next_tb = tcg_qemu_tb_exec(env, tc_ptr);
+
+                    if (tracefile_enabled) {
+                        trace_after_exec(tb, next_tb);
+                    }
+                    if (next_tb & 4) {
+                        next_tb = 0;
+                    }
+
                     if ((next_tb & 3) == 2) {
                         /* Instruction counter expired.  */
                         int insns_left;
@@ -599,6 +623,10 @@ int cpu_exec(CPUArchState *env)
             /* Reload env after longjmp - the compiler may have smashed all
              * local variables as longjmp is marked 'noreturn'. */
             env = cpu_single_env;
+
+            if (tracefile_enabled) {
+                trace_at_fault(env);
+            }
         }
     } /* for(;;) */
 
@@ -633,4 +661,103 @@ int cpu_exec(CPUArchState *env)
     /* fail safe : never use cpu_single_env outside cpu_exec() */
     cpu_single_env = NULL;
     return ret;
+}
+
+static TranslationBlock *trace_current_tb;
+
+static void trace_before_exec(TranslationBlock *tb)
+{
+#ifdef DEBUG_TRACE
+    printf("From " TARGET_FMT_lx " - "
+           TARGET_FMT_lx "\n", tb->pc, tb->pc + tb->size - 1);
+#endif
+    trace_current_tb = tb;
+}
+
+/* TB is the tb we jumped to, LAST_TB (if not null) is the last executed tb.  */
+static void trace_after_exec(TranslationBlock *tb, unsigned long next_tb)
+{
+    TranslationBlock *last_tb = (TranslationBlock *)(next_tb & ~7);
+    int br = next_tb & 3;
+
+#ifdef DEBUG_TRACE
+    printf("... to " TARGET_FMT_lx " (" TARGET_FMT_lx ")",
+           tb->pc + tb->size - 1, env->nip);
+    if (last_tb) {
+        printf(" (last_ip=" TARGET_FMT_lx ", tflags=%04x)",
+               last_tb->pc + last_tb->size - 1, last_tb->tflags);
+    }
+    printf("[br=%d tb->tflags=%04x, op=%04x]\n",
+           br, tb->tflags, trace_current->op);
+#endif
+
+    if (last_tb) {
+        /* Last instruction is a branch (because last_tb is set).  */
+        /* If last_tb != tb, then this is a threaded execution and tb has
+           already been executed.  */
+        unsigned char op = (1 << br);
+
+        if (last_tb == tb) {
+            op |= TRACE_OP_BLOCK;
+        }
+
+        if ((last_tb->tflags & op) == op
+            && !tracefile_history_for_tb(last_tb)) {
+            return;
+        }
+
+        trace_current->pc = last_tb->pc;
+        trace_current->size = last_tb->size;
+        trace_current->op = op;
+        last_tb->tflags |= op;
+    } else {
+        /* Note: if last_tb is not set, we don't know if we exited from tb
+           or not.  We just know that tb has been executed and the last
+           instruction was not a branch.  */
+        if (tb->tflags & TRACE_OP_BLOCK) {
+            return;
+        }
+        trace_current->pc = tb->pc;
+        trace_current->size = tb->size;
+        trace_current->op = TRACE_OP_BLOCK;
+        tb->tflags |= TRACE_OP_BLOCK;
+    }
+    trace_push_entry();
+}
+
+static void trace_at_fault(CPUArchState *e)
+{
+    target_ulong cs_base, pc;
+    int flags;
+
+    cpu_get_tb_cpu_state(e, &pc, &cs_base, &flags);
+
+#ifdef DEBUG_TRACE
+    printf("... fault at " TARGET_FMT_lx "\n", pc);
+#endif
+    if (trace_current_tb
+        && pc >= trace_current_tb->pc
+        && pc < trace_current_tb->pc + trace_current_tb->size) {
+        if (!tracefile_history_for_tb(trace_current_tb)
+            && (trace_current_tb->tflags & TRACE_OP_BLOCK)) {
+            return;
+        }
+        trace_current->pc = trace_current_tb->pc;
+        trace_current->op = TRACE_OP_FAULT;
+        trace_current->size = pc - trace_current->pc;
+        if (trace_current->size == trace_current_tb->size) {
+            trace_current->op = TRACE_OP_FAULT | TRACE_OP_BLOCK;
+        }
+    } else {
+        if (trace_current_tb &&
+            !tracefile_history_for_tb(trace_current_tb)) {
+            /* Discard single fault.  */
+            return;
+        }
+        trace_current->pc = pc;
+        trace_current->size = 0;
+        trace_current->op = TRACE_OP_FAULT;
+    }
+
+    trace_push_entry();
 }
