@@ -960,6 +960,7 @@ TranslationBlock *tb_gen_code(CPUState *env,
     tb->cs_base = cs_base;
     tb->flags = flags;
     tb->cflags = cflags;
+    tb->tflags = 0;
     cpu_gen_code(env, tb, &code_gen_size);
     code_gen_ptr = (void *)(((unsigned long)code_gen_ptr + code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
 
