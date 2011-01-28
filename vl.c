@@ -165,6 +165,8 @@ int main(int argc, char **argv)
 
 #include "ui/qemu-spice.h"
 
+#include "qemu-traces.h"
+
 //#define DEBUG_NET
 //#define DEBUG_SLIRP
 
@@ -3152,6 +3154,10 @@ int main(int argc, char **argv, char **envp)
                     fclose(fp);
                     break;
                 }
+            case QEMU_OPTION_exec_trace:
+                trace_init(optarg);
+                break;
+
             default:
                 os_parse_cmd_args(popt->index, optarg);
             }
