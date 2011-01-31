@@ -477,11 +477,11 @@ if test "$mingw32" = "yes" ; then
   QEMU_CFLAGS="-D__USE_MINGW_ANSI_STDIO=1 $QEMU_CFLAGS"
   LIBS="-lwinmm -lws2_32 -liphlpapi $LIBS"
   prefix="c:/Program Files/Qemu"
-  mandir="\${prefix}"
-  datadir="\${prefix}"
-  docdir="\${prefix}"
-  bindir="\${prefix}"
-  sysconfdir="\${prefix}"
+  mandir="\${prefix}/share/man"
+  datadir="\${prefix}/share/qemu"
+  docdir="\${prefix}/share/doc/qemu"
+  bindir="\${prefix}/bin"
+  sysconfdir="\${prefix}/etc"
   confsuffix=""
 fi
 
