@@ -468,12 +468,13 @@ fi
 case $targetos in
 CYGWIN*)
   mingw32="yes"
-  QEMU_CFLAGS="-mno-cygwin $QEMU_CFLAGS"
+  QEMU_CFLAGS="-mno-cygwin $QEMU_CFLAGS -Wno-format"
   audio_possible_drivers="winwave sdl"
   audio_drv_list="winwave"
 ;;
 MINGW32*)
   mingw32="yes"
+  QEMU_CFLAGS="$QEMU_CFLAGS -Wno-format"
   audio_possible_drivers="winwave dsound sdl fmod"
   audio_drv_list="winwave"
 ;;
