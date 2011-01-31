@@ -683,11 +683,11 @@ EOF
     LIBS="-liberty $LIBS"
   fi
   prefix="c:/Program Files/QEMU"
-  mandir="\${prefix}"
-  datadir="\${prefix}"
-  qemu_docdir="\${prefix}"
-  bindir="\${prefix}"
-  sysconfdir="\${prefix}"
+  mandir="\${prefix}/share/man"
+  datadir="\${prefix}/share/qemu"
+  qemu_docdir="\${prefix}/share/doc/qemu"
+  bindir="\${prefix}/bin"
+  sysconfdir="\${prefix}/etc"
   local_statedir=
   confsuffix=""
   libs_qga="-lws2_32 -lwinmm -lpowrprof $libs_qga"
