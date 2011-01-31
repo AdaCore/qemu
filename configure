@@ -899,7 +899,7 @@ if test "$mingw32" = "yes" ; then
   EXESUF=".exe"
   DSOSUF=".dll"
   # MinGW needs -mthreads for TLS and macro _MT.
-  QEMU_CFLAGS="-mthreads $QEMU_CFLAGS"
+  QEMU_CFLAGS="-Wno-format -mthreads $QEMU_CFLAGS"
   LIBS="-lwinmm -lws2_32 -liphlpapi $LIBS"
   write_c_skeleton;
   if compile_prog "" "-liberty" ; then
