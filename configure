@@ -571,12 +571,13 @@ HOST_VARIANT_DIR=""
 case $targetos in
 CYGWIN*)
   mingw32="yes"
-  QEMU_CFLAGS="-mno-cygwin $QEMU_CFLAGS"
+  QEMU_CFLAGS="-mno-cygwin $QEMU_CFLAGS -Wno-format"
   audio_possible_drivers="sdl"
   audio_drv_list="sdl"
 ;;
 MINGW32*)
   mingw32="yes"
+  QEMU_CFLAGS="$QEMU_CFLAGS -Wno-format"
   audio_possible_drivers="dsound sdl"
   if check_include dsound.h; then
     audio_drv_list="dsound"
