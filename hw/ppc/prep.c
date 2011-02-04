@@ -491,10 +491,6 @@ static void ppc_prep_init(MachineState *machine)
                 break;
             }
         }
-        if (ppc_boot_device == '\0') {
-            error_report("No valid boot device for Mac99 machine");
-            exit(1);
-        }
     }
 
     if (PPC_INPUT(env) != PPC_FLAGS_INPUT_6xx) {
