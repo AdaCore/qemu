@@ -59,7 +59,7 @@
 
 #define CFG_ADDR 0xf0000510
 
-#define BIOS_SIZE (1 * MiB)
+#define BIOS_SIZE (32 * 1024 * 1024)
 #define BIOS_FILENAME "ppc_rom.bin"
 #define KERNEL_LOAD_ADDR 0x01000000
 #define INITRD_LOAD_ADDR 0x01800000
