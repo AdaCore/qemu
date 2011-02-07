@@ -2633,6 +2633,17 @@ static void gdb_sigterm_handler(int signal)
 }
 #endif
 
+static void gdbserver_exit(void)
+{
+  put_packet(gdbserver_state, "W00");
+
+#ifndef CONFIG_USER_ONLY
+  if (gdbserver_state->chr) {
+    qemu_chr_close(gdbserver_state->chr);
+  }
+#endif
+}
+
 int gdbserver_start(const char *device)
 {
     GDBState *s;
@@ -2689,6 +2700,7 @@ int gdbserver_start(const char *device)
     s->state = chr ? RS_IDLE : RS_INACTIVE;
     s->mon_chr = mon_chr;
 
+    atexit(gdbserver_exit);
     return 0;
 }
 #endif
