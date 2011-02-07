@@ -87,6 +87,7 @@ int cpu_restore_state(struct TranslationBlock *tb,
                       CPUState *env, unsigned long searched_pc,
                       void *puc);
 void cpu_resume_from_signal(CPUState *env1, void *puc);
+void cpu_resume_from_exception(CPUState *env1, int excp);
 void cpu_io_recompile(CPUState *env, void *retaddr);
 TranslationBlock *tb_gen_code(CPUState *env, 
                               target_ulong pc, target_ulong cs_base, int flags,
