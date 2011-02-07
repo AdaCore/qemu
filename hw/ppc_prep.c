@@ -514,19 +514,29 @@ static void ppc_prep_init (ram_addr_t ram_size,
     memory_region_set_readonly(bios, true);
     memory_region_add_subregion(sysmem, (uint32_t)(-BIOS_SIZE), bios);
     vmstate_register_ram_global(bios);
-    if (bios_name == NULL)
-        bios_name = BIOS_FILENAME;
-    filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
-    if (filename) {
-        bios_size = get_image_size(filename);
+
+
+    if (bios_name != NULL && strcmp(bios_name, "-") == 0) {
+        /* No bios.  */
+        bios_size = BIOS_SIZE;
+        filename = NULL;
     } else {
-        bios_size = -1;
+        if (bios_name == NULL)
+            bios_name = BIOS_FILENAME;
+        filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+        if (filename) {
+            bios_size = get_image_size(filename);
+        } else {
+            bios_size = -1;
+        }
     }
     if (bios_size > 0 && bios_size <= BIOS_SIZE) {
         target_phys_addr_t bios_addr;
         bios_size = (bios_size + 0xfff) & ~0xfff;
         bios_addr = (uint32_t)(-bios_size);
-        bios_size = load_image_targphys(filename, bios_addr, bios_size);
+        if (filename) {
+            bios_size = load_image_targphys(filename, bios_addr, bios_size);
+        }
     }
     if (bios_size < 0 || bios_size > BIOS_SIZE) {
         hw_error("qemu: could not load PPC PREP bios '%s'\n", bios_name);
