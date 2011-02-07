@@ -585,7 +585,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
     if (filename) {
         bios_size = get_image_size(filename);
     } else {
-        bios_size = -1;
+        bios_size = BIOS_SIZE;
     }
     if (bios_size > 0 && bios_size <= BIOS_SIZE) {
         target_phys_addr_t bios_addr;
@@ -593,7 +593,9 @@ static void ppc_prep_init (ram_addr_t ram_size,
         bios_addr = (uint32_t)(-bios_size);
         cpu_register_physical_memory(bios_addr, bios_size,
                                      bios_offset | IO_MEM_ROM);
-        bios_size = load_image_targphys(filename, bios_addr, bios_size);
+        if (filename) {
+            bios_size = load_image_targphys(filename, bios_addr, bios_size);
+        }
     }
     if (bios_size < 0 || bios_size > BIOS_SIZE) {
         hw_error("qemu: could not load PPC PREP bios '%s'\n", bios_name);
