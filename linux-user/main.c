@@ -29,6 +29,7 @@
 #include "qemu.h"
 #include "qemu-common.h"
 #include "cache-utils.h"
+#include "qemu-traces.h"
 /* For tb_lock */
 #include "exec-all.h"
 #include "tcg.h"
@@ -2886,8 +2887,12 @@ int main(int argc, char **argv, char **envp)
             singlestep = 1;
         } else if (!strcmp(r, "strace")) {
             do_strace = 1;
-        } else
-        {
+        } else if (!strcmp(r, "version")) {
+            version();
+            exit(0);
+        } else if (!strcmp(r, "exec-trace")) {
+            trace_init(argv[optind++]);
+        } else {
             usage();
         }
     }
