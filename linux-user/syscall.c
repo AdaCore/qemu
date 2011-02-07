@@ -60,6 +60,7 @@ int __clone2(int (*fn)(void *), void *child_stack_base,
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <qemu-common.h>
+#include "qemu-traces.h"
 #ifdef TARGET_GPROF
 #include <sys/gmon.h>
 #endif

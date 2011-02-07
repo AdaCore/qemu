@@ -111,6 +111,7 @@ extern struct trace_entry *trace_current;
 extern int                 tracefile_enabled;
 
 void trace_init(const char *optarg);
+void trace_cleanup(void);
 void trace_push_entry(void);
 
 #endif /* QEMU_TRACE_H */
