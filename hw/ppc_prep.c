@@ -39,6 +39,7 @@
 #include "blockdev.h"
 #include "arch_init.h"
 #include "exec-memory.h"
+#include "elf.h"
 
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
@@ -536,8 +537,12 @@ static void ppc_prep_init (ram_addr_t ram_size,
     if (linux_boot) {
         kernel_base = KERNEL_LOAD_ADDR;
         /* now we can load the kernel */
-        kernel_size = load_image_targphys(kernel_filename, kernel_base,
-                                          ram_size - kernel_base);
+        kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, NULL, NULL,
+                               1, ELF_MACHINE, 0);
+        if (kernel_size < 0) {
+            kernel_size = load_image_targphys(kernel_filename, kernel_base,
+                                              ram_size - kernel_base);
+        }
         if (kernel_size < 0) {
             hw_error("qemu: could not load kernel '%s'\n", kernel_filename);
         }
