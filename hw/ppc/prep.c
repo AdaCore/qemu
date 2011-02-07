@@ -542,7 +542,6 @@ static void ppc_prep_init(MachineState *machine)
                                           ram_size - kernel_base);
         if (kernel_size < 0) {
             error_report("could not load kernel '%s'", kernel_filename);
-            exit(1);
         }
         /* load initrd */
         if (initrd_filename) {
