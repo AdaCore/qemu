@@ -515,9 +515,19 @@ static void ppc_prep_init(QEMUMachineInitArgs *args)
     memory_region_set_readonly(bios, true);
     memory_region_add_subregion(sysmem, (uint32_t)(-BIOS_SIZE), bios);
     vmstate_register_ram_global(bios);
-    if (bios_name == NULL)
-        bios_name = BIOS_FILENAME;
-    filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+
+
+    if (bios_name != NULL && strcmp(bios_name, "-") == 0) {
+        /* No bios.  */
+        bios_size = BIOS_SIZE;
+        filename = NULL;
+    } else {
+        if (bios_name == NULL) {
+            bios_name = BIOS_FILENAME;
+        }
+        filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+    }
+
     if (filename) {
         bios_size = load_elf(filename, NULL, NULL, NULL,
                              NULL, NULL, 1, ELF_MACHINE, 0);
@@ -535,8 +545,6 @@ static void ppc_prep_init(QEMUMachineInitArgs *args)
                 exit(1);
             }
         }
-    } else {
-        bios_size = -1;
     }
     if (bios_size < 0 && !qtest_enabled()) {
         fprintf(stderr, "qemu: could not load PPC PReP bios '%s'\n",
