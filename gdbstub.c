@@ -1723,6 +1723,13 @@ static void gdb_sigterm_handler(int signal)
 }
 #endif
 
+void gdbserver_cleanup(void)
+{
+    if (gdbserver_state) {
+        put_packet(gdbserver_state, "W00");
+    }
+}
+
 int gdbserver_start(const char *device)
 {
     GDBState *s;

@@ -4706,6 +4706,7 @@ int main(int argc, char **argv, char **envp)
     net_cleanup();
     audio_cleanup();
     monitor_cleanup();
+    gdbserver_cleanup();
     qemu_chr_cleanup();
 
     return 0;
