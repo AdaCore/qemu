@@ -780,7 +780,8 @@ static int cpu_gdb_write_register(CPUPPCState *env, uint8_t *mem_buf, int n)
             /* fpscr */
             if (gdb_has_xml)
                 return 0;
-            return 4;
+            env->fpscr = ldtul_p(mem_buf);
+            return sizeof(target_ulong);
         }
     }
     return 0;
