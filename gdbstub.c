@@ -1690,10 +1690,15 @@ void gdb_register_coprocessor(CPUState * env,
 }
 
 #ifndef CONFIG_USER_ONLY
+#if defined(TARGET_PPC)
+#define BP_ARCH_FLAGS BP_STOP_BEFORE_ACCESS
+#else
+#define BP_ARCH_FLAGS 0
+#endif
 static const int xlat_gdb_type[] = {
-    [GDB_WATCHPOINT_WRITE]  = BP_GDB | BP_MEM_WRITE,
-    [GDB_WATCHPOINT_READ]   = BP_GDB | BP_MEM_READ,
-    [GDB_WATCHPOINT_ACCESS] = BP_GDB | BP_MEM_ACCESS,
+    [GDB_WATCHPOINT_WRITE]  = BP_GDB | BP_MEM_WRITE | BP_ARCH_FLAGS,
+    [GDB_WATCHPOINT_READ]   = BP_GDB | BP_MEM_READ | BP_ARCH_FLAGS,
+    [GDB_WATCHPOINT_ACCESS] = BP_GDB | BP_MEM_ACCESS | BP_ARCH_FLAGS,
 };
 #endif
 
