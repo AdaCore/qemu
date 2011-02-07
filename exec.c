@@ -1862,7 +1862,7 @@ void cpu_abort(CPUState *env, const char *fmt, ...)
         sigaction(SIGABRT, &act, NULL);
     }
 #endif
-    abort();
+    exit(5);
 }
 
 CPUState *cpu_copy(CPUState *env)
