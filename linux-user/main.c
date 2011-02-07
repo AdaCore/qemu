@@ -30,6 +30,7 @@
 #include "qemu-common.h"
 #include "cache-utils.h"
 #include "cpu.h"
+#include "qemu-traces.h"
 #include "tcg.h"
 #include "qemu-timer.h"
 #include "envlist.h"
@@ -3051,6 +3052,8 @@ int main(int argc, char **argv, char **envp)
         } else if (!strcmp(r, "version")) {
             version();
             exit(0);
+        } else if (!strcmp(r, "exec-trace")) {
+            trace_init(argv[optind++]);
         } else {
             usage();
         }
