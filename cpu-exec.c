@@ -45,6 +45,15 @@ void cpu_loop_exit(CPUArchState *env)
     longjmp(env->jmp_env, 1);
 }
 
+/* exit the current TB from an exception. The host registers are
+   restored in a state compatible with the CPU emulator
+ */
+void cpu_resume_from_exception(CPUArchState *env1, int excp)
+{
+    env1->exception_index = excp;
+    longjmp(env1->jmp_env, 1);
+}
+
 /* exit the current TB from a signal handler. The host registers are
    restored in a state compatible with the CPU emulator
  */
@@ -53,8 +62,7 @@ void cpu_resume_from_signal(CPUArchState *env, void *puc)
 {
     /* XXX: restore cpu registers saved in host registers */
 
-    env->exception_index = -1;
-    longjmp(env->jmp_env, 1);
+    cpu_resume_from_exception(env, -1);
 }
 #endif
 
