@@ -374,7 +374,7 @@ void hw_error(const char *fmt, ...)
 #endif
     }
     va_end(ap);
-    abort();
+    exit(4);
 }
 
 void cpu_synchronize_all_states(void)
