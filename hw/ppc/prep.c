@@ -448,10 +448,16 @@ static void ppc_prep_init(MachineState *machine)
     memory_region_add_subregion(sysmem, 0, ram);
 
     if (linux_boot) {
+        uint64_t entry;
+
         kernel_base = KERNEL_LOAD_ADDR;
         /* now we can load the kernel */
-        kernel_size = load_image_targphys(kernel_filename, kernel_base,
-                                          ram_size - kernel_base);
+        kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, &entry,
+                               NULL, NULL, 1, PPC_ELF_MACHINE, 0, 0);
+        if (kernel_size < 0) {
+            kernel_size = load_image_targphys(kernel_filename, kernel_base,
+                                              ram_size - kernel_base);
+        }
         if (kernel_size < 0) {
             error_report("could not load kernel '%s'", kernel_filename);
             exit(1);
