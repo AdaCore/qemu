@@ -570,7 +570,6 @@ static void ppc_prep_init(MachineState *machine)
                                           ram_size - kernel_base);
         if (kernel_size < 0) {
             hw_error("qemu: could not load kernel '%s'\n", kernel_filename);
-            exit(1);
         }
         /* load initrd */
         if (initrd_filename) {
