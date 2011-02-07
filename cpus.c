@@ -1012,7 +1012,7 @@ void hw_error(const char *fmt, ...)
         cpu_dump_state(cpu, stderr, fprintf, CPU_DUMP_FPU);
     }
     va_end(ap);
-    abort();
+    exit(4);
 }
 
 void cpu_synchronize_all_states(void)

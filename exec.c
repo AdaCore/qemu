@@ -1278,7 +1278,7 @@ void cpu_abort(CPUState *cpu, const char *fmt, ...)
         sigaction(SIGABRT, &act, NULL);
     }
 #endif
-    abort();
+    exit(5);
 }
 
 #if !defined(CONFIG_USER_ONLY)
