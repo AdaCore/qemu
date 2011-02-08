@@ -615,8 +615,12 @@ static void ppc_prep_init (ram_addr_t ram_size,
     /* init basic PC hardware */
     pci_vga_init(pci_bus);
 
-    if (serial_hds[0])
-        serial_isa_init(isa_bus, 0, serial_hds[0]);
+    for(i = 0; i < MAX_SERIAL_PORTS; i++) {
+        if (serial_hds[i]) {
+            serial_isa_init(isa_bus, i, serial_hds[i]);
+        }
+    }
+
     nb_nics1 = nb_nics;
     if (nb_nics1 > NE2000_NB_MAX)
         nb_nics1 = NE2000_NB_MAX;
