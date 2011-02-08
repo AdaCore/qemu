@@ -545,6 +545,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
     long kernel_size, initrd_size;
     PCIBus *pci_bus;
     qemu_irq *i8259;
+    qemu_irq cpu_irq;
     qemu_irq *cpu_exit_irq;
     int ppc_boot_device;
     DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
@@ -652,10 +653,15 @@ static void ppc_prep_init (ram_addr_t ram_size,
     }
 
     isa_mem_base = 0xc0000000;
-    if (PPC_INPUT(env) != PPC_FLAGS_INPUT_6xx) {
-        hw_error("Only 6xx bus is supported on PREP machine\n");
+    if (PPC_INPUT(env) == PPC_FLAGS_INPUT_6xx) {
+        cpu_irq = first_cpu->irq_inputs[PPC6xx_INPUT_INT];
     }
-    i8259 = i8259_init(first_cpu->irq_inputs[PPC6xx_INPUT_INT]);
+    else if (PPC_INPUT(env) == PPC_FLAGS_INPUT_BookE) {
+        cpu_irq = NULL;
+    } else {
+        hw_error("Only 6xx or BookE bus is supported on PREP machine\n");
+    }
+    i8259 = i8259_init(cpu_irq);
     pci_bus = pci_prep_init(i8259);
     /* Hmm, prep has no pci-isa bridge ??? */
     isa_bus_new(NULL);
