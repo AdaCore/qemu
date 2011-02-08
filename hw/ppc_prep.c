@@ -266,6 +266,8 @@ typedef struct sysctrl_t {
     uint8_t fake_io[2];
     int contiguous_map;
     int endian;
+    qemu_irq irq14;
+    qemu_irq irq15;
 } sysctrl_t;
 
 enum {
@@ -348,6 +350,13 @@ static void PREP_io_800_writeb (void *opaque, uint32_t addr, uint32_t val)
         /* system control register */
         sysctrl->syscontrol = val & 0x0F;
         break;
+    case 0x0840:
+        if (val & 0x01) {
+            qemu_irq_raise(sysctrl->irq14);
+        } else {
+            qemu_irq_lower(sysctrl->irq14);
+        }
+       break;
     case 0x0850:
         /* I/O map type register */
         sysctrl->contiguous_map = val & 0x01;
@@ -724,6 +733,9 @@ static void ppc_prep_init (ram_addr_t ram_size,
         fd[i] = drive_get(IF_FLOPPY, 0, i);
     }
     fdctrl_init_isa(fd);
+
+    sysctrl->irq14 = i8259[14];
+    sysctrl->irq15 = i8259[15];
 
     /* Register speaker port */
     register_ioport_read(0x61, 1, 1, speaker_ioport_read, NULL);
