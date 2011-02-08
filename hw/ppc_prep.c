@@ -476,6 +476,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
     PCIBus *pci_bus;
     PCIDevice *pci;
     ISABus *isa_bus;
+    qemu_irq cpu_irq;
     qemu_irq *cpu_exit_irq;
     int ppc_boot_device;
     DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
@@ -586,8 +587,13 @@ static void ppc_prep_init (ram_addr_t ram_size,
         }
     }
 
-    if (PPC_INPUT(env) != PPC_FLAGS_INPUT_6xx) {
-        hw_error("Only 6xx bus is supported on PREP machine\n");
+    isa_mem_base = 0xc0000000;
+    if (PPC_INPUT(env) == PPC_FLAGS_INPUT_6xx) {
+        cpu_irq = first_cpu->irq_inputs[PPC6xx_INPUT_INT];
+    } else if (PPC_INPUT(env) == PPC_FLAGS_INPUT_BookE) {
+        cpu_irq = NULL;
+    } else {
+        hw_error("Only 6xx or BookE bus is supported on PREP machine\n");
     }
 
     dev = qdev_create(NULL, "raven-pcihost");
