@@ -292,6 +292,7 @@ typedef struct mapping_t {
 	 */
 	struct {
 	    uint32_t offset;
+	    char *last_cluster_data;
 	} file;
 	struct {
 	    int parent_mapping_index;
@@ -301,9 +302,8 @@ typedef struct mapping_t {
     /* path contains the full path, i.e. it always starts with s->path */
     char* path;
 
-    enum { MODE_UNDEFINED = 0, MODE_NORMAL = 1, MODE_MODIFIED = 2,
-	MODE_DIRECTORY = 4, MODE_FAKED = 8,
-	MODE_DELETED = 16, MODE_RENAMED = 32 } mode;
+    enum { MODE_UNDEFINED = 0, MODE_NORMAL = 1,
+	   MODE_DIRECTORY = 2, MODE_DELETED = 4 } mode;
     int read_only;
 } mapping_t;
 
@@ -779,6 +779,7 @@ static int read_directory(BDRVVVFATState* s, int mapping_index)
 	    } else {
 		s->current_mapping->mode = MODE_UNDEFINED;
 		s->current_mapping->info.file.offset = 0;
+		s->current_mapping->info.file.last_cluster_data = NULL;
 	    }
 	    s->current_mapping->path=buffer;
 	    s->current_mapping->read_only =
@@ -818,8 +819,10 @@ static int read_directory(BDRVVVFATState* s, int mapping_index)
     return 0;
 }
 
-static inline uint32_t sector2cluster(BDRVVVFATState* s,off_t sector_num)
+static inline int32_t sector2cluster(BDRVVVFATState* s,off_t sector_num)
 {
+    if (sector_num < s->faked_sectors) return -1;
+
     return (sector_num-s->faked_sectors)/s->sectors_per_cluster;
 }
 
@@ -1012,6 +1015,11 @@ static QemuOptsList runtime_opts = {
             .type = QEMU_OPT_BOOL,
             .help = "Make the image writable",
         },
+        {
+            .name = "no-mbr",
+            .type = QEMU_OPT_BOOL,
+            .help = "Do not add MBR on this disk",
+        },
         { /* end of list */ }
     },
 };
@@ -1022,6 +1030,7 @@ static void vvfat_parse_filename(const char *filename, QDict *options,
     int fat_type = 0;
     bool floppy = false;
     bool rw = false;
+    bool no_mbr = false;
     int i;
 
     if (!strstart(filename, "fat:", NULL)) {
@@ -1046,6 +1055,10 @@ static void vvfat_parse_filename(const char *filename, QDict *options,
         rw = true;
     }
 
+    if (strstr(filename, ":no-mbr:")) {
+        no_mbr = true;
+    }
+
     /* Get the directory name without options */
     i = strrchr(filename, ':') - filename;
     assert(i >= 3);
@@ -1061,6 +1074,7 @@ static void vvfat_parse_filename(const char *filename, QDict *options,
     qdict_put(options, "fat-type", qint_from_int(fat_type));
     qdict_put(options, "floppy", qbool_from_bool(floppy));
     qdict_put(options, "rw", qbool_from_bool(rw));
+    qdict_put(options, "no-mbr", qbool_from_bool(no_mbr));
 }
 
 static int vvfat_open(BlockDriverState *bs, QDict *options, int flags,
@@ -1155,6 +1169,12 @@ static int vvfat_open(BlockDriverState *bs, QDict *options, int flags,
     s->sectors_per_cluster=0x10;
 
     s->current_cluster=0xffffffff;
+
+    if (qemu_opt_get_bool(opts, "no-mbr", false)) {
+        s->first_sectors_number = 1;
+    } else {
+        s->first_sectors_number=0x40;
+    }
 
     /* read only is the default for safety */
     bs->read_only = true;
@@ -1327,6 +1347,14 @@ read_cluster_directory:
 	    s->current_cluster = -1;
 	    return -1;
 	}
+	if (cluster_num == s->current_mapping->end - 1
+	    && s->current_mapping->info.file.last_cluster_data) {
+	    memcpy (s->cluster + result,
+		    s->current_mapping->info.file.last_cluster_data + result,
+		    s->cluster_size - result);
+	}
+	else
+	    memset (s->cluster + result, 0, s->cluster_size - result);
 	s->current_cluster = cluster_num;
     }
     return 0;
@@ -1487,6 +1515,11 @@ typedef struct commit_t {
 	ACTION_RENAME, ACTION_WRITEOUT, ACTION_NEW_FILE, ACTION_MKDIR
     } action;
 } commit_t;
+
+#ifdef DEBUG
+static const char * const action_str[] =
+  { "rename", "writeout", "new_file", "mkdir" };
+#endif
 
 static void clear_commits(BDRVVVFATState* s)
 {
@@ -1734,6 +1767,7 @@ static uint32_t get_cluster_count_for_direntry(BDRVVVFATState* s,
      */
     int copy_it = 0;
     int was_modified = 0;
+    int size_was_modified = 0;
     int32_t ret = 0;
 
     uint32_t cluster_num = begin_of_direntry(direntry);
@@ -1756,6 +1790,7 @@ static uint32_t get_cluster_count_for_direntry(BDRVVVFATState* s,
 
 	if (mapping) {
 	    const char* basename;
+	    direntry_t *d;
 
 	    assert(mapping->mode & MODE_DELETED);
 	    mapping->mode &= ~MODE_DELETED;
@@ -1767,6 +1802,12 @@ static uint32_t get_cluster_count_for_direntry(BDRVVVFATState* s,
 	    /* rename */
 	    if (strcmp(basename, basename2))
 		schedule_rename(s, cluster_num, g_strdup(path));
+
+	    d = (direntry_t*)array_get(&(s->directory), mapping->dir_index);
+	    if ((filesize_of_direntry(d) & 0x1ff)
+		!= (filesize_of_direntry(direntry) & 0x1ff)) {
+		size_was_modified = 1;
+            }
 	} else if (is_file(direntry))
 	    /* new file */
 	    schedule_new_file(s, g_strdup(path), cluster_num);
@@ -1850,8 +1891,12 @@ static uint32_t get_cluster_count_for_direntry(BDRVVVFATState* s,
 
 	cluster_num = modified_fat_get(s, cluster_num);
 
-	if (fat_eof(s, cluster_num))
+	if (fat_eof(s, cluster_num)) {
+	    if (size_was_modified && !was_modified)
+		schedule_writeout(s, mapping->dir_index,
+				  filesize_of_direntry(direntry) & ~0x1ff);
 	    return ret;
+	}
 	else if (cluster_num < 2 || cluster_num > s->max_fat_value - 16)
 	    return -1;
 
@@ -2127,8 +2172,12 @@ static int remove_mapping(BDRVVVFATState* s, int mapping_index)
     mapping_t* first_mapping = array_get(&(s->mapping), 0);
 
     /* free mapping */
-    if (mapping->first_mapping_index < 0) {
-        g_free(mapping->path);
+    if (mapping->first_mapping_index < 0)
+        free(mapping->path);
+    if ((mapping->mode & MODE_NORMAL)
+        && mapping->info.file.last_cluster_data) {
+        free (mapping->info.file.last_cluster_data);
+        mapping->info.file.last_cluster_data = NULL;
     }
 
     /* remove from s->mapping */
@@ -2250,9 +2299,11 @@ static int commit_mappings(BDRVVVFATState* s,
 			mapping->info.dir.first_dir_index +
 			0x10 * s->sectors_per_cluster *
 			(mapping->end - mapping->begin);
-	    } else
+	    } else {
 		next_mapping->info.file.offset = mapping->info.file.offset +
 			mapping->end - mapping->begin;
+		next_mapping->info.file.last_cluster_data = NULL;
+	    }
 
 	    mapping = next_mapping;
 	}
@@ -2321,7 +2372,6 @@ DLOG(fprintf(stderr, "commit_direntries for %s, parent_mapping_index %d\n", mapp
 
         /* The first directory entry on the filesystem is the volume name */
         first_direntry = (direntry_t*) s->directory.pointer;
-        assert(!memcmp(first_direntry->name, s->volume_label, 11));
 
 	current_dir_index += factor;
     }
@@ -2363,6 +2413,9 @@ static int commit_one_file(BDRVVVFATState* s,
     assert(offset < size);
     assert((offset % s->cluster_size) == 0);
 
+DLOG(fprintf(stderr,"commit_one_file: %s at %d (len=%d)\n",
+	     mapping->path, offset, size));
+
     for (i = s->cluster_size; i < offset; i += s->cluster_size)
 	c = modified_fat_get(s, c);
 
@@ -2384,7 +2437,8 @@ static int commit_one_file(BDRVVVFATState* s,
     while (offset < size) {
 	uint32_t c1;
 	int rest_size = (size - offset > s->cluster_size ?
-		s->cluster_size : size - offset);
+			 s->cluster_size : size - offset);
+//	int rest_size = s->cluster_size;
 	int ret;
 
 	c1 = modified_fat_get(s, c);
@@ -2393,7 +2447,7 @@ static int commit_one_file(BDRVVVFATState* s,
 		(size > offset && c >=2 && !fat_eof(s, c)));
 
 	ret = vvfat_read(s->bs, cluster2sector(s, c),
-	    (uint8_t*)cluster, (rest_size + 0x1ff) / 0x200);
+			 (uint8_t*)cluster, s->cluster_size / 0x200);//(rest_size + 0x1ff) / 0x200);
 
         if (ret < 0) {
             qemu_close(fd);
@@ -2406,6 +2460,15 @@ static int commit_one_file(BDRVVVFATState* s,
             g_free(cluster);
             return -2;
         }
+
+	if (rest_size != s->cluster_size) {
+	    mapping_t *mapping = find_mapping_for_cluster(s, c);
+	    assert (mapping);
+	    if (!mapping->info.file.last_cluster_data)
+		mapping->info.file.last_cluster_data=malloc (s->cluster_size);
+	    memcpy (mapping->info.file.last_cluster_data, cluster,
+		    s->cluster_size);
+	}
 
 	offset += rest_size;
 	c = c1;
@@ -2431,7 +2494,7 @@ static void check1(BDRVVVFATState* s)
     for (i = 0; i < s->mapping.next; i++) {
 	mapping_t* mapping = array_get(&(s->mapping), i);
 	if (mapping->mode & MODE_DELETED) {
-	    fprintf(stderr, "deleted\n");
+	    fprintf(stderr, "deleted: %s\n", mapping->path);
 	    continue;
 	}
 	assert(mapping->dir_index < s->directory.next);
@@ -2500,7 +2563,7 @@ static int handle_renames_and_mkdirs(BDRVVVFATState* s)
     fprintf(stderr, "handle_renames\n");
     for (i = 0; i < s->commits.next; i++) {
 	commit_t* commit = array_get(&(s->commits), i);
-	fprintf(stderr, "%d, %s (%d, %d)\n", i, commit->path ? commit->path : "(null)", commit->param.rename.cluster, commit->action);
+	fprintf(stderr, "%d, %s (%d, %s)\n", i, commit->path ? commit->path : "(null)", commit->param.rename.cluster, action_str[commit->action]);
     }
 #endif
 
@@ -2667,6 +2730,7 @@ static int handle_commits(BDRVVVFATState* s)
 	    mapping->read_only = 0;
 	    mapping->mode = MODE_NORMAL;
 	    mapping->info.file.offset = 0;
+	    mapping->info.file.last_cluster_data = NULL;
 
 	    if (commit_one_file(s, i, 0))
 		fail = -7;
@@ -2695,38 +2759,33 @@ static int handle_deletes(BDRVVVFATState* s)
 	for (i = 1; i < s->mapping.next; i++) {
 	    mapping_t* mapping = array_get(&(s->mapping), i);
 	    if (mapping->mode & MODE_DELETED) {
-		direntry_t* entry = array_get(&(s->directory),
-			mapping->dir_index);
+		DLOG(direntry_t* entry = array_get(&(s->directory),
+						   mapping->dir_index));
 
-		if (is_free(entry)) {
-		    /* remove file/directory */
-		    if (mapping->mode & MODE_DIRECTORY) {
-			int j, next_dir_index = s->directory.next,
+		/* remove file/directory */
+		if (mapping->mode & MODE_DIRECTORY) {
+		    int j, next_dir_index = s->directory.next,
 			first_dir_index = mapping->info.dir.first_dir_index;
-
-			if (rmdir(mapping->path) < 0) {
-			    if (errno == ENOTEMPTY) {
-				deferred++;
-				continue;
-			    } else
-				return -5;
-			}
-
-			for (j = 1; j < s->mapping.next; j++) {
-			    mapping_t* m = array_get(&(s->mapping), j);
-			    if (m->mode & MODE_DIRECTORY &&
-				    m->info.dir.first_dir_index >
-				    first_dir_index &&
-				    m->info.dir.first_dir_index <
-				    next_dir_index)
-				next_dir_index =
-				    m->info.dir.first_dir_index;
-			}
-			remove_direntries(s, first_dir_index,
-				next_dir_index - first_dir_index);
-
-			deleted++;
+		    
+		    if (rmdir(mapping->path) < 0) {
+			if (errno == ENOTEMPTY) {
+			    deferred++;
+			    continue;
+			} else
+			    return -5;
 		    }
+
+		    for (j = 1; j < s->mapping.next; j++) {
+			mapping_t* m = array_get(&(s->mapping), j);
+			if (m->mode & MODE_DIRECTORY &&
+			    m->info.dir.first_dir_index > first_dir_index &&
+			    m->info.dir.first_dir_index < next_dir_index)
+			    next_dir_index = m->info.dir.first_dir_index;
+		    }
+		    remove_direntries(s, first_dir_index,
+				      next_dir_index - first_dir_index);
+
+		    deleted++;
 		} else {
 		    if (unlink(mapping->path))
 			return -4;
@@ -2752,10 +2811,6 @@ static int handle_deletes(BDRVVVFATState* s)
 static int do_commit(BDRVVVFATState* s)
 {
     int ret = 0;
-
-    /* the real meat are the commits. Nothing to do? Move along! */
-    if (s->commits.next == 0)
-	return 0;
 
     vvfat_close_current_file(s);
 
@@ -2805,8 +2860,10 @@ static int try_commit(BDRVVVFATState* s)
 {
     vvfat_close_current_file(s);
 DLOG(checkpoint());
-    if(!is_consistent(s))
+    if(!is_consistent(s)) {
+	DLOG(fprintf(stderr,"not consistent\n"));
 	return -1;
+    }
     return do_commit(s);
 }
 
@@ -2959,7 +3016,9 @@ write_target_commit(BlockDriverState *bs, uint64_t offset, uint64_t bytes,
 static void write_target_close(BlockDriverState *bs) {
     BDRVVVFATState* s = *((BDRVVVFATState**) bs->opaque);
     bdrv_unref_child(s->bs, s->qcow);
+    unlink(s->qcow_filename);
     g_free(s->qcow_filename);
+    s->qcow_filename = NULL;
 }
 
 static BlockDriver vvfat_write_target = {
@@ -3051,8 +3110,15 @@ err:
 static void vvfat_close(BlockDriverState *bs)
 {
     BDRVVVFATState *s = bs->opaque;
+    int i;
 
     vvfat_close_current_file(s);
+
+    for (i = 0; i < s->mapping.next; i++) {
+	mapping_t *mapping=array_get(&(s->mapping),i);
+	if (mapping->first_mapping_index < 0)
+	    free (mapping->path);
+    }
     array_free(&(s->fat));
     array_free(&(s->directory));
     array_free(&(s->mapping));
