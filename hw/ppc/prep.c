@@ -51,6 +51,21 @@
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
 
+/* Copied from hw/isa/i82378.c until we find a better solution... */
+
+#define TYPE_I82378 "i82378"
+#define I82378(obj) \
+    OBJECT_CHECK(I82378State, (obj), TYPE_I82378)
+
+typedef struct I82378State {
+    PCIDevice parent_obj;
+
+    qemu_irq out[2];
+    qemu_irq *i8259;
+    MemoryRegion io;
+} I82378State;
+/******************************************************************/
+
 /* SMP is not enabled, for now */
 #define MAX_CPUS 1
 
@@ -191,6 +206,8 @@ typedef struct sysctrl_t {
     int contiguous_map;
     qemu_irq contiguous_map_irq;
     int endian;
+    qemu_irq irq14;
+    qemu_irq irq15;
 } sysctrl_t;
 
 enum {
@@ -260,6 +277,13 @@ static void PREP_io_800_writeb (void *opaque, uint32_t addr, uint32_t val)
         /* system control register */
         sysctrl->syscontrol = val & 0x0F;
         break;
+    case 0x0840:
+        if (val & 0x01) {
+            qemu_irq_raise(sysctrl->irq14);
+        } else {
+            qemu_irq_lower(sysctrl->irq14);
+        }
+       break;
     case 0x0850:
         /* I/O map type register */
         sysctrl->contiguous_map = val & 0x01;
@@ -533,6 +557,7 @@ static void ppc_prep_init(MachineState *machine)
     ISABus *isa_bus;
     ISADevice *isa;
     int ppc_boot_device;
+    I82378State *i82378;
     DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
 
     sysctrl = g_malloc0(sizeof(sysctrl_t));
@@ -675,6 +700,10 @@ static void ppc_prep_init(MachineState *machine)
 
     portio_list_init(&prep_port_list, NULL, prep_portio_list, sysctrl, "prep");
     portio_list_add(&prep_port_list, isa_address_space_io(isa), 0x0);
+
+    i82378 = I82378(DEVICE(pci));
+    sysctrl->irq14 = i82378->i8259[14];
+    sysctrl->irq15 = i82378->i8259[15];
 
     /* PowerPC control and status register group */
 #if 0
