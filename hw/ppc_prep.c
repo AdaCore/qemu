@@ -44,6 +44,20 @@
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
 
+typedef struct I82378State {
+    qemu_irq out[2];
+    qemu_irq *i8259;
+    MemoryRegion io;
+    MemoryRegion mem;
+} I82378State;
+
+typedef struct PCIi82378State {
+    PCIDevice pci_dev;
+    uint32_t isa_io_base;
+    uint32_t isa_mem_base;
+    I82378State state;
+} PCIi82378State;
+
 /* SMP is not enabled, for now */
 #define MAX_CPUS 1
 
@@ -184,6 +198,8 @@ typedef struct sysctrl_t {
     uint8_t fake_io[2];
     int contiguous_map;
     int endian;
+    qemu_irq irq14;
+    qemu_irq irq15;
 } sysctrl_t;
 
 enum {
@@ -267,6 +283,13 @@ static void PREP_io_800_writeb (void *opaque, uint32_t addr, uint32_t val)
         /* system control register */
         sysctrl->syscontrol = val & 0x0F;
         break;
+    case 0x0840:
+        if (val & 0x01) {
+            qemu_irq_raise(sysctrl->irq14);
+        } else {
+            qemu_irq_lower(sysctrl->irq14);
+        }
+       break;
     case 0x0850:
         /* I/O map type register */
         sysctrl->contiguous_map = val & 0x01;
@@ -479,6 +502,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
     qemu_irq cpu_irq;
     qemu_irq *cpu_exit_irq;
     int ppc_boot_device;
+    PCIi82378State *i82378;
     DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
     DriveInfo *fd[MAX_FD];
 
@@ -663,6 +687,10 @@ static void ppc_prep_init (ram_addr_t ram_size,
         fd[i] = drive_get(IF_FLOPPY, 0, i);
     }
     fdctrl_init_isa(isa_bus, fd);
+
+    i82378 = DO_UPCAST(PCIi82378State, pci_dev, pci);
+    sysctrl->irq14 = i82378->state.i8259[14];
+    sysctrl->irq15 = i82378->state.i8259[15];
 
     /* Register fake IO ports for PREP */
     sysctrl->reset_irq = first_cpu->irq_inputs[PPC6xx_INPUT_HRESET];
