@@ -596,9 +596,7 @@ static void ppc_prep_init(QEMUMachineInitArgs *args)
         }
     }
 
-    if (PPC_INPUT(env) != PPC_FLAGS_INPUT_6xx) {
-        hw_error("Only 6xx bus is supported on PREP machine\n");
-    }
+    isa_mem_base = 0xc0000000;
 
     dev = qdev_create(NULL, "raven-pcihost");
     pcihost = PCI_HOST_BRIDGE(dev);

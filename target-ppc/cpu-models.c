@@ -479,6 +479,8 @@
                 "PowerPC e200z5 core")
     POWERPC_DEF("e200z6",        CPU_POWERPC_e200z6,                 e200,
                 "PowerPC e200z6 core")
+    POWERPC_DEF("e200_nommu",    CPU_POWERPC_e200z6,                 e200_nommu,
+                "PowerPC e200 core without MMU")
     /* PowerPC e200 microcontrollers                                         */
 #if defined(TODO)
     POWERPC_DEF_SVR("MPC5514E", "MPC5514E",

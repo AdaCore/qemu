@@ -4339,6 +4339,40 @@ POWERPC_FAMILY(e200)(ObjectClass *oc, void *data)
                  POWERPC_FLAG_BUS_CLK;
 }
 
+POWERPC_FAMILY(e200_nommu)(ObjectClass *oc, void *data)
+{
+    DeviceClass *dc = DEVICE_CLASS(oc);
+    PowerPCCPUClass *pcc = POWERPC_CPU_CLASS(oc);
+
+    dc->desc = "e200 core";
+    pcc->init_proc = init_proc_e200;
+    pcc->check_pow = check_pow_hid0;
+    /* XXX: unimplemented instructions:
+     * dcblc
+     * dcbtlst
+     * dcbtstls
+     * icblc
+     * icbtls
+     * tlbivax
+     * all SPE multiply-accumulate instructions
+     */
+    pcc->insns_flags = PPC_INSNS_BASE | PPC_ISEL |
+                       PPC_SPE | PPC_SPE_SINGLE |
+                       PPC_WRTEE | PPC_RFDI |
+                       PPC_CACHE | PPC_CACHE_LOCK | PPC_CACHE_ICBI |
+                       PPC_CACHE_DCBZ | PPC_CACHE_DCBA |
+                       PPC_MEM_TLBSYNC | PPC_TLBIVAX |
+                       PPC_BOOKE;
+    pcc->msr_mask = 0x000000000606FF30ULL;
+    pcc->mmu_model = POWERPC_MMU_REAL;
+    pcc->excp_model = POWERPC_EXCP_BOOKE;
+    pcc->bus_model = PPC_FLAGS_INPUT_BookE;
+    pcc->bfd_mach = bfd_mach_ppc_860;
+    pcc->flags = POWERPC_FLAG_SPE | POWERPC_FLAG_CE |
+                 POWERPC_FLAG_UBLE | POWERPC_FLAG_DE |
+                 POWERPC_FLAG_BUS_CLK;
+}
+
 static void init_proc_e300 (CPUPPCState *env)
 {
     gen_spr_ne_601(env);
@@ -7519,10 +7553,12 @@ static void init_ppc_proc(PowerPCCPU *cpu)
         /* Pre-compute some useful values */
         env->tlb_per_way = env->nb_tlb / env->nb_ways;
     }
+#if 0
     if (env->irq_inputs == NULL) {
         fprintf(stderr, "WARNING: no internal IRQ controller registered.\n"
                 " Attempt QEMU to crash very soon !\n");
     }
+#endif
 #endif
     if (env->check_pow == NULL) {
         fprintf(stderr, "WARNING: no power management check handler "
