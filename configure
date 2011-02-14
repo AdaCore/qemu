@@ -1318,10 +1318,10 @@ for flag in $gcc_flags; do
     fi
 done
 
-if compile_prog "-Werror -fstack-protector-all" "" ; then
-    QEMU_CFLAGS="$QEMU_CFLAGS -fstack-protector-all"
-    LIBTOOLFLAGS="$LIBTOOLFLAGS -Wc,-fstack-protector-all"
-fi
+#if compile_prog "-Werror -fstack-protector-all" "" ; then
+#    QEMU_CFLAGS="$QEMU_CFLAGS -fstack-protector-all"
+#    LIBTOOLFLAGS="$LIBTOOLFLAGS -Wc,-fstack-protector-all"
+#fi
 
 # Workaround for http://gcc.gnu.org/PR55489.  Happens with -fPIE/-fPIC and
 # large functions that use global variables.  The bug is in all releases of
