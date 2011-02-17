@@ -102,7 +102,7 @@ static void read_map_file(char **poptarg)
     int my_endian;
 
     if (efilename == NULL) {
-	fprintf(stderr, "missing ',' after filename for --trace histmap=");
+	fprintf(stderr, "missing ',' after filename for -exec-trace histmap=");
 	exit(1);
     }
     *efilename = 0;
@@ -210,7 +210,7 @@ void trace_init(const char *optarg)
     int kind = QEMU_TRACE_KIND_RAW;
 
     if (opt_trace_seen) {
-	fprintf(stderr, "option -trace already specified\n");
+	fprintf(stderr, "option -exec-trace already specified\n");
 	exit(1);
     }
     opt_trace_seen = 1;

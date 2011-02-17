@@ -5623,6 +5623,7 @@ int main(int argc, char **argv, char **envp)
                 break;
 #endif
 	    case QEMU_OPTION_trace:
+	    case QEMU_OPTION_exec_trace:
 		trace_init(optarg);
 		break;
             }

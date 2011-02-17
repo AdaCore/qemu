@@ -1644,11 +1644,15 @@ Immediately before starting guest execution, drop root privileges, switching
 to the specified user.
 ETEXI
 
+DEF("exec-trace", HAS_ARG, QEMU_OPTION_exec_trace, \
+    "-exec-trace filename  Enable execution traces generation to filename.\n")
 DEF("trace", HAS_ARG, QEMU_OPTION_trace, \
-    "-trace filename  Enable traces generation to filename.\n")
+    "-trace filename  Same as -exec-trace (deprecated).\n")
 STEXI
-@item -trace filename
+@item -exec-trace filename
 Write execution traces to filename.
+@item -trace filename
+Deprecated alias for -exec-trace.
 ETEXI
 
 STEXI
