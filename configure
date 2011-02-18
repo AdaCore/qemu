@@ -145,6 +145,7 @@ mandir="\${prefix}/share/man"
 datadir="\${prefix}/share/qemu"
 docdir="\${prefix}/share/doc/qemu"
 bindir="\${prefix}/bin"
+includedir="\${prefix}/include/qemu"
 sysconfdir="\${prefix}/etc"
 confsuffix="/qemu"
 slirp="yes"
@@ -458,6 +459,7 @@ Haiku)
   if [ "$cpu" = "i386" -o "$cpu" = "x86_64" ] ; then
     audio_possible_drivers="$audio_possible_drivers fmod"
   fi
+  LDFLAGS="-ldl $LDFLAGS"
 ;;
 esac
 
@@ -482,6 +484,7 @@ if test "$mingw32" = "yes" ; then
   datadir="\${prefix}/share/qemu"
   docdir="\${prefix}/share/doc/qemu"
   bindir="\${prefix}/bin"
+  includedir="\${prefix}/include/qemu"
   sysconfdir="\${prefix}/etc"
   confsuffix=""
 fi
@@ -534,6 +537,8 @@ for opt do
   --datadir=*) datadir="$optarg"
   ;;
   --docdir=*) docdir="$optarg"
+  ;;
+  --includedir=*) includedir="$optarg"
   ;;
   --sysconfdir=*) sysconfdir="$optarg"
   ;;
@@ -832,6 +837,7 @@ echo "  --mandir=PATH            install man pages in PATH"
 echo "  --datadir=PATH           install firmware in PATH"
 echo "  --docdir=PATH            install documentation in PATH"
 echo "  --bindir=PATH            install binaries in PATH"
+echo "  --includedir=PATH        install plug-in interface in PATH"
 echo "  --sysconfdir=PATH        install config in PATH/qemu"
 echo "  --enable-debug-tcg       enable TCG debugging"
 echo "  --disable-debug-tcg      disable TCG debugging (default)"
@@ -2561,6 +2567,7 @@ echo "mandir=$mandir" >> $config_host_mak
 echo "datadir=$datadir" >> $config_host_mak
 echo "sysconfdir=$sysconfdir" >> $config_host_mak
 echo "docdir=$docdir" >> $config_host_mak
+echo "includedir=$includedir" >> $config_host_mak
 echo "confdir=$confdir" >> $config_host_mak
 
 case "$cpu" in
