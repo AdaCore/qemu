@@ -32,6 +32,8 @@
 #include "elf.h"
 #include "trace.h"
 #include "exec/address-spaces.h"
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 #include "hw/sparc/grlib.h"
 
@@ -211,6 +213,14 @@ static void leon3_generic_hw_init(QEMUMachineInitArgs *args)
     if (serial_hds[0]) {
         grlib_apbuart_create(0x80000100, serial_hds[0], cpu_irqs[3]);
     }
+
+    /* Initialize plug-ins */
+    plugin_init(cpu_irqs, MAX_PILS);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(cpu_irqs, MAX_PILS);
+    gnatbus_device_init();
 }
 
 static QEMUMachine leon3_generic_machine = {

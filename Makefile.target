@@ -112,6 +112,8 @@ endif #CONFIG_BSD_USER
 ifdef CONFIG_SOFTMMU
 obj-y += arch_init.o cpus.o monitor.o gdbstub.o balloon.o ioport.o
 obj-y += qtest.o
+obj-y += qemu-plugin.o
+obj-y += gnat-bus.o gnat-bus-process-packet.o
 obj-y += hw/
 obj-$(CONFIG_FDT) += device_tree.o
 obj-$(CONFIG_KVM) += kvm-all.o
