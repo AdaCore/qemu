@@ -309,4 +309,39 @@ CharDriverState *qemu_chr_open_msmouse(void);
 /* baum.c */
 CharDriverState *chr_baum_init(void);
 
+/* async I/O support */
+
+void io_remove_watch_poll(guint tag);
+guint io_add_watch_poll(GIOChannel *channel,
+                        IOCanReadHandler *fd_can_read,
+                        GIOFunc fd_read,
+                        gpointer user_data);
+
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len);
+gboolean tcp_chr_read(GIOChannel *chan, GIOCondition cond, void *opaque);
+int tcp_chr_read_poll(void *opaque);
+
+typedef struct {
+
+    GIOChannel *chan, *listen_chan;
+    guint listen_tag;
+    int fd, listen_fd;
+    int connected;
+    int max_size;
+    int do_telnetopt;
+    int do_nodelay;
+    int is_unix;
+    int msgfd;
+} TCPCharDriver;
+
+#ifdef _WIN32
+typedef struct {
+    int max_size;
+    HANDLE hcom, hrecv, hsend;
+    OVERLAPPED orecv, osend;
+    BOOL fpipe;
+    DWORD len;
+} WinCharState;
+#endif
+
 #endif

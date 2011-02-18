@@ -32,6 +32,8 @@
 #include "hw/ptimer.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 /* Default system clock.  */
 #define CPU_CLK (50 * 1000 * 1000)
@@ -837,6 +839,14 @@ static void at697_hw_init(QEMUMachineInitArgs *args)
     if (serial_hds[1]) {
         leon_uart_init(serial_hds[1], &s->uart2, cpu_irqs[2]);
     }
+
+    /* Initialize plug-ins */
+    plugin_init(cpu_irqs, MAX_PILS);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(cpu_irqs, MAX_PILS);
+    gnatbus_device_init();
 
     /* Can directly load an application. */
     if (kernel_filename != NULL) {

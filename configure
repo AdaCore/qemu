@@ -648,6 +648,7 @@ Haiku)
     audio_possible_drivers="$audio_possible_drivers fmod"
   fi
   QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$(pwd)/linux-headers $QEMU_INCLUDES"
+  LIBS="$LIBS -ldl"
 ;;
 esac
 
@@ -687,6 +688,7 @@ EOF
   datadir="\${prefix}/share/qemu"
   qemu_docdir="\${prefix}/share/doc/qemu"
   bindir="\${prefix}/bin"
+  includedir="\${prefix}/include/qemu"
   sysconfdir="\${prefix}/etc"
   local_statedir=
   confsuffix=""
@@ -773,6 +775,8 @@ for opt do
   --with-confsuffix=*) confsuffix="$optarg"
   ;;
   --docdir=*) qemu_docdir="$optarg"
+  ;;
+  --includedir=*) includedir="$optarg"
   ;;
   --sysconfdir=*) sysconfdir="$optarg"
   ;;
@@ -1216,6 +1220,7 @@ Advanced options (experts only):
   --localstatedir=PATH     install local state in PATH (set at runtime on win32)
   --with-confsuffix=SUFFIX suffix for QEMU data inside datadir/libdir/sysconfdir [$confsuffix]
   --enable-modules         enable modules support
+  --includedir=PATH        install plug-in interface in PATH
   --enable-debug-tcg       enable TCG debugging
   --disable-debug-tcg      disable TCG debugging (default)
   --enable-debug-info       enable debugging information (default)

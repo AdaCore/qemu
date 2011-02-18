@@ -119,6 +119,8 @@ int main(int argc, char **argv)
 #include "qom/object_interfaces.h"
 
 #include "qemu-traces.h"
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 #define DEFAULT_RAM_SIZE 128
 
@@ -3906,6 +3908,15 @@ int main(int argc, char **argv, char **envp)
                 break;
             case QEMU_OPTION_exec_trace:
                 trace_init(optarg);
+                break;
+
+            case QEMU_OPTION_plugin:
+                plugin_save_optargs(optarg);
+                break;
+
+
+            case QEMU_OPTION_gnatbus:
+                gnatbus_save_optargs(optarg);
                 break;
 
             default:

@@ -3719,7 +3719,8 @@
 #
 # Since: 1.4
 ##
-{ 'type': 'ChardevHostdev', 'data': { 'device' : 'str' } }
+{ 'type': 'ChardevHostdev', 'data': { 'device' : 'str',
+                                      '*server'  : 'bool' } }
 
 ##
 # @ChardevSocket:
