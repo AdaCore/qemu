@@ -25,6 +25,7 @@
 #include "qemu-timer.h"
 #include "ptimer.h"
 #include "qemu-char.h"
+#include "qemu-plugin.h"
 #include "sysemu.h"
 #include "boards.h"
 #include "loader.h"
@@ -206,6 +207,10 @@ static void leon3_generic_hw_init(ram_addr_t  ram_size,
     if (serial_hds[0]) {
         grlib_apbuart_create(0x80000100, serial_hds[0], cpu_irqs[3]);
     }
+
+    /* Initialize plug-ins */
+    plugin_init(cpu_irqs, MAX_PILS);
+    plugin_device_init();
 }
 
 QEMUMachine leon3_generic_machine = {

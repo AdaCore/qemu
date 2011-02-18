@@ -24,6 +24,7 @@
 #include "hw.h"
 #include "qemu-timer.h"
 #include "qemu-char.h"
+#include "qemu-plugin.h"
 #include "sysemu.h"
 #include "boards.h"
 #include "loader.h"
@@ -541,6 +542,10 @@ static void tsc695_hw_init(ram_addr_t  ram_size,
     if (serial_hds[1]) {
         erc32_uart_init(serial_hds[1], &s->uartb, cpu_irqs[5]);
     }
+
+    /* Initialize plug-ins */
+    plugin_init(cpu_irqs, MAX_PILS);
+    plugin_device_init();
 
     /* Can directly load an application. */
     if (kernel_filename != NULL) {

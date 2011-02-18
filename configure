@@ -493,6 +493,7 @@ Haiku)
   if [ "$cpu" = "i386" -o "$cpu" = "x86_64" ] ; then
     audio_possible_drivers="$audio_possible_drivers fmod"
   fi
+  LIBS="$LIBS-ldl"
 ;;
 esac
 
@@ -525,6 +526,7 @@ EOF
   datadir="\${prefix}/share/qemu"
   docdir="\${prefix}/share/doc/qemu"
   bindir="\${prefix}/bin"
+  includedir="\${prefix}/include/qemu"
   sysconfdir="\${prefix}/etc"
   confsuffix=""
   libs_qga="-lws2_32 -lwinmm -lpowrprof $libs_qga"
@@ -595,6 +597,8 @@ for opt do
   --with-confsuffix=*) confsuffix="$optarg"
   ;;
   --docdir=*) qemu_docdir="$optarg"
+  ;;
+  --includedir=*) includedir="$optarg"
   ;;
   --sysconfdir=*) sysconfdir="$optarg"
   ;;
@@ -1008,6 +1012,7 @@ echo "  --docdir=PATH            install documentation in PATH$confsuffix"
 echo "  --bindir=PATH            install binaries in PATH"
 echo "  --sysconfdir=PATH        install config in PATH$confsuffix"
 echo "  --with-confsuffix=SUFFIX suffix for QEMU data inside datadir and sysconfdir [$confsuffix]"
+echo "  --includedir=PATH        install plug-in interface in PATH"
 echo "  --enable-debug-tcg       enable TCG debugging"
 echo "  --disable-debug-tcg      disable TCG debugging (default)"
 echo "  --enable-debug           enable common debug build options"
