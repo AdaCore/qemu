@@ -71,6 +71,7 @@ all: $(PROGS) stap
 # cpu emulator library
 libobj-y = exec.o translate-all.o cpu-exec.o translate.o
 libobj-y += qemu-traces.o
+libobj-y += qemu-plugin.o
 libobj-y += tcg/tcg.o
 libobj-$(CONFIG_SOFTFLOAT) += fpu/softfloat.o
 libobj-$(CONFIG_NOSOFTFLOAT) += fpu/softfloat-native.o
