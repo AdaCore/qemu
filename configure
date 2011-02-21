@@ -458,6 +458,7 @@ Haiku)
   if [ "$cpu" = "i386" -o "$cpu" = "x86_64" ] ; then
     audio_possible_drivers="$audio_possible_drivers fmod"
   fi
+  LDFLAGS="-ldl $LDFLAGS"
 ;;
 esac
 
