@@ -318,6 +318,11 @@ void plugin_device_init(void)
 {
     QemuPlugin_SysBusDevice *pdev;
 
+    if (g_plugin == NULL) {
+        /* No plug-in */
+        return;
+    }
+
     QLIST_FOREACH(pdev, &g_plugin->devices_list, list) {
         if (pdev->info->pdevice_init != NULL) {
             pdev->info->pdevice_init();
@@ -332,6 +337,11 @@ static void plugin_device_exit(void)
 {
     QemuPlugin_SysBusDevice *pdev;
 
+    if (g_plugin == NULL) {
+        /* No plug-in */
+        return;
+    }
+
     QLIST_FOREACH(pdev, &g_plugin->devices_list, list) {
         if (pdev->info->pdevice_exit != NULL) {
             pdev->info->pdevice_exit();
@@ -345,6 +355,11 @@ static void plugin_device_exit(void)
 static void plugin_cpu_reset(void *null)
 {
     QemuPlugin_SysBusDevice *pdev;
+
+    if (g_plugin == NULL) {
+        /* No plug-in */
+        return;
+    }
 
     QLIST_FOREACH(pdev, &g_plugin->devices_list, list) {
         if (pdev->info->pdevice_reset != NULL) {
