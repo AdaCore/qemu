@@ -3831,6 +3831,9 @@ static void gen_bcond(DisasContext *ctx, int type)
         } else {
             tcg_gen_andi_tl(cpu_nip, target, ~3);
         }
+        if (ctx->singlestep_enabled & GDBSTUB_SINGLE_STEP) {
+            gen_debug_exception(ctx);
+        }
         if (!tracefile_enabled) {
             gen_lookup_and_goto_ptr(ctx);
         } else {
