@@ -3571,6 +3571,9 @@ static inline void gen_bcond(DisasContext *ctx, int type)
         else
 #endif
             tcg_gen_andi_tl(cpu_nip, target, ~3);
+        if (ctx->singlestep_enabled & GDBSTUB_SINGLE_STEP) {
+            gen_debug_exception(ctx);
+        }
         tcg_gen_exit_tb((long)ctx->tb + 4);
     }
 
