@@ -96,14 +96,14 @@ void trace_cleanup(void)
 
 static void read_map_file(char **poptarg)
 {
-    char                *filename  = *poptarg;
-    char                *efilename = strchr(filename, ',');
-    FILE                *histfile;
-    struct trace_header  hdr;
-    off_t                length;
-    int                  ent_sz;
-    int                  i;
-    int                  my_endian;
+    char *filename = *poptarg;
+    char *efilename = strchr(filename, ',');
+    FILE *histfile;
+    struct trace_header hdr;
+    off_t length;
+    int ent_sz;
+    int i;
+    int my_endian;
 
     if (efilename == NULL) {
         fprintf(stderr, "missing ',' after filename for --trace histmap=");
@@ -212,9 +212,9 @@ static void read_map_file(char **poptarg)
 void trace_init(const char *optarg)
 {
     static struct trace_header hdr  = { QEMU_TRACE_MAGIC };
-    static int                 opt_trace_seen;
-    int                        noappend;
-    int                        kind = QEMU_TRACE_KIND_RAW;
+    static int opt_trace_seen;
+    int noappend = 0;
+    int kind = QEMU_TRACE_KIND_RAW;
 
     if (opt_trace_seen) {
         fprintf(stderr, "option -trace already specified\n");
