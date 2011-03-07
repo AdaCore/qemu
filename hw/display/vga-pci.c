@@ -383,7 +383,7 @@ static void vga_class_init(ObjectClass *klass, void *data)
     PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
 
     k->realize = pci_std_vga_realize;
-    k->romfile = "vgabios-stdvga.bin";
+    /* k->romfile = "vgabios-stdvga.bin"; */
     k->class_id = PCI_CLASS_DISPLAY_VGA;
     dc->props = vga_pci_properties;
     dc->hotpluggable = false;
