@@ -3424,6 +3424,7 @@ static inline void gen_bcond(DisasContext *ctx, int type)
     TCGv target;
 
     ctx->exception = POWERPC_EXCP_BRANCH;
+    /* Read target for branch to register.  */
     if (type == BCOND_LR || type == BCOND_CTR || type == BCOND_TAR) {
         target = tcg_temp_local_new();
         if (type == BCOND_CTR)
@@ -3435,9 +3436,17 @@ static inline void gen_bcond(DisasContext *ctx, int type)
     } else {
         TCGV_UNUSED(target);
     }
-    if (LK(ctx->opcode))
+
+    /* Save LR for link variants.  */
+    if (LK(ctx->opcode)) {
         gen_setlr(ctx, ctx->nip);
-    l1 = gen_new_label();
+    }
+
+    /* In some variants (CTR test or CR test), the branch is conditionnal.  */
+    if ((bo & 0x14) != 0) {
+        l1 = gen_new_label();
+    }
+
     if ((bo & 0x4) == 0) {
         /* Decrement and test CTR */
         TCGv temp = tcg_temp_new();
@@ -3476,14 +3485,15 @@ static inline void gen_bcond(DisasContext *ctx, int type)
     gen_update_cfar(ctx, ctx->nip - 4);
     if (type == BCOND_IM) {
         target_ulong li = (target_long)((int16_t)(BD(ctx->opcode)));
+        target_ulong dst;
+
         if (likely(AA(ctx->opcode) == 0)) {
-            gen_goto_tb(ctx, 0, ctx->nip + li - 4);
+            dst = ctx->nip + li - 4;
         } else {
-            gen_goto_tb(ctx, 0, li);
+            dst = li;
         }
         if ((bo & 0x14) != 0x14) {
-            gen_set_label(l1);
-            gen_goto_tb(ctx, 1, ctx->nip);
+            gen_goto_tb(ctx, 0, dst);
         }
     } else {
         if (NARROW_MODE(ctx)) {
@@ -3494,8 +3504,7 @@ static inline void gen_bcond(DisasContext *ctx, int type)
         tcg_gen_exit_tb((long)ctx->tb + TB_EXIT_NOPATCH);
         if ((bo & 0x14) != 0x14) {
             gen_set_label(l1);
-            gen_update_nip(ctx, ctx->nip);
-            tcg_gen_exit_tb(0);
+            gen_goto_tb(ctx, 1, ctx->nip);
         }
     }
     if (type == BCOND_LR || type == BCOND_CTR || type == BCOND_TAR) {
