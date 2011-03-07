@@ -192,7 +192,7 @@ static void vga_class_init(ObjectClass *klass, void *data)
 
     k->no_hotplug = 1;
     k->init = pci_std_vga_initfn;
-    k->romfile = "vgabios-stdvga.bin";
+    /* k->romfile = "vgabios-stdvga.bin"; */
     k->vendor_id = PCI_VENDOR_ID_QEMU;
     k->device_id = PCI_DEVICE_ID_QEMU_VGA;
     k->class_id = PCI_CLASS_DISPLAY_VGA;
