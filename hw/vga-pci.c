@@ -82,7 +82,7 @@ static PCIDeviceInfo vga_info = {
     .qdev.vmsd    = &vmstate_vga_pci,
     .no_hotplug   = 1,
     .init         = pci_vga_initfn,
-    .romfile      = "vgabios-stdvga.bin",
+    /* .romfile      = "vgabios-stdvga.bin", */
 
     /* dummy VGA (same as Bochs ID) */
     .vendor_id    = PCI_VENDOR_ID_QEMU,
