@@ -113,7 +113,7 @@ static PCIDeviceInfo vga_info = {
     .no_hotplug   = 1,
     .init         = pci_vga_initfn,
     .config_write = pci_vga_write_config,
-    .romfile      = "vgabios-stdvga.bin",
+/*    .romfile      = "vgabios-stdvga.bin", */
 };
 
 static void vga_register(void)
