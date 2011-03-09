@@ -3357,6 +3357,22 @@ static inline bool use_goto_tb(DisasContext *ctx, target_ulong dest)
 }
 
 /***                                Branch                                 ***/
+static inline void gen_exit_tb(DisasContext *ctx, int n)
+{
+    TranslationBlock *tb = ctx->tb;
+
+    if (unlikely(ctx->singlestep_enabled)) {
+        if ((ctx->singlestep_enabled & (CPU_BRANCH_STEP | CPU_SINGLE_STEP))
+            && ctx->exception == POWERPC_EXCP_BRANCH) {
+            gen_exception(ctx, POWERPC_EXCP_TRACE);
+        }
+        if (ctx->singlestep_enabled & GDBSTUB_SINGLE_STEP) {
+            gen_debug_exception(ctx);
+        }
+    }
+    tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH | n);
+}
+
 static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
 {
     if (NARROW_MODE(ctx)) {
@@ -3368,18 +3384,7 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
         tcg_gen_exit_tb((uintptr_t)ctx->tb + n);
     } else {
         tcg_gen_movi_tl(cpu_nip, dest & ~3);
-        if (unlikely(ctx->singlestep_enabled)) {
-            if ((ctx->singlestep_enabled &
-                (CPU_BRANCH_STEP | CPU_SINGLE_STEP)) &&
-                (ctx->exception == POWERPC_EXCP_BRANCH ||
-                 ctx->exception == POWERPC_EXCP_TRACE)) {
-                gen_exception_nip(ctx, POWERPC_EXCP_TRACE, dest);
-            }
-            if (ctx->singlestep_enabled & GDBSTUB_SINGLE_STEP) {
-                gen_debug_exception(ctx);
-            }
-        }
-        tcg_gen_exit_tb((uintptr_t)ctx->tb + n | TB_EXIT_NOPATCH);
+        gen_exit_tb(ctx, n);
     }
 }
 
@@ -3423,6 +3428,7 @@ static inline void gen_bcond(DisasContext *ctx, int type)
     TCGLabel *l1;
     TCGv target;
 
+    /* Will stop translation.  */
     ctx->exception = POWERPC_EXCP_BRANCH;
     /* Read target for branch to register.  */
     if (type == BCOND_LR || type == BCOND_CTR || type == BCOND_TAR) {
@@ -3442,10 +3448,7 @@ static inline void gen_bcond(DisasContext *ctx, int type)
         gen_setlr(ctx, ctx->nip);
     }
 
-    /* In some variants (CTR test or CR test), the branch is conditionnal.  */
-    if ((bo & 0x14) != 0) {
-        l1 = gen_new_label();
-    }
+    l1 = gen_new_label();
 
     if ((bo & 0x4) == 0) {
         /* Decrement and test CTR */
@@ -3501,15 +3504,17 @@ static inline void gen_bcond(DisasContext *ctx, int type)
         } else {
             tcg_gen_andi_tl(cpu_nip, target, ~3);
         }
-        if (ctx->singlestep_enabled & GDBSTUB_SINGLE_STEP) {
-            gen_debug_exception(ctx);
-        }
-        tcg_gen_exit_tb((long)ctx->tb + TB_EXIT_NOPATCH);
-        if ((bo & 0x14) != 0x14) {
-            gen_set_label(l1);
-            gen_goto_tb(ctx, 1, ctx->nip);
-        }
+        gen_exit_tb(ctx, 0);
     }
+
+    if ((bo & 0x04) == 0 || (bo & 0x10) == 0) {
+        gen_set_label(l1);
+        /* This field may have been modified by gen_exception for the taken
+           branch in case of single stepping.  */
+        ctx->exception = POWERPC_EXCP_BRANCH;
+        gen_goto_tb(ctx, 1, ctx->nip);
+    }
+
     if (type == BCOND_LR || type == BCOND_CTR || type == BCOND_TAR) {
         tcg_temp_free(target);
     }
