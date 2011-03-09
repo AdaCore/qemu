@@ -867,6 +867,7 @@ int main (int argc, const char * argv[]) {
     for (i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-vnc") ||
             !strcmp(argv[i], "-nographic") ||
+            !strcmp(argv[i], "-version") ||
             !strcmp(argv[i], "-curses")) {
                 return qemu_main(gArgc, gArgv);
         }
