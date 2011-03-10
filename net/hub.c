@@ -328,7 +328,7 @@ void net_hub_check_clients(void)
                 break;
             }
         }
-        if (has_host_dev && !has_nic) {
+        if (has_host_dev && !has_nic && !(hub->id == 0 && default_net)) {
             fprintf(stderr, "Warning: vlan %d with no nics\n", hub->id);
         }
         if (has_nic && !has_host_dev) {
