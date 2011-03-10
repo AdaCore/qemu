@@ -1392,12 +1392,14 @@ void net_check_clients(void)
             default: ;
             }
         }
-        if (has_host_dev && !has_nic)
+        if (has_host_dev && !has_nic && !(vlan->id == 0 && default_net)) {
             fprintf(stderr, "Warning: vlan %d with no nics\n", vlan->id);
-        if (has_nic && !has_host_dev)
+        }
+        if (has_nic && !has_host_dev) {
             fprintf(stderr,
                     "Warning: vlan %d is not connected to host network\n",
                     vlan->id);
+        }
     }
     QTAILQ_FOREACH(vc, &non_vlan_clients, next) {
         if (!vc->peer) {
