@@ -218,7 +218,7 @@ static int default_floppy = 1;
 static int default_cdrom = 1;
 static int default_sdcard = 1;
 static int default_vga = 1;
-static int default_net = 1;
+int default_net = 1;
 
 static struct {
     const char *driver;

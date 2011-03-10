@@ -344,7 +344,7 @@ void net_hub_check_clients(void)
                 break;
             }
         }
-        if (has_host_dev && !has_nic) {
+        if (has_host_dev && !has_nic && !(hub->id == 0 && default_net)) {
             warn_report("hub %d with no nics", hub->id);
         }
         if (has_nic && !has_host_dev && !qtest_enabled()) {
