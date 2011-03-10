@@ -1002,6 +1002,30 @@ static inline void save_npc(DisasContext *dc)
     }
 }
 
+static inline void save_npc_and_exit(DisasContext *dc, TCGv cond)
+{
+    if (dc->npc == JUMP_PC) {
+        TCGLabel *l1 = gen_new_label();
+
+        tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, l1);
+
+        tcg_gen_movi_tl(cpu_npc, dc->jump_pc[0]);
+        tcg_gen_exit_tb((uintptr_t)dc->tb | TB_EXIT_IDX0 | TB_EXIT_NOPATCH);
+
+        gen_set_label(l1);
+        tcg_gen_movi_tl(cpu_npc, dc->jump_pc[1]);
+        tcg_gen_exit_tb((uintptr_t)dc->tb | TB_EXIT_IDX1 | TB_EXIT_NOPATCH);
+
+        dc->npc = DYNAMIC_PC;
+    } else if (dc->npc != DYNAMIC_PC) {
+        tcg_gen_movi_tl(cpu_npc, dc->npc);
+        tcg_gen_exit_tb(0);
+    }
+    else {
+        tcg_gen_exit_tb(0);
+    }
+}
+
 static inline void update_psr(DisasContext *dc)
 {
     if (dc->cc_op != CC_OP_FLAGS) {
@@ -5311,8 +5335,7 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
             if (dc->pc != DYNAMIC_PC) {
                 tcg_gen_movi_tl(cpu_pc, dc->pc);
             }
-            save_npc(dc);
-            tcg_gen_exit_tb(0);
+            save_npc_and_exit(dc, cpu_cond);
         }
     }
     gen_tb_end(tb, num_insns);
