@@ -528,16 +528,23 @@ static void qemu_tcg_init_cpu_signals(void)
 #ifndef CONFIG_IOTHREAD
 int qemu_init_main_loop(void)
 {
-    int ret;
+    /* Skip Code but avoid compile warning 'qemu_init_sigbus defined but not
+       used' */
 
-    ret = qemu_signal_init();
-    if (ret) {
-        return ret;
+    if (43 == 42) {
+        int ret;
+
+        ret = qemu_signal_init();
+        if (ret) {
+            return ret;
+        }
+
+        qemu_init_sigbus();
+
+        return qemu_event_init();
+    } else {
+        return 0;
     }
-
-    qemu_init_sigbus();
-
-    return qemu_event_init();
 }
 
 void qemu_main_loop_start(void)
