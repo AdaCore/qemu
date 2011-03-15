@@ -2573,17 +2573,18 @@ fi
 
 
 ##########################################
-# Do we need librt
+# Do we need clock_gettime + librt
+clock_gettime=no
 cat > $TMPC <<EOF
-#include <signal.h>
 #include <time.h>
 int main(void) { return clock_gettime(CLOCK_REALTIME, NULL); }
 EOF
 
 if compile_prog "" "" ; then
-  :
+  clock_gettime=yes
 elif compile_prog "" "-lrt" ; then
   LIBS="-lrt $LIBS"
+  clock_gettime=yes
 fi
 
 if test "$darwin" != "yes" -a "$mingw32" != "yes" -a "$solaris" != yes -a \
@@ -3021,6 +3022,7 @@ echo "preadv support    $preadv"
 echo "fdatasync         $fdatasync"
 echo "madvise           $madvise"
 echo "posix_madvise     $posix_madvise"
+echo "clock_gettime     $clock_gettime"
 echo "uuid support      $uuid"
 echo "libcap-ng support $cap_ng"
 echo "vhost-net support $vhost_net"
@@ -3177,6 +3179,9 @@ if test "$vnc_thread" = "yes" ; then
 fi
 if test "$fnmatch" = "yes" ; then
   echo "CONFIG_FNMATCH=y" >> $config_host_mak
+fi
+if test "$clock_gettime" = "yes" ; then
+  echo "CONFIG_CLOCK_GETTIME=y" >> $config_host_mak
 fi
 if test "$uuid" = "yes" ; then
   echo "CONFIG_UUID=y" >> $config_host_mak
