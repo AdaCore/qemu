@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "qemu-thread.h"
+#include "config-host.h"
 
 static void error_exit(int err, const char *msg)
 {
