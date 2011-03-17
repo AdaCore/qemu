@@ -287,8 +287,6 @@ static inline void gen_debug_exception(DisasContext *ctx)
 {
     TCGv_i32 t0;
 
-    if (ctx->exception != POWERPC_EXCP_BRANCH)
-        gen_update_nip(ctx, ctx->nip);
     t0 = tcg_const_i32(EXCP_DEBUG);
     gen_helper_raise_exception(t0);
     tcg_temp_free_i32(t0);
@@ -3572,6 +3570,10 @@ static void gen_rfi(DisasContext *ctx)
     }
     gen_helper_rfi();
     gen_sync_exception(ctx);
+    /* Exit TB now.  We must do that manually to correctly handle single
+       step.  */
+    gen_exit_tb(ctx,0);
+    ctx->exception = POWERPC_EXCP_BRANCH;
 #endif
 }
 
@@ -9203,11 +9205,13 @@ static inline void gen_intermediate_code_internal(CPUState *env,
         max_insns = CF_COUNT_MASK;
 
     gen_icount_start();
-    /* Set env in case of segfault during code fetch */
+
     while (ctx.exception == POWERPC_EXCP_NONE && gen_opc_ptr < gen_opc_end) {
+        /* Handle breakpoints.  */
         if (unlikely(!QTAILQ_EMPTY(&env->breakpoints))) {
             QTAILQ_FOREACH(bp, &env->breakpoints, entry) {
                 if (bp->pc == ctx.nip) {
+                    gen_update_nip(ctxp, ctx.nip);
                     gen_debug_exception(ctxp);
                     break;
                 }
@@ -9237,9 +9241,13 @@ static inline void gen_intermediate_code_internal(CPUState *env,
         LOG_DISAS("translate opcode %08x (%02x %02x %02x) (%s)\n",
                     ctx.opcode, opc1(ctx.opcode), opc2(ctx.opcode),
                     opc3(ctx.opcode), little_endian ? "little" : "big");
+
         if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP)))
             tcg_gen_debug_insn_start(ctx.nip);
+
         ctx.nip += 4;
+
+        /* Decoding.  */
         table = env->opcodes;
         num_insns++;
         handler = table[opc1(ctx.opcode)];
@@ -9299,6 +9307,7 @@ static inline void gen_intermediate_code_internal(CPUState *env,
         gen_goto_tb(&ctx, 0, ctx.nip);
     } else if (ctx.exception != POWERPC_EXCP_BRANCH) {
         if (unlikely(env->singlestep_enabled)) {
+            gen_update_nip(ctxp, ctx.nip);
             gen_debug_exception(ctxp);
         }
         /* Generate the return instruction */
