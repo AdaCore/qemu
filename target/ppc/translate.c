@@ -318,13 +318,6 @@ static void gen_debug_exception(DisasContext *ctx)
 {
     TCGv_i32 t0;
 
-    /* These are all synchronous exceptions, we set the PC back to
-     * the faulting instruction
-     */
-    if ((ctx->exception != POWERPC_EXCP_BRANCH) &&
-        (ctx->exception != POWERPC_EXCP_SYNC)) {
-        gen_update_nip(ctx, ctx->base.pc_next);
-    }
     t0 = tcg_const_i32(EXCP_DEBUG);
     gen_helper_raise_exception(cpu_env, t0);
     tcg_temp_free_i32(t0);
@@ -3604,6 +3597,20 @@ static inline bool use_goto_tb(DisasContext *ctx, target_ulong dest)
 }
 
 /***                                Branch                                 ***/
+static inline void gen_exit_tb(DisasContext *ctx, int n)
+{
+    if (unlikely(ctx->singlestep_enabled)) {
+        if ((ctx->singlestep_enabled & (CPU_BRANCH_STEP | CPU_SINGLE_STEP))
+            && ctx->exception == POWERPC_EXCP_BRANCH) {
+            gen_exception(ctx, POWERPC_EXCP_TRACE);
+        }
+        if (ctx->singlestep_enabled & GDBSTUB_SINGLE_STEP) {
+            gen_debug_exception(ctx);
+        }
+    }
+    tcg_gen_exit_tb(ctx->base.tb, TB_EXIT_NOPATCH | n);
+}
+
 static void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
 {
     if (NARROW_MODE(ctx)) {
@@ -3847,6 +3854,10 @@ static void gen_rfi(DisasContext *ctx)
     gen_update_cfar(ctx, ctx->base.pc_next - 4);
     gen_helper_rfi(cpu_env);
     gen_sync_exception(ctx);
+    /* Exit TB now.  We must do that manually to correctly handle single
+       step.  */
+    gen_exit_tb(ctx, 0);
+    ctx->exception = POWERPC_EXCP_BRANCH;
 #endif
 }
 
@@ -7469,6 +7480,7 @@ static bool ppc_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cs,
 {
     DisasContext *ctx = container_of(dcbase, DisasContext, base);
 
+    gen_update_nip(ctx, ctx->base.pc_next);
     gen_debug_exception(ctx);
     dcbase->is_jmp = DISAS_NORETURN;
     /* The address covered by the breakpoint must be included in
@@ -7574,6 +7586,7 @@ static void ppc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
         gen_goto_tb(ctx, 0, ctx->base.pc_next);
     } else if (ctx->exception != POWERPC_EXCP_BRANCH) {
         if (unlikely(ctx->base.singlestep_enabled)) {
+            gen_update_nip(ctx, ctx->base.pc_next);
             gen_debug_exception(ctx);
         }
         /* Generate the return instruction */
