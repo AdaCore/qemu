@@ -318,13 +318,6 @@ static void gen_debug_exception(DisasContext *ctx)
 {
     TCGv_i32 t0;
 
-    /* These are all synchronous exceptions, we set the PC back to
-     * the faulting instruction
-     */
-    if ((ctx->exception != POWERPC_EXCP_BRANCH) &&
-        (ctx->exception != POWERPC_EXCP_SYNC)) {
-        gen_update_nip(ctx, ctx->nip);
-    }
     t0 = tcg_const_i32(EXCP_DEBUG);
     gen_helper_raise_exception(cpu_env, t0);
     tcg_temp_free_i32(t0);
@@ -3616,6 +3609,10 @@ static void gen_rfi(DisasContext *ctx)
     gen_update_cfar(ctx, ctx->nip - 4);
     gen_helper_rfi(cpu_env);
     gen_sync_exception(ctx);
+    /* Exit TB now.  We must do that manually to correctly handle single
+       step.  */
+    gen_exit_tb(ctx, 0);
+    ctx->exception = POWERPC_EXCP_BRANCH;
 #endif
 }
 
@@ -7087,6 +7084,7 @@ void gen_intermediate_code(CPUPPCState *env, struct TranslationBlock *tb)
         num_insns++;
 
         if (unlikely(cpu_breakpoint_test(cs, ctx.nip, BP_ANY))) {
+            gen_update_nip(ctxp, ctx.nip);
             gen_debug_exception(ctxp);
             /* The address covered by the breakpoint must be included in
                [tb->pc, tb->pc + tb->size) in order to for it to be
@@ -7111,6 +7109,8 @@ void gen_intermediate_code(CPUPPCState *env, struct TranslationBlock *tb)
                   opc3(ctx.opcode), opc4(ctx.opcode),
                   ctx.le_mode ? "little" : "big");
         ctx.nip += 4;
+
+        /* Decoding.  */
         table = env->opcodes;
         handler = table[opc1(ctx.opcode)];
         if (is_indirect_opcode(handler)) {
@@ -7186,6 +7186,7 @@ void gen_intermediate_code(CPUPPCState *env, struct TranslationBlock *tb)
         gen_goto_tb(&ctx, 0, ctx.nip);
     } else if (ctx.exception != POWERPC_EXCP_BRANCH) {
         if (unlikely(cs->singlestep_enabled)) {
+            gen_update_nip(ctxp, ctx.nip);
             gen_debug_exception(ctxp);
         }
         /* Generate the return instruction */
