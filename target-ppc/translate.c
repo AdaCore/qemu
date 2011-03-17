@@ -310,10 +310,6 @@ static inline void gen_debug_exception(DisasContext *ctx)
 {
     TCGv_i32 t0;
 
-    if ((ctx->exception != POWERPC_EXCP_BRANCH) &&
-        (ctx->exception != POWERPC_EXCP_SYNC)) {
-        gen_update_nip(ctx, ctx->nip);
-    }
     t0 = tcg_const_i32(EXCP_DEBUG);
     gen_helper_raise_exception(cpu_env, t0);
     tcg_temp_free_i32(t0);
@@ -4061,6 +4057,10 @@ static void gen_rfi(DisasContext *ctx)
     gen_update_cfar(ctx, ctx->nip);
     gen_helper_rfi(cpu_env);
     gen_sync_exception(ctx);
+    /* Exit TB now.  We must do that manually to correctly handle single
+       step.  */
+    gen_exit_tb(ctx, 0);
+    ctx->exception = POWERPC_EXCP_BRANCH;
 #endif
 }
 
@@ -11495,9 +11495,11 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
     tcg_clear_temp_count();
     /* Set env in case of segfault during code fetch */
     while (ctx.exception == POWERPC_EXCP_NONE && !tcg_op_buf_full()) {
+        /* Handle breakpoints.  */
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
             QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
                 if (bp->pc == ctx.nip) {
+                    gen_update_nip(ctxp, ctx.nip);
                     gen_debug_exception(ctxp);
                     break;
                 }
@@ -11531,6 +11533,8 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
             tcg_gen_debug_insn_start(ctx.nip);
         }
         ctx.nip += 4;
+
+        /* Decoding.  */
         table = env->opcodes;
         num_insns++;
         handler = table[opc1(ctx.opcode)];
@@ -11604,6 +11608,7 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
         gen_goto_tb(&ctx, 0, ctx.nip);
     } else if (ctx.exception != POWERPC_EXCP_BRANCH) {
         if (unlikely(cs->singlestep_enabled)) {
+            gen_update_nip(ctxp, ctx.nip);
             gen_debug_exception(ctxp);
         }
         /* Generate the return instruction */
