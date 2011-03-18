@@ -479,9 +479,21 @@ static int local_chown(FsContext *fs_ctx, const char *path, FsCred *credp)
     return -1;
 }
 
+
 static int local_utimensat(FsContext *s, const char *path,
                            const struct timespec *buf)
 {
+/* Older Linux kernels do not define the following macros.  If they don't,
+   then define them ourselves.  We do this here, because we know that
+   using them in this specific context is not going to cause problems
+   (we had to look at the implementation of qemu_utimensat to find that,
+   in that case, their value most likely end up being unused).  */
+#ifndef AT_FDCWD
+#define AT_FDCWD                -100
+#endif
+#ifndef AT_SYMLINK_NOFOLLOW
+#define AT_SYMLINK_NOFOLLOW     0x100
+#endif
     return qemu_utimensat(AT_FDCWD, rpath(s, path), buf, AT_SYMLINK_NOFOLLOW);
 }
 
