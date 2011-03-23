@@ -919,7 +919,7 @@ uint64_t helper_frsp(CPUPPCState *env, uint64_t arg)
     farg.ll = arg;
 
     if (unlikely(float64_is_signaling_nan(farg.d, &env->fp_status))) {
-        /* sNaN square root */
+        /* sNaN */
         float_invalid_op_excp(env, POWERPC_EXCP_FP_VXSNAN, 1);
     }
     f32 = float64_to_float32(farg.d, &env->fp_status);
