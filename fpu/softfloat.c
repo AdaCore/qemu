@@ -3792,28 +3792,46 @@ float64 float64_mul( float64 a, float64 b STATUS_PARAM )
     zSign = aSign ^ bSign;
     if ( aExp == 0x7FF ) {
         if ( aSig || ( ( bExp == 0x7FF ) && bSig ) ) {
+            /* a or b is NaN.  */
             return propagateFloat64NaN( a, b STATUS_VAR );
         }
+        /* a = Inf.  */
         if ( ( bExp | bSig ) == 0 ) {
+            /* b = 0.  */
             float_raise( float_flag_invalid STATUS_VAR);
             return float64_default_nan;
         }
+        /* Result is Inf.  */
         return packFloat64( zSign, 0x7FF, 0 );
     }
     if ( bExp == 0x7FF ) {
-        if ( bSig ) return propagateFloat64NaN( a, b STATUS_VAR );
+        if ( bSig ) {
+            /* b = NaN.  */
+            return propagateFloat64NaN( a, b STATUS_VAR );
+        }
+        /* b = Inf.  */
         if ( ( aExp | aSig ) == 0 ) {
+            /* a = 0.  */
             float_raise( float_flag_invalid STATUS_VAR);
             return float64_default_nan;
         }
+        /* Result is Inf.  */
         return packFloat64( zSign, 0x7FF, 0 );
     }
     if ( aExp == 0 ) {
-        if ( aSig == 0 ) return packFloat64( zSign, 0, 0 );
+        if ( aSig == 0 ) {
+            /* a = 0.  */
+            return packFloat64( zSign, 0, 0 );
+        }
+        /* a is subnormal.  */
         normalizeFloat64Subnormal( aSig, &aExp, &aSig );
     }
     if ( bExp == 0 ) {
-        if ( bSig == 0 ) return packFloat64( zSign, 0, 0 );
+        if ( bSig == 0 ) {
+            /* b = 0.  */
+            return packFloat64( zSign, 0, 0 );
+        }
+        /* b is subnormal.  */
         normalizeFloat64Subnormal( bSig, &bExp, &bSig );
     }
     zExp = aExp + bExp - 0x3FF;
