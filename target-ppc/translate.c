@@ -7091,6 +7091,7 @@ void gen_intermediate_code(CPUPPCState *env, struct TranslationBlock *tb)
                properly cleared -- thus we increment the PC here so that
                the logic setting tb->size below does the right thing.  */
             ctx.nip += 4;
+            ctx.exception = POWERPC_EXCP_BRANCH;
             break;
         }
 
