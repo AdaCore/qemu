@@ -7871,6 +7871,7 @@ static bool ppc_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cs,
      * setting tb->size below does the right thing.
      */
     ctx->base.pc_next += 4;
+    ctx->exception = POWERPC_EXCP_BRANCH;
     return true;
 }
 
