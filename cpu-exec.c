@@ -465,6 +465,10 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
                 CPUClass *cc = CPU_GET_CLASS(cpu);
                 cc->do_interrupt(cpu);
                 cpu->exception_index = -1;
+                if (cpu->singlestep_enabled & SSTEP_ENABLE) {
+                    ret = EXCP_DEBUG;
+                    break;
+                }
             } else if (!replay_has_interrupt()) {
                 /* give a chance to iothread in replay mode */
                 *ret = EXCP_INTERRUPT;
