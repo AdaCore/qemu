@@ -531,6 +531,10 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             cc->do_interrupt(cpu);
             qemu_mutex_unlock_iothread();
             cpu->exception_index = -1;
+            if (cpu->singlestep_enabled & SSTEP_ENABLE) {
+                *ret = EXCP_DEBUG;
+                return true;
+            }
         } else if (!replay_has_interrupt()) {
             /* give a chance to iothread in replay mode */
             *ret = EXCP_INTERRUPT;
