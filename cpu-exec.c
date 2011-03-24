@@ -447,6 +447,10 @@ int cpu_exec(CPUState *cpu)
 #else
                     cc->do_interrupt(cpu);
                     cpu->exception_index = -1;
+                    if (cpu->singlestep_enabled & SSTEP_ENABLE) {
+                        ret = EXCP_DEBUG;
+                        break;
+                    }
 #endif
                 }
             }
