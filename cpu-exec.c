@@ -272,6 +272,10 @@ int cpu_exec(CPUArchState *env)
 #else
                     do_interrupt(env);
                     env->exception_index = -1;
+                    if (env->singlestep_enabled & SSTEP_ENABLE) {
+                        ret = EXCP_DEBUG;
+                        break;
+                    }
 #endif
                 }
             }
