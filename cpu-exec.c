@@ -348,6 +348,11 @@ int cpu_exec(CPUState *env1)
                     do_interrupt(0);
 #endif
                     env->exception_index = -1;
+                    if (env->singlestep_enabled & SSTEP_ENABLE) {
+                        ret = EXCP_DEBUG;
+                        cpu_handle_debug_exception(env);
+                        break;
+                    }
 #endif
                 }
             }
