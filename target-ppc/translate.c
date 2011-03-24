@@ -11322,6 +11322,20 @@ void ppc_cpu_dump_statistics(CPUState *cs, FILE*f,
 #endif
 }
 
+/* Return true if PC is on a breakpoint. */
+static inline int is_on_breakpoint(CPUState *cs, target_ulong pc)
+{
+    CPUBreakpoint *bp;
+
+    QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
+        if (bp->pc == pc) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 /*****************************************************************************/
 static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
                                                   TranslationBlock *tb,
@@ -11333,7 +11347,6 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
     opc_handler_t **table, *handler;
     target_ulong pc_start;
     uint16_t *gen_opc_end;
-    CPUBreakpoint *bp;
     int j, lj = -1;
     int num_insns;
     int max_insns;
@@ -11391,12 +11404,11 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
             && tcg_ctx.gen_opc_ptr < gen_opc_end) {
         /* Handle breakpoints.  */
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
-            QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
-                if (bp->pc == ctx.nip) {
-                    gen_update_nip(ctxp, ctx.nip);
-                    gen_debug_exception(ctxp);
-                    break;
-                }
+            if (is_on_breakpoint(cs, ctx.nip)) {
+                gen_update_nip(ctxp, ctx.nip);
+                gen_debug_exception(ctxp);
+                ctx.exception = POWERPC_EXCP_BRANCH;
+                break;
             }
         }
         if (unlikely(search_pc)) {
