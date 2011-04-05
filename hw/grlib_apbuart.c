@@ -65,6 +65,8 @@
 #define SCALER_OFFSET     0x0C  /* not supported */
 #define FIFO_DEBUG_OFFSET 0x10  /* not supported */
 
+#define FIFO_LENGTH 1024
+
 typedef struct UART {
     SysBusDevice busdev;
 
@@ -76,21 +78,67 @@ typedef struct UART {
     uint32_t receive;
     uint32_t status;
     uint32_t control;
+
+    /* FIFO */
+    char buffer[FIFO_LENGTH];
+    int  len;
+    int  current;
 } UART;
+
+static int uart_data_to_read(UART *uart)
+{
+    return uart->current < uart->len;
+}
+
+static char uart_pop(UART *uart)
+{
+    char ret;
+
+    if (uart->len == 0) {
+        uart->status &= ~UART_DATA_READY;
+        return 0;
+    }
+
+    ret = uart->buffer[uart->current++];
+
+    if (uart->current >= uart->len) {
+        /* Flush */
+        uart->len     = 0;
+        uart->current = 0;
+    }
+
+    if (!uart_data_to_read(uart)) {
+        uart->status &= ~UART_DATA_READY;
+    }
+
+    return ret;
+}
+
+static void uart_add_to_fifo(UART          *uart,
+                             const uint8_t *buffer,
+                             int            length)
+{
+    if (uart->len + length > FIFO_LENGTH) {
+        abort();
+    }
+    memcpy(uart->buffer + uart->len, buffer, length);
+    uart->len += length;
+}
 
 static int grlib_apbuart_can_receive(void *opaque)
 {
     UART *uart = opaque;
 
-    return !!(uart->status & UART_DATA_READY);
+    return FIFO_LENGTH - uart->len;
 }
 
 static void grlib_apbuart_receive(void *opaque, const uint8_t *buf, int size)
 {
     UART *uart = opaque;
 
-    uart->receive  = *buf;
-    uart->status  |= UART_DATA_READY;
+    uart_add_to_fifo(uart, buf, size);
+
+    uart->status |= UART_DATA_READY;
 
     if (uart->control & UART_RECEIVE_INTERRUPT) {
         qemu_irq_pulse(uart->irq);
@@ -100,6 +148,35 @@ static void grlib_apbuart_receive(void *opaque, const uint8_t *buf, int size)
 static void grlib_apbuart_event(void *opaque, int event)
 {
     trace_grlib_apbuart_event(event);
+}
+
+
+static uint32_t grlib_apbuart_readl(void *opaque, target_phys_addr_t addr)
+{
+    UART     *uart = opaque;
+
+    addr &= 0xff;
+
+    /* Unit registers */
+    switch (addr) {
+    case DATA_OFFSET:
+        return uart_pop(uart);
+
+    case STATUS_OFFSET:
+        /* Read Only */
+        return uart->status;
+
+    case CONTROL_OFFSET:
+        return uart->control;
+
+    case SCALER_OFFSET:
+        /* Not supported */
+        return 0;
+
+    default:
+        trace_grlib_apbuart_unknown_register("read", addr);
+        return 0;
+    }
 }
 
 static void
@@ -122,7 +199,7 @@ grlib_apbuart_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
         return;
 
     case CONTROL_OFFSET:
-        /* Not supported */
+        uart->control = value;
         return;
 
     case SCALER_OFFSET:
@@ -137,7 +214,7 @@ grlib_apbuart_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
 }
 
 static CPUReadMemoryFunc * const grlib_apbuart_read[] = {
-    NULL, NULL, NULL,
+    NULL, NULL, grlib_apbuart_readl,
 };
 
 static CPUWriteMemoryFunc * const grlib_apbuart_write[] = {
