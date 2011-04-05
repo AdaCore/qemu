@@ -130,13 +130,20 @@
 
 #define MAX_PILS 16
 
+#define FIFO_LENGTH 1024
+
 typedef struct LeonUartState {
-        uint32_t         status;
-        uint32_t         control;
-        uint32_t         scaler;
-        uint8_t          rcv;
-        CharDriverState *chr;
-        qemu_irq         irq;
+    uint32_t         status;
+    uint32_t         control;
+    uint32_t         scaler;
+    CharDriverState *chr;
+    qemu_irq         irq;
+
+    /* FIFO */
+    char buffer[FIFO_LENGTH];
+    int  len;
+    int  current;
+
 } LeonUartState;
 
 struct LeonTimerState {
@@ -301,35 +308,71 @@ static void leon_uart_check_irq(struct LeonUartState *s)
     }
 }
 
+static int uart_data_to_read(LeonUartState *s)
+{
+    return s->current < s->len;
+}
+
+static char uart_pop(LeonUartState *s)
+{
+    char ret;
+
+    if (s->len == 0) {
+        return 0;
+    }
+
+    ret = s->buffer[s->current++];
+
+    if (s->current >= s->len) {
+        /* Flush */
+        s->len     = 0;
+        s->current = 0;
+    }
+    return ret;
+}
+
+static void uart_add_to_fifo(LeonUartState *s,
+                             const uint8_t *buffer,
+                             int            length)
+{
+    if (s->len + length > FIFO_LENGTH) {
+        abort();
+    }
+    memcpy(s->buffer + s->len, buffer, length);
+    s->len += length;
+}
+
 static int leon_uart_can_receive(void *opaque)
 {
     LeonUartState *s = opaque;
 
-    return (s->status & UART_STATUS_DR) ? 0 : 1;
+    return FIFO_LENGTH - s->len;
 }
 
 static void leon_uart_receive(void *opaque, const uint8_t *buf, int size)
 {
     LeonUartState *s = opaque;
 
-    s->rcv     = *buf;
+    uart_add_to_fifo(s, buf, size);
     s->status |= UART_STATUS_DR;
     leon_uart_check_irq(s);
 }
 
 static void leon_uart_event(void *opaque, int event)
 {
-
     trace_leon_uart_event(event);
 }
 
 static uint32_t leon_uart_read_uad(struct LeonUartState *s)
 {
-    if (s->status & UART_STATUS_DR) {
+    uint32_t ret = uart_pop(s);
+
+    if (!uart_data_to_read(s)) {
         s->status &= ~UART_STATUS_DR;
         leon_uart_check_irq(s);
     }
-    return s->rcv;
+
+    return ret;
 }
 
 static void leon_uart_init(CharDriverState *chr,
