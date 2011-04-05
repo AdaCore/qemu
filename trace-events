@@ -303,6 +303,7 @@ grlib_irqmp_writel_unknown(uint64_t addr, uint32_t value) "addr 0x%"PRIx64" valu
 
 # hw/grlib_apbuart.c
 grlib_apbuart_event(int event) "event:%d"
+grlib_apbuart_readl_unknown(uint64_t addr) "addr 0x%"PRIx64""
 grlib_apbuart_writel_unknown(uint64_t addr, uint32_t value) "addr 0x%"PRIx64" value 0x%x"
 
 # hw/leon3.c
