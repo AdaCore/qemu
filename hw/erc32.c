@@ -64,6 +64,8 @@
 
 #define MAX_PILS 16
 
+#define FIFO_LENGTH 1024
+
 typedef struct ResetData {
     CPUState *env;
     uint32_t  entry;            /* save kernel entry in case of reset */
@@ -83,9 +85,14 @@ static void main_cpu_reset(void *opaque)
 
 typedef struct Erc32UartState {
     uint32_t         status;
-    uint8_t          rcv;
     CharDriverState *chr;
     qemu_irq         irq;
+
+    /* FIFO */
+    char buffer[FIFO_LENGTH];
+    int  len;
+    int  current;
+
 } Erc32UartState;
 
 struct Erc32TimerState {
@@ -189,17 +196,52 @@ static void erc32_uart_check_irq(struct Erc32UartState *s)
     }
 }
 
+static int uart_data_to_read(Erc32UartState *s)
+{
+    return s->current < s->len;
+}
+
+static char uart_pop(Erc32UartState *s)
+{
+    char ret;
+
+    if (s->len == 0) {
+        return 0;
+    }
+
+    ret = s->buffer[s->current++];
+
+    if (s->current >= s->len) {
+        /* Flush */
+        s->len     = 0;
+        s->current = 0;
+    }
+    return ret;
+}
+
+static void uart_add_to_fifo(Erc32UartState *s,
+                             const uint8_t *buffer,
+                             int            length)
+{
+    if (s->len + length > FIFO_LENGTH) {
+        abort();
+    }
+    memcpy(s->buffer + s->len, buffer, length);
+    s->len += length;
+}
+
 static int erc32_uart_can_receive(void *opaque)
 {
     Erc32UartState *s = opaque;
 
-    return (s->status & UART_DR) ? 0 : 1;
+    return FIFO_LENGTH - s->len;
 }
 
 static void erc32_uart_receive(void *opaque, const uint8_t *buf, int size)
 {
     Erc32UartState *s = opaque;
-    s->rcv = *buf;
+
+    uart_add_to_fifo(s, buf, size);
     s->status |= UART_DR;
     erc32_uart_check_irq(s);
 }
@@ -211,11 +253,13 @@ static void erc32_uart_event(void *opaque, int event)
 
 static uint32_t erc32_uart_read_reg(struct Erc32UartState *s)
 {
-    if (s->status & UART_DR) {
+    uint32_t ret = uart_pop(s);
+
+    if (!uart_data_to_read(s)) {
         s->status &= ~UART_DR;
         erc32_uart_check_irq(s);
     }
-    return s->rcv;
+    return ret;
 }
 
 static void erc32_uart_init(CharDriverState       *chr,
