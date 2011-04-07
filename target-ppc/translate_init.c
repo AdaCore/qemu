@@ -3071,6 +3071,12 @@ static void init_excp_7400 (CPUPPCState *env)
 #endif
 }
 
+static void init_excp_8641D (CPUPPCState *env)
+{
+    init_excp_7400(env);
+    env->hreset_vector = 0x0FFF00100UL;
+}
+
 static void init_excp_7450 (CPUPPCState *env)
 {
 #if !defined(CONFIG_USER_ONLY)
@@ -5308,6 +5314,47 @@ static void init_proc_755 (CPUPPCState *env)
                               POWERPC_FLAG_BE | POWERPC_FLAG_PMM |            \
                               POWERPC_FLAG_BUS_CLK)
 #define check_pow_7400       check_pow_hid0
+
+/* PowerPC 8641D */
+#define POWERPC_INSNS_8641D  POWERPC_INSNS_7400
+#define POWERPC_MSRM_8641D   POWERPC_MSRM_7400
+#define POWERPC_MMU_8641D    POWERPC_MMU_7400
+#define POWERPC_EXCP_8641D   POWERPC_EXCP_7400
+#define POWERPC_INPUT_8641D  POWERPC_INPUT_7400
+#define POWERPC_BFDM_8641D   POWERPC_BFDM_7400
+#define POWERPC_FLAG_8641D   POWERPC_FLAG_7400
+
+#define check_pow_8641D     check_pow_7400
+
+static void init_proc_8641D (CPUPPCState *env)
+{
+    gen_spr_ne_601(env);
+    gen_spr_7xx(env);
+    /* Time base */
+    gen_tbl(env);
+    /* 74xx specific SPR */
+    gen_spr_74xx(env);
+    /* XXX : not implemented */
+    spr_register(env, SPR_UBAMR, "UBAMR",
+                 &spr_read_ureg, SPR_NOACCESS,
+                 &spr_read_ureg, SPR_NOACCESS,
+                 0x00000000);
+    /* XXX: this seems not implemented on all revisions. */
+    /* XXX : not implemented */
+    spr_register(env, SPR_MSSCR1, "MSSCR1",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* Thermal management */
+    gen_spr_thrm(env);
+    /* Memory management */
+    gen_low_BATs(env);
+    init_excp_8641D(env);
+    env->dcache_line_size = 32;
+    env->icache_line_size = 32;
+    /* Allocate hardware IRQ controller */
+    ppc6xx_irq_init(env);
+}
 
 static void init_proc_7400 (CPUPPCState *env)
 {
@@ -8428,7 +8475,7 @@ static const ppc_def_t ppc_defs[] = {
                     CPU_POWERPC_MPC8641,      POWERPC_SVR_8641,      7400),
     /* MPC8641D                                                              */
     POWERPC_DEF_SVR("MPC8641D",
-                    CPU_POWERPC_MPC8641D,     POWERPC_SVR_8641D,     7400),
+                    CPU_POWERPC_MPC8641D,     POWERPC_SVR_8641D,     8641D),
     /* 32 bits "classic" PowerPC                                             */
     /* PowerPC 6xx family                                                    */
     /* PowerPC 601                                                           */
