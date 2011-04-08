@@ -39,6 +39,7 @@
 #include "mc146818rtc.h"
 #include "blockdev.h"
 #include "elf.h"
+#include "openpic.h"
 
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
@@ -474,7 +475,7 @@ static void PPC_prep_io_writew (void *opaque, target_phys_addr_t addr,
     sysctrl_t *sysctrl = opaque;
 
     addr = prep_IO_address(sysctrl, addr);
-    PPC_IO_DPRINTF("0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", addr, value);
+    //PPC_IO_DPRINTF("0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", addr, value);
     cpu_outw(addr, value);
 }
 
@@ -485,7 +486,7 @@ static uint32_t PPC_prep_io_readw (void *opaque, target_phys_addr_t addr)
 
     addr = prep_IO_address(sysctrl, addr);
     ret = cpu_inw(addr);
-    PPC_IO_DPRINTF("0x" TARGET_FMT_plx " <= 0x%08" PRIx32 "\n", addr, ret);
+    //PPC_IO_DPRINTF("0x" TARGET_FMT_plx " <= 0x%08" PRIx32 "\n", addr, ret);
 
     return ret;
 }
@@ -496,7 +497,7 @@ static void PPC_prep_io_writel (void *opaque, target_phys_addr_t addr,
     sysctrl_t *sysctrl = opaque;
 
     addr = prep_IO_address(sysctrl, addr);
-    PPC_IO_DPRINTF("0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", addr, value);
+    //PPC_IO_DPRINTF("0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", addr, value);
     cpu_outl(addr, value);
 }
 
@@ -507,7 +508,7 @@ static uint32_t PPC_prep_io_readl (void *opaque, target_phys_addr_t addr)
 
     addr = prep_IO_address(sysctrl, addr);
     ret = cpu_inl(addr);
-    PPC_IO_DPRINTF("0x" TARGET_FMT_plx " <= 0x%08" PRIx32 "\n", addr, ret);
+    //PPC_IO_DPRINTF("0x" TARGET_FMT_plx " <= 0x%08" PRIx32 "\n", addr, ret);
 
     return ret;
 }
@@ -536,7 +537,7 @@ static void cpu_request_exit(void *opaque, int irq, int level)
 }
 
 /* PowerPC PREP hardware initialisation */
-static void ppc_prep_init (ram_addr_t ram_size,
+static void ppc_simple_init (ram_addr_t ram_size,
                            const char *boot_device,
                            const char *kernel_filename,
                            const char *kernel_cmdline,
@@ -553,7 +554,7 @@ static void ppc_prep_init (ram_addr_t ram_size,
     uint32_t kernel_base, initrd_base;
     long kernel_size, initrd_size;
     PCIBus *pci_bus;
-    qemu_irq *i8259;
+    //qemu_irq *i8259;
     qemu_irq cpu_irq;
     qemu_irq *cpu_exit_irq;
     int ppc_boot_device;
@@ -584,11 +585,11 @@ static void ppc_prep_init (ram_addr_t ram_size,
     }
 
     /* allocate RAM */
-    ram_offset = qemu_ram_alloc(NULL, "ppc_prep.ram", ram_size);
+    ram_offset = qemu_ram_alloc(NULL, "ppc_simple.ram", ram_size);
     cpu_register_physical_memory(0, ram_size, ram_offset);
 
     /* allocate and load BIOS */
-    bios_offset = qemu_ram_alloc(NULL, "ppc_prep.bios", BIOS_SIZE);
+    bios_offset = qemu_ram_alloc(NULL, "ppc_simple.bios", BIOS_SIZE);
     if (bios_name != NULL && strcmp(bios_name, "-") == 0) {
         /* No bios.  */
         bios_size = BIOS_SIZE;
@@ -660,136 +661,63 @@ static void ppc_prep_init (ram_addr_t ram_size,
             }
         }
     }
-
     isa_mem_base = 0xc0000000;
-    if (PPC_INPUT(env) == PPC_FLAGS_INPUT_6xx) {
-        cpu_irq = first_cpu->irq_inputs[PPC6xx_INPUT_INT];
-    }
-    else if (PPC_INPUT(env) == PPC_FLAGS_INPUT_BookE) {
-        cpu_irq = NULL;
-    } else {
-        hw_error("Only 6xx or BookE bus is supported on PREP machine\n");
-    }
-    i8259 = i8259_init(cpu_irq);
-    pci_bus = pci_prep_init(i8259);
-    /* Hmm, prep has no pci-isa bridge ??? */
-    isa_bus_new(NULL);
-    isa_bus_irqs(i8259);
-    //    pci_bus = i440fx_init();
-    /* Register 8 MB of ISA IO space (needed for non-contiguous map) */
-    PPC_io_memory = cpu_register_io_memory(PPC_prep_io_read,
-                                           PPC_prep_io_write, sysctrl,
-                                           DEVICE_LITTLE_ENDIAN);
-    cpu_register_physical_memory(0x80000000, 0x00800000, PPC_io_memory);
 
-    /* init basic PC hardware */
-    pci_vga_init(pci_bus);
-    //    openpic = openpic_init(0x00000000, 0xF0000000, 1);
-    //    pit = pit_init(0x40, 0);
-    rtc_init(2000, NULL);
-
-    for(i = 0; i < MAX_SERIAL_PORTS; i++) {
-        if (serial_hds[i]) {
-            serial_isa_init(i, serial_hds[i]);
+    qemu_irq ** openpic_irqs;
+    openpic_irqs = qemu_mallocz(smp_cpus * sizeof(qemu_irq *));
+    openpic_irqs[0] =
+            qemu_mallocz(smp_cpus * sizeof(qemu_irq) * OPENPIC_OUTPUT_NB);
+    for (i = 0; i < smp_cpus; i++) {
+            /* Mac99 IRQ connection between OpenPIC outputs pins
+             * and PowerPC input pins
+             */
+            switch (PPC_INPUT(env)) {
+            case PPC_FLAGS_INPUT_6xx:
+                openpic_irqs[i] = openpic_irqs[0] + (i * OPENPIC_OUTPUT_NB);
+                openpic_irqs[i][OPENPIC_OUTPUT_INT] =
+                    ((qemu_irq *)env->irq_inputs)[PPC6xx_INPUT_INT];
+                openpic_irqs[i][OPENPIC_OUTPUT_CINT] =
+                    ((qemu_irq *)env->irq_inputs)[PPC6xx_INPUT_INT];
+                openpic_irqs[i][OPENPIC_OUTPUT_MCK] =
+                    ((qemu_irq *)env->irq_inputs)[PPC6xx_INPUT_MCP];
+                /* Not connected ? */
+                openpic_irqs[i][OPENPIC_OUTPUT_DEBUG] = NULL;
+                /* Check this */
+                openpic_irqs[i][OPENPIC_OUTPUT_RESET] =
+                    ((qemu_irq *)env->irq_inputs)[PPC6xx_INPUT_HRESET];
+                break;
+#if defined(TARGET_PPC64)
+        case PPC_FLAGS_INPUT_970:
+            openpic_irqs[i] = openpic_irqs[0] + (i * OPENPIC_OUTPUT_NB);
+            openpic_irqs[i][OPENPIC_OUTPUT_INT] =
+                ((qemu_irq *)env->irq_inputs)[PPC970_INPUT_INT];
+            openpic_irqs[i][OPENPIC_OUTPUT_CINT] =
+                ((qemu_irq *)env->irq_inputs)[PPC970_INPUT_INT];
+            openpic_irqs[i][OPENPIC_OUTPUT_MCK] =
+                ((qemu_irq *)env->irq_inputs)[PPC970_INPUT_MCP];
+            /* Not connected ? */
+            openpic_irqs[i][OPENPIC_OUTPUT_DEBUG] = NULL;
+            /* Check this */
+            openpic_irqs[i][OPENPIC_OUTPUT_RESET] =
+                ((qemu_irq *)env->irq_inputs)[PPC970_INPUT_HRESET];
+            break;
+#endif /* defined(TARGET_PPC64) */
+        default:
+            hw_error("Bus model not supported on mac99 machine\n");
+            exit(1);
         }
     }
-
-    nb_nics1 = nb_nics;
-    if (nb_nics1 > NE2000_NB_MAX)
-        nb_nics1 = NE2000_NB_MAX;
-    for(i = 0; i < nb_nics1; i++) {
-        if (nd_table[i].model == NULL) {
-	    nd_table[i].model = qemu_strdup("ne2k_isa");
-        }
-        if (strcmp(nd_table[i].model, "ne2k_isa") == 0) {
-            isa_ne2000_init(ne2000_io[i], ne2000_irq[i], &nd_table[i]);
-        } else {
-            pci_nic_init_nofail(&nd_table[i], "ne2k_pci", NULL);
-        }
-    }
-
-    if (drive_get_max_bus(IF_IDE) >= MAX_IDE_BUS) {
-        fprintf(stderr, "qemu: too many IDE bus\n");
-        exit(1);
-    }
-
-    for(i = 0; i < MAX_IDE_BUS * MAX_IDE_DEVS; i++) {
-        hd[i] = drive_get(IF_IDE, i / MAX_IDE_DEVS, i % MAX_IDE_DEVS);
-    }
-
-    for(i = 0; i < MAX_IDE_BUS; i++) {
-        isa_ide_init(ide_iobase[i], ide_iobase2[i], ide_irq[i],
-                     hd[2 * i],
-		     hd[2 * i + 1]);
-    }
-    isa_create_simple("i8042");
-
-    cpu_exit_irq = qemu_allocate_irqs(cpu_request_exit, NULL, 1);
-    DMA_init(1, cpu_exit_irq);
-
-    //    SB16_init();
-
-    for(i = 0; i < MAX_FD; i++) {
-        fd[i] = drive_get(IF_FLOPPY, 0, i);
-    }
-    fdctrl_init_isa(fd);
-
-    sysctrl->irq14 = i8259[14];
-    sysctrl->irq15 = i8259[15];
-
-    /* Register speaker port */
-    register_ioport_read(0x61, 1, 1, speaker_ioport_read, NULL);
-    register_ioport_write(0x61, 1, 1, speaker_ioport_write, NULL);
-    /* Register fake IO ports for PREP */
-    sysctrl->reset_irq = first_cpu->irq_inputs[PPC6xx_INPUT_HRESET];
-    register_ioport_read(0x398, 2, 1, &PREP_io_read, sysctrl);
-    register_ioport_write(0x398, 2, 1, &PREP_io_write, sysctrl);
-    /* System control ports */
-    register_ioport_read(0x0092, 0x01, 1, &PREP_io_800_readb, sysctrl);
-    register_ioport_write(0x0092, 0x01, 1, &PREP_io_800_writeb, sysctrl);
-    register_ioport_read(0x0800, 0x52, 1, &PREP_io_800_readb, sysctrl);
-    register_ioport_write(0x0800, 0x52, 1, &PREP_io_800_writeb, sysctrl);
-    /* PCI intack location */
-    PPC_io_memory = cpu_register_io_memory(PPC_intack_read,
-                                           PPC_intack_write, NULL,
-                                           DEVICE_LITTLE_ENDIAN);
-    cpu_register_physical_memory(0xBFFFFFF0, 0x4, PPC_io_memory);
-    /* PowerPC control and status register group */
-#if 0
-    PPC_io_memory = cpu_register_io_memory(PPC_XCSR_read, PPC_XCSR_write,
-                                           NULL, DEVICE_LITTLE_ENDIAN);
-    cpu_register_physical_memory(0xFEFF0000, 0x1000, PPC_io_memory);
-#endif
-
-    if (usb_enabled) {
-        usb_ohci_init_pci(pci_bus, -1);
-    }
-
-    m48t59 = m48t59_init(i8259[8], 0, 0x0074, NVRAM_SIZE, 59);
-    if (m48t59 == NULL)
-        return;
-    sysctrl->nvram = m48t59;
-
-    /* Initialise NVRAM */
-    nvram.opaque = m48t59;
-    nvram.read_fn = &m48t59_read;
-    nvram.write_fn = &m48t59_write;
-    PPC_NVRAM_set_params(&nvram, NVRAM_SIZE, "PREP", ram_size, ppc_boot_device,
-                         kernel_base, kernel_size,
-                         kernel_cmdline,
-                         initrd_base, initrd_size,
-                         /* XXX: need an option to load a NVRAM image */
-                         0,
-                         graphic_width, graphic_height, graphic_depth);
-
-    /* Special port to get debug messages from Open-Firmware */
-    register_ioport_write(0x0F00, 4, 1, &PPC_debug_write, NULL);
+    int pic_mem_index;
+    qemu_irq *pic;
+    pic = openpic_init(NULL, &pic_mem_index, smp_cpus, openpic_irqs, NULL);
+    PPC_IO_DPRINTF("OpenPIC init : pic_mem_index = 0x%x\n", pic_mem_index);
+    cpu_register_physical_memory(0xF8040000, 256 * 1024, pic_mem_index);
 }
 
 static QEMUMachine simple_machine = {
     .name = "simple",
     .desc = "PowerPC simple platform",
-    .init = ppc_prep_init,
+    .init = ppc_simple_init,
     .max_cpus = MAX_CPUS,
 };
 
