@@ -74,99 +74,8 @@ qemu_log_mask(CPU_LOG_IOPORT, fmt, ## __VA_ARGS__)
 #define PPC_IO_DPRINTF(fmt, ...) do { } while (0)
 #endif
 
-/* Constants for devices init */
-static const int ide_iobase[2] = { 0x1f0, 0x170 };
-static const int ide_iobase2[2] = { 0x3f6, 0x376 };
-static const int ide_irq[2] = { 13, 13 };
-
-#define NE2000_NB_MAX 6
-
-static uint32_t ne2000_io[NE2000_NB_MAX] = { 0x300, 0x320, 0x340, 0x360, 0x280, 0x380 };
-static int ne2000_irq[NE2000_NB_MAX] = { 9, 10, 11, 3, 4, 5 };
-
-//static ISADevice *pit;
-
-/* ISA IO ports bridge */
-#define PPC_IO_BASE 0x80000000
-
-#if 0
-/* Speaker port 0x61 */
-static int speaker_data_on;
-static int dummy_refresh_clock;
-#endif
-
-static void speaker_ioport_write (void *opaque, uint32_t addr, uint32_t val)
-{
-#if 0
-    speaker_data_on = (val >> 1) & 1;
-    pit_set_gate(pit, 2, val & 1);
-#endif
-}
-
-static uint32_t speaker_ioport_read (void *opaque, uint32_t addr)
-{
-#if 0
-    int out;
-    out = pit_get_out(pit, 2, qemu_get_clock_ns(vm_clock));
-    dummy_refresh_clock ^= 1;
-    return (speaker_data_on << 1) | pit_get_gate(pit, 2) | (out << 5) |
-        (dummy_refresh_clock << 4);
-#endif
-    return 0;
-}
-
 /* PCI intack register */
 /* Read-only register (?) */
-static void _PPC_intack_write (void *opaque,
-                               target_phys_addr_t addr, uint32_t value)
-{
-#if 0
-    printf("%s: 0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", __func__, addr,
-           value);
-#endif
-}
-
-static inline uint32_t _PPC_intack_read(target_phys_addr_t addr)
-{
-    uint32_t retval = 0;
-
-    if ((addr & 0xf) == 0)
-        retval = pic_intack_read(isa_pic);
-#if 0
-    printf("%s: 0x" TARGET_FMT_plx " <= %08" PRIx32 "\n", __func__, addr,
-           retval);
-#endif
-
-    return retval;
-}
-
-static uint32_t PPC_intack_readb (void *opaque, target_phys_addr_t addr)
-{
-    return _PPC_intack_read(addr);
-}
-
-static uint32_t PPC_intack_readw (void *opaque, target_phys_addr_t addr)
-{
-    return _PPC_intack_read(addr);
-}
-
-static uint32_t PPC_intack_readl (void *opaque, target_phys_addr_t addr)
-{
-    return _PPC_intack_read(addr);
-}
-
-static CPUWriteMemoryFunc * const PPC_intack_write[] = {
-    &_PPC_intack_write,
-    &_PPC_intack_write,
-    &_PPC_intack_write,
-};
-
-static CPUReadMemoryFunc * const PPC_intack_read[] = {
-    &PPC_intack_readb,
-    &PPC_intack_readw,
-    &PPC_intack_readl,
-};
-
 /* PowerPC control and status registers */
 #if 0 // Not used
 static struct {
@@ -277,164 +186,6 @@ enum {
 
 static sysctrl_t *sysctrl;
 
-static void PREP_io_write (void *opaque, uint32_t addr, uint32_t val)
-{
-    sysctrl_t *sysctrl = opaque;
-
-    PPC_IO_DPRINTF("0x%08" PRIx32 " => 0x%02" PRIx32 "\n", addr - PPC_IO_BASE,
-                   val);
-    sysctrl->fake_io[addr - 0x0398] = val;
-}
-
-static uint32_t PREP_io_read (void *opaque, uint32_t addr)
-{
-    sysctrl_t *sysctrl = opaque;
-
-    PPC_IO_DPRINTF("0x%08" PRIx32 " <= 0x%02" PRIx32 "\n", addr - PPC_IO_BASE,
-                   sysctrl->fake_io[addr - 0x0398]);
-    return sysctrl->fake_io[addr - 0x0398];
-}
-
-static void PREP_io_800_writeb (void *opaque, uint32_t addr, uint32_t val)
-{
-    sysctrl_t *sysctrl = opaque;
-
-    PPC_IO_DPRINTF("0x%08" PRIx32 " => 0x%02" PRIx32 "\n",
-                   addr - PPC_IO_BASE, val);
-    switch (addr) {
-    case 0x0092:
-        /* Special port 92 */
-        /* Check soft reset asked */
-        if (val & 0x01) {
-            qemu_irq_raise(sysctrl->reset_irq);
-        } else {
-            qemu_irq_lower(sysctrl->reset_irq);
-        }
-        /* Check LE mode */
-        if (val & 0x02) {
-            sysctrl->endian = 1;
-        } else {
-            sysctrl->endian = 0;
-        }
-        break;
-    case 0x0800:
-        /* Motorola CPU configuration register : read-only */
-        break;
-    case 0x0802:
-        /* Motorola base module feature register : read-only */
-        break;
-    case 0x0803:
-        /* Motorola base module status register : read-only */
-        break;
-    case 0x0808:
-        /* Hardfile light register */
-        if (val & 1)
-            sysctrl->state |= STATE_HARDFILE;
-        else
-            sysctrl->state &= ~STATE_HARDFILE;
-        break;
-    case 0x0810:
-        /* Password protect 1 register */
-        if (sysctrl->nvram != NULL)
-            m48t59_toggle_lock(sysctrl->nvram, 1);
-        break;
-    case 0x0812:
-        /* Password protect 2 register */
-        if (sysctrl->nvram != NULL)
-            m48t59_toggle_lock(sysctrl->nvram, 2);
-        break;
-    case 0x0814:
-        /* L2 invalidate register */
-        //        tlb_flush(first_cpu, 1);
-        break;
-    case 0x081C:
-        /* system control register */
-        sysctrl->syscontrol = val & 0x0F;
-        break;
-    case 0x0840:
-        if (val & 0x01) {
-            qemu_irq_raise(sysctrl->irq14);
-        } else {
-            qemu_irq_lower(sysctrl->irq14);
-        }
-       break;
-    case 0x0850:
-        /* I/O map type register */
-        sysctrl->contiguous_map = val & 0x01;
-        break;
-    default:
-        printf("ERROR: unaffected IO port write: %04" PRIx32
-               " => %02" PRIx32"\n", addr, val);
-        break;
-    }
-}
-
-static uint32_t PREP_io_800_readb (void *opaque, uint32_t addr)
-{
-    sysctrl_t *sysctrl = opaque;
-    uint32_t retval = 0xFF;
-
-    switch (addr) {
-    case 0x0092:
-        /* Special port 92 */
-        retval = 0x00;
-        break;
-    case 0x0800:
-        /* Motorola CPU configuration register */
-        retval = 0xEF; /* MPC750 */
-        break;
-    case 0x0802:
-        /* Motorola Base module feature register */
-        retval = 0xAD; /* No ESCC, PMC slot neither ethernet */
-        break;
-    case 0x0803:
-        /* Motorola base module status register */
-        retval = 0xE0; /* Standard MPC750 */
-        break;
-    case 0x080C:
-        /* Equipment present register:
-         *  no L2 cache
-         *  no upgrade processor
-         *  no cards in PCI slots
-         *  SCSI fuse is bad
-         */
-        retval = 0x3C;
-        break;
-    case 0x0810:
-        /* Motorola base module extended feature register */
-        retval = 0x39; /* No USB, CF and PCI bridge. NVRAM present */
-        break;
-    case 0x0814:
-        /* L2 invalidate: don't care */
-        break;
-    case 0x0818:
-        /* Keylock */
-        retval = 0x00;
-        break;
-    case 0x081C:
-        /* system control register
-         * 7 - 6 / 1 - 0: L2 cache enable
-         */
-        retval = sysctrl->syscontrol;
-        break;
-    case 0x0823:
-        /* */
-        retval = 0x03; /* no L2 cache */
-        break;
-    case 0x0850:
-        /* I/O map type register */
-        retval = sysctrl->contiguous_map;
-        break;
-    default:
-        printf("ERROR: unaffected IO port: %04" PRIx32 " read\n", addr);
-        break;
-    }
-    PPC_IO_DPRINTF("0x%08" PRIx32 " <= 0x%02" PRIx32 "\n",
-                   addr - PPC_IO_BASE, retval);
-
-    return retval;
-}
-
 static inline target_phys_addr_t prep_IO_address(sysctrl_t *sysctrl,
                                                  target_phys_addr_t addr)
 {
@@ -525,17 +276,35 @@ static CPUReadMemoryFunc * const PPC_prep_io_read[] = {
     &PPC_prep_io_readl,
 };
 
-#define NVRAM_SIZE        0x2000
+#define MEM_START 0xF8000000
+#define MEM_SIZE (0x40000)
 
-static void cpu_request_exit(void *opaque, int irq, int level)
+uint32_t * phony_mem;
+
+static void my_write (void *opaque, target_phys_addr_t addr, uint32_t value)
 {
-    CPUState *env = cpu_single_env;
-
-    if (env && level) {
-        cpu_exit(env);
-    }
+    printf("my_write : attempting to write to : 0x%08x <= 0x%x\n", addr +
+            MEM_START, value);
+    uint32_t * mem = opaque;
+    mem[addr] = value;
 }
+static uint32_t my_read (void *opaque, target_phys_addr_t addr)
+{
+    printf("my_read : attempting to read from : 0x%08x\n", addr + MEM_START);
+    uint32_t * mem = opaque;
+    return mem[addr];
+}
+static CPUWriteMemoryFunc * const my_cpu_write_fct[] = {
+    &my_write,
+    &my_write,
+    &my_write,
+};
 
+static CPUReadMemoryFunc * const my_cpu_read_fct[] = {
+    &my_read,
+    &my_read,
+    &my_read,
+};
 /* PowerPC PREP hardware initialisation */
 static void ppc_simple_init (ram_addr_t ram_size,
                            const char *boot_device,
@@ -546,20 +315,11 @@ static void ppc_simple_init (ram_addr_t ram_size,
 {
     CPUState *env = NULL;
     char *filename;
-    nvram_t nvram;
-    M48t59State *m48t59;
-    int PPC_io_memory;
-    int linux_boot, i, nb_nics1, bios_size;
+    int linux_boot, i, bios_size;
     ram_addr_t ram_offset, bios_offset;
     uint32_t kernel_base, initrd_base;
     long kernel_size, initrd_size;
-    PCIBus *pci_bus;
-    //qemu_irq *i8259;
-    qemu_irq cpu_irq;
-    qemu_irq *cpu_exit_irq;
     int ppc_boot_device;
-    DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
-    DriveInfo *fd[MAX_FD];
 
     sysctrl = qemu_mallocz(sizeof(sysctrl_t));
 
@@ -707,11 +467,17 @@ static void ppc_simple_init (ram_addr_t ram_size,
             exit(1);
         }
     }
-    int pic_mem_index;
+    phony_mem = qemu_mallocz(MEM_SIZE);
+    int io_mem = cpu_register_io_memory(my_cpu_read_fct, my_cpu_write_fct,
+            phony_mem, DEVICE_BIG_ENDIAN);
+    cpu_register_physical_memory(MEM_START, MEM_SIZE, io_mem);
+
+    int pic_mem_mapping = 0xF8040000;
     qemu_irq *pic;
-    pic = openpic_init(NULL, &pic_mem_index, smp_cpus, openpic_irqs, NULL);
+    pic = mpic_init(pic_mem_mapping, smp_cpus, openpic_irqs, NULL);
     PPC_IO_DPRINTF("OpenPIC init : pic_mem_index = 0x%x\n", pic_mem_index);
-    cpu_register_physical_memory(0xF8040000, 256 * 1024, pic_mem_index);
+    //cpu_register_physical_memory(0xF8040000, 256 * 1024, pic_mem_index);
+
 }
 
 static QEMUMachine simple_machine = {
