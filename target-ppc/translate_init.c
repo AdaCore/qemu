@@ -5349,6 +5349,7 @@ static void init_proc_8641D (CPUPPCState *env)
     gen_spr_thrm(env);
     /* Memory management */
     gen_low_BATs(env);
+    gen_high_BATs(env);
     init_excp_8641D(env);
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
