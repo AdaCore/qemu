@@ -277,7 +277,7 @@ static CPUReadMemoryFunc * const PPC_prep_io_read[] = {
 };
 
 #define MEM_START 0xF8000000
-#define MEM_SIZE (0x40000)
+#define MEM_SIZE  0x00004000
 
 uint32_t * phony_mem;
 
@@ -477,6 +477,17 @@ static void ppc_simple_init (ram_addr_t ram_size,
     pic = mpic_init(pic_mem_mapping, smp_cpus, openpic_irqs, NULL);
     PPC_IO_DPRINTF("OpenPIC init : pic_mem_index = 0x%x\n", pic_mem_index);
     //cpu_register_physical_memory(0xF8040000, 256 * 1024, pic_mem_index);
+
+    int serial1_mem_mapping = 0xF8004500;
+    int serial2_mem_mapping = 0xF8004600;
+    if (serial_hds[0]) {
+        serial_mm_init(serial1_mem_mapping, 1, pic[26], 115200,
+                serial_hds[0], 1, 1);
+    }
+    if (serial_hds[1]) {
+        serial_mm_init(serial2_mem_mapping, 1, pic[12], 115200,
+                serial_hds[0], 1, 1);
+    }
 
 }
 
