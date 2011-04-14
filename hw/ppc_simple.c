@@ -305,6 +305,40 @@ static CPUReadMemoryFunc * const my_cpu_read_fct[] = {
     &my_read,
     &my_read,
 };
+
+#define GUR_START       0xf80e0000
+#define GUR_SIZE        0x30
+static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
+{
+    printf("my_read_gur : reading from Global Utility Register : 0x%08x\n",
+            addr +
+            GUR_START);
+    return 0;
+}
+
+static CPUReadMemoryFunc * const my_cpu_read_fct_gur[] = {
+    &my_read_gur,
+    &my_read_gur,
+    &my_read_gur,
+};
+
+#define PMR_START       0xf80e1000
+#define PMR_SIZE        0xA9
+static uint32_t my_read_pmr (void *opaque, target_phys_addr_t addr)
+{
+    printf("my_read_pmr : reading from Performance Management Register : "
+            "0x%08x\n",
+            addr +
+            PMR_START);
+    return 0;
+}
+
+static CPUReadMemoryFunc * const my_cpu_read_fct_pmr[] = {
+    &my_read_pmr,
+    &my_read_pmr,
+    &my_read_pmr,
+};
+
 /* PowerPC PREP hardware initialisation */
 static void ppc_simple_init (ram_addr_t ram_size,
                            const char *boot_device,
@@ -471,6 +505,14 @@ static void ppc_simple_init (ram_addr_t ram_size,
     int io_mem = cpu_register_io_memory(my_cpu_read_fct, my_cpu_write_fct,
             phony_mem, DEVICE_BIG_ENDIAN);
     cpu_register_physical_memory(MEM_START, MEM_SIZE, io_mem);
+
+    io_mem = cpu_register_io_memory(my_cpu_read_fct_gur, my_cpu_write_fct,
+            NULL, DEVICE_BIG_ENDIAN);
+    cpu_register_physical_memory(GUR_START, GUR_SIZE, io_mem);
+
+    io_mem = cpu_register_io_memory(my_cpu_read_fct_pmr, my_cpu_write_fct,
+            NULL, DEVICE_BIG_ENDIAN);
+    cpu_register_physical_memory(PMR_START, PMR_SIZE, io_mem);
 
     int pic_mem_mapping = 0xF8040000;
     qemu_irq *pic;
