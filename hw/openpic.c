@@ -101,7 +101,7 @@ enum {
 /* MPIC */
 #define MPIC_MAX_CPU      1
 #define MPIC_MAX_EXT     12
-#define MPIC_MAX_INT     64
+#define MPIC_MAX_INT     48
 #define MPIC_MAX_MSG      4
 #define MPIC_MAX_MSI      8
 #define MPIC_MAX_TMR      (MAX_TMR * MAX_GRP)
