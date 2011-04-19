@@ -573,6 +573,7 @@ static uint32_t leon_io_readl(void *opaque, target_phys_addr_t addr)
         break;
 
     case UART_1_DATA_REGISTER:
+    case UART_1_DATA_REGISTER + 3: /* when only one byte read  */
         ret = leon_uart_read_uad(&s->uart1);
         break;
     case UART_1_CONTROL_REGISTER:
@@ -657,6 +658,7 @@ static void leon_io_writel(void *opaque, target_phys_addr_t addr,
         s->uart1.scaler = val & 0x3ff;
         break;
     case UART_1_DATA_REGISTER:
+    case UART_1_DATA_REGISTER + 3: /* when only one byte write  */
     {
         unsigned char c = val;
         qemu_chr_write(s->uart1.chr, &c, 1);
@@ -683,14 +685,14 @@ static void leon_io_writel(void *opaque, target_phys_addr_t addr,
 }
 
 static CPUReadMemoryFunc *leon_io_read[3] = {
-    NULL,
-    NULL,
+    leon_io_readl,
+    leon_io_readl,
     leon_io_readl
 };
 
 static CPUWriteMemoryFunc *leon_io_write[3] = {
-    NULL,
-    NULL,
+    leon_io_writel,
+    leon_io_writel,
     leon_io_writel,
 };
 
