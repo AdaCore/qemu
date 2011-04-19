@@ -278,3 +278,25 @@ disable erc32_timer_hit(int id) "timer:%d HIT"
 disable erc32_unknown_register(const char *op, uint64_t val) "%s unknown register 0x%"PRIx64""
 disable erc32_readl(uint64_t addr, uint32_t val) "addr:0x%"PRIx64" val:0x%x"
 disable erc32_writel(uint64_t addr, uint32_t val) "addr:0x%"PRIx64" val:0x%x"
+
+# gnat-bus-process-packet.c
+
+disable gnatbus_setirq(uint8_t line, uint8_t level) "Process SetIRQ line:0x%x level:0x%x"
+disable gnatbus_registerevent(uint64_t expire_time, uint64_t event) "Process Register Event expire_time:0x%016llx event:0x%016llx"
+disable gnatbus_resp_error(uint32_t request_id, uint32_t error_code) "Send Error Response request_id:0x%x error_code:0x%x"
+disable gnatbus_process_read(uint64_t addr, uint64_t len) "Process Read Request addr:0x%016llx len:0x%016llx"
+disable gnatbus_process_write(uint64_t addr, uint64_t len) "Process Write Request addr:0x%016llx len:0x%016llx"
+disable gnatbus_process_register(const char *name) "Process Register Request device_name:'%s'"
+disable gnatbus_process_gettime(uint64_t time) "Process GetTime Request time:0x%016llx"
+
+# gnat-bus.c
+
+disable gnatbus_receive_packet_sync(void) "Wait for packet"
+disable gnatbus_receive_packet_async(int size) "%d bytes received"
+disable gnatbus_send_and_wait_resp(void) "Send and wait for response"
+disable gnatbus_device_init(void) "Broadcast init event"
+disable gnatbus_device_exit(void) "Broadcast exit event"
+disable gnatbus_device_reset(void) "Broadcast reset event"
+disable gnatbus_trigger_event(uint64_t event, uint64_t expire_time, uint64_t now) "Send TriggerEvent event:0x%016llx expire_time:0x%016llx now:0x%016llx"
+disable gnatbus_send_read(uint64_t addr, uint64_t len) "Send Read Request addr:0x%016llx len:0x%016llx"
+disable gnatbus_send_write(uint64_t addr, uint64_t len) "Send Write Request addr:0x%016llx len:0x%016llx"

@@ -120,4 +120,8 @@ int qemu_set_fd_handler(int fd,
                         IOHandler *fd_read,
                         IOHandler *fd_write,
                         void *opaque);
+
+void fd_chr_set_blocking(CharDriverState *chr);
+void fd_chr_set_nonblocking(CharDriverState *chr);
+
 #endif

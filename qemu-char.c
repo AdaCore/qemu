@@ -609,6 +609,43 @@ static void fd_chr_close(struct CharDriverState *chr)
     qemu_chr_event(chr, CHR_EVENT_CLOSED);
 }
 
+void fd_chr_set_blocking(CharDriverState *chr)
+{
+    FDCharDriver *s = chr->opaque;
+    int           oldfl;
+
+
+    /* Remove fd from the active list.  */
+    qemu_set_fd_handler2(s->fd_in, NULL, NULL, NULL, NULL);
+
+    /* Unset blocking fd */
+    oldfl = fcntl(s->fd_in, F_GETFL);
+    if (oldfl == -1) {
+        fprintf(stderr, "%s File descriptor error\n", __func__);
+        abort();
+    }
+    fcntl(s->fd_in, F_SETFL, oldfl & ~O_NONBLOCK);
+
+}
+
+void fd_chr_set_nonblocking(CharDriverState *chr)
+{
+    FDCharDriver *s     = chr->opaque;
+    int           oldfl = 0;
+
+    /* Set blocking fd */
+    oldfl = fcntl(s->fd_in, F_GETFL);
+    if (oldfl == -1) {
+        fprintf(stderr, "%s File descriptor error\n", __func__);
+        abort();
+    }
+    fcntl(s->fd_in, F_SETFL, oldfl | O_NONBLOCK);
+
+    /* Put fd in the active list.  */
+    qemu_set_fd_handler2(s->fd_in, fd_chr_read_poll,
+                         fd_chr_read, NULL, chr);
+}
+
 /* open a character device to a unix fd */
 static CharDriverState *qemu_chr_open_fd(int fd_in, int fd_out)
 {
@@ -2728,8 +2765,11 @@ CharDriverState *qemu_chr_open(const char *label, const char *filename, void (*i
     }
 
     opts = qemu_chr_parse_compat(label, filename);
-    if (!opts)
+    if (!opts) {
+        fprintf(stderr, "chardev:  qemu_chr_parse_compat error \"%s\"\n",
+                filename);
         return NULL;
+    }
 
     chr = qemu_chr_open_opts(opts, init);
     if (chr && qemu_opt_get_bool(opts, "mux", 0)) {
