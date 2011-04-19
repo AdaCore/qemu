@@ -250,4 +250,20 @@ size_t qemu_chr_mem_osize(const CharDriverState *chr);
 
 CharDriverState *qemu_char_get_next_serial(void);
 
+/* async I/O support */
+
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len);
+void tcp_chr_read(void *opaque);
+int tcp_chr_read_poll(void *opaque);
+
+typedef struct {
+    int fd, listen_fd;
+    int connected;
+    int max_size;
+    int do_telnetopt;
+    int do_nodelay;
+    int is_unix;
+    int msgfd;
+} TCPCharDriver;
+
 #endif

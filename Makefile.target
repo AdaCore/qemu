@@ -79,7 +79,6 @@ all: $(PROGS) stap
 # cpu emulator library
 libobj-y = exec.o translate-all.o cpu-exec.o translate.o
 libobj-y += qemu-traces.o
-libobj-y += qemu-plugin.o
 libobj-y += tcg/tcg.o tcg/optimize.o
 libobj-$(CONFIG_TCG_INTERPRETER) += tci.o
 libobj-y += fpu/softfloat.o
@@ -182,6 +181,10 @@ endif #CONFIG_BSD_USER
 ifdef CONFIG_SOFTMMU
 
 obj-y = arch_init.o cpus.o monitor.o machine.o gdbstub.o balloon.o ioport.o
+
+libobj-y += qemu-plugin.o
+libobj-y += gnat-bus.o gnat-bus-process-packet.o
+
 # virtio has to be here due to weird dependency between PCI and virtio-net.
 # need to fix this properly
 obj-$(CONFIG_NO_PCI) += pci-stub.o

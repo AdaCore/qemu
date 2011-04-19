@@ -2129,16 +2129,6 @@ return_err:
 /***********************************************************/
 /* TCP Net console */
 
-typedef struct {
-    int fd, listen_fd;
-    int connected;
-    int max_size;
-    int do_telnetopt;
-    int do_nodelay;
-    int is_unix;
-    int msgfd;
-} TCPCharDriver;
-
 static void tcp_chr_accept(void *opaque);
 
 static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
@@ -2152,7 +2142,7 @@ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
     }
 }
 
-static int tcp_chr_read_poll(void *opaque)
+int tcp_chr_read_poll(void *opaque)
 {
     CharDriverState *chr = opaque;
     TCPCharDriver *s = chr->opaque;
@@ -2244,7 +2234,7 @@ static void unix_process_msgfd(CharDriverState *chr, struct msghdr *msg)
     }
 }
 
-static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
 {
     TCPCharDriver *s = chr->opaque;
     struct msghdr msg = { NULL, };
@@ -2270,14 +2260,14 @@ static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
     return ret;
 }
 #else
-static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
 {
     TCPCharDriver *s = chr->opaque;
     return qemu_recv(s->fd, buf, len, 0);
 }
 #endif
 
-static void tcp_chr_read(void *opaque)
+void tcp_chr_read(void *opaque)
 {
     CharDriverState *chr = opaque;
     TCPCharDriver *s = chr->opaque;
@@ -2805,8 +2795,11 @@ CharDriverState *qemu_chr_new(const char *label, const char *filename, void (*in
     }
 
     opts = qemu_chr_parse_compat(label, filename);
-    if (!opts)
+    if (!opts) {
+        fprintf(stderr, "chardev:  qemu_chr_parse_compat error \"%s\"\n",
+                filename);
         return NULL;
+    }
 
     chr = qemu_chr_new_from_opts(opts, init);
     if (chr && qemu_opt_get_bool(opts, "mux", 0)) {

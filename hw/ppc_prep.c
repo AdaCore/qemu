@@ -41,6 +41,9 @@
 #include "exec-memory.h"
 #include "elf.h"
 
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
+
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
 
@@ -733,6 +736,14 @@ static void ppc_prep_init (ram_addr_t ram_size,
 
     /* Initialize audio subsystem */
     audio_init(isa_bus, pci_bus);
+
+    /* Initialize plug-ins */
+    plugin_init(i82378->state.i8259, 16);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(i82378->state.i8259, 16);
+    gnatbus_device_init();
 }
 
 static QEMUMachine prep_machine = {

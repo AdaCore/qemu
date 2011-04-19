@@ -170,6 +170,7 @@ int main(int argc, char **argv)
 
 #include "qemu-traces.h"
 #include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 //#define DEBUG_NET
 //#define DEBUG_SLIRP
@@ -3210,6 +3211,11 @@ int main(int argc, char **argv, char **envp)
 
             case QEMU_OPTION_plugin:
                 plugin_save_optargs(optarg);
+                break;
+
+
+            case QEMU_OPTION_gnatbus:
+                gnatbus_save_optargs(optarg);
                 break;
 
             default:

@@ -30,7 +30,7 @@ struct QemuPlugin_SysBusDevice {
 
     QemuPlugin_DeviceInfo *info;
 
-    QemuPlugin_IORegion io_base[MAX_IOMEM];
+    QemuPlugin_IORegion io_region[MAX_IOMEM];
 
     QLIST_ENTRY(QemuPlugin_SysBusDevice) list;
 };
@@ -40,9 +40,11 @@ typedef QLIST_HEAD(QemuPlugin_Events_List, QemuPlugin_Event)
 
 typedef struct QemuPlugin_Event
 {
-    uint64_t                 expire_time;
-    QemuPlugin_EventCallback event;
-    QemuPlugin_ClockType     clock;
+    uint64_t              expire_time;
+    uint32_t              id;
+    EventCallback         event;
+    QemuPlugin_ClockType  clock;
+    void                 *opaque;
 
     QLIST_ENTRY(QemuPlugin_Event) list;
 } QemuPlugin_Event;
@@ -111,14 +113,18 @@ static void plugin_timer_tick_bh(void *opaque)
 
     now = qemu_get_clock_ns(ev->qclock);
 
-    while (QLIST_FIRST(event_list) != NULL &&
-           QLIST_FIRST(event_list)->expire_time <= now) {
+    while (QLIST_FIRST(event_list) != NULL) {
         event = QLIST_FIRST(event_list);
-        QLIST_REMOVE(event, list);
 
-        /* Run the callback */
-        event->event();
-        g_free(event);
+        if (event->expire_time <= now) {
+            QLIST_REMOVE(event, list);
+
+            /* Run the callback */
+            event->event(event->opaque, event->id, event->expire_time);
+            g_free(event);
+        } else {
+            break;
+        }
     }
 
     if (QLIST_EMPTY(event_list)) {
@@ -128,9 +134,12 @@ static void plugin_timer_tick_bh(void *opaque)
     }
 }
 
-static uint32_t plugin_add_event(uint64_t                 expire_time,
-                                 QemuPlugin_ClockType     clock,
-                                 QemuPlugin_EventCallback event)
+static uint32_t plugin_add_event(uint64_t              expire_time,
+                                 QemuPlugin_ClockType  clock,
+                                 uint32_t              event_id,
+                                 EventCallback         event,
+                                 void                 *opaque)
+
 {
     QemuPlugin_EventsMgt *ev = (clock == QP_VM_CLOCK)
                                  ? &g_plugin->vm_events
@@ -142,19 +151,26 @@ static uint32_t plugin_add_event(uint64_t                 expire_time,
     QemuPlugin_Event *new  = NULL;
     QemuPlugin_Event *parc = NULL;
 
-    new = g_malloc0(sizeof(*new));
+    new              = g_malloc0(sizeof(*new));
     new->event       = event;
+    new->id          = event_id;
     new->expire_time = expire_time;
     new->clock       = clock;
+    new->opaque      = opaque;
 
     if (QLIST_EMPTY(event_list)
-        || QLIST_FIRST(event_list)->expire_time > expire_time) {
+        || QLIST_FIRST(event_list)->expire_time >= expire_time) {
 
+        /* Head insertion */
         QLIST_INSERT_HEAD(event_list, new, list);
     } else {
         QLIST_FOREACH(parc, event_list, list) {
             if (parc->expire_time > expire_time) {
                 QLIST_INSERT_BEFORE(parc, new, list);
+                break;
+            } else if (QLIST_NEXT(parc, list) == NULL) {
+                /* Tail insertion */
+                QLIST_INSERT_AFTER(parc, new, list);
                 break;
             }
         }
@@ -165,8 +181,8 @@ static uint32_t plugin_add_event(uint64_t                 expire_time,
     return QP_NOERROR;
 }
 
-static uint32_t plugin_remove_event(QemuPlugin_ClockType     clock,
-                                    QemuPlugin_EventCallback event)
+static uint32_t plugin_remove_event(QemuPlugin_ClockType clock,
+                                    uint32_t             event_id)
 {
     QemuPlugin_EventsMgt *ev = (clock == QP_VM_CLOCK)
                                  ? &g_plugin->vm_events
@@ -178,7 +194,7 @@ static uint32_t plugin_remove_event(QemuPlugin_ClockType     clock,
     QemuPlugin_Event *next_parc = NULL;
 
     QLIST_FOREACH_SAFE(parc, event_list, list, next_parc) {
-        if (parc->event == event) {
+        if (parc->id == event_id) {
             QLIST_REMOVE(parc, list);
             break;
             return QP_NOERROR;
@@ -200,10 +216,12 @@ static inline void plugin_write(void               *opaque,
                                 uint64_t            value,
                                 unsigned            size)
 {
-    QemuPlugin_SysBusDevice *pdev = opaque;
+    QemuPlugin_IORegion     *io_region = opaque;
+    QemuPlugin_SysBusDevice *pdev    = io_region->pdev;
 
     if (pdev->info->io_write != NULL) {
-        pdev->info->io_write(addr, size, value);
+        pdev->info->io_write(pdev->info->opaque,
+                             io_region->base + addr, size, value);
     } else {
         fprintf(stderr, "%s: error: no write I/O callback\n", pdev->info->name);
     }
@@ -213,10 +231,12 @@ static inline uint64_t plugin_read(void               *opaque,
                                    target_phys_addr_t  addr,
                                    unsigned            size)
 {
-    QemuPlugin_SysBusDevice *pdev = opaque;
+    QemuPlugin_IORegion     *io_region = opaque;
+    QemuPlugin_SysBusDevice *pdev    = io_region->pdev;
 
     if (pdev->info->io_read != NULL) {
-        return pdev->info->io_read(addr, size);
+        return pdev->info->io_read(pdev->info->opaque,
+                                   addr + io_region->base, size);
     } else {
         fprintf(stderr, "%s: error: no read I/O callback\n", pdev->info->name);
         return 0;
@@ -240,16 +260,16 @@ static int plugin_init_device(SysBusDevice *dev)
 
     for (i = 0; i < pdev->info->nr_iomem; i++) {
 
-        pdev->io_base[i].pdev = pdev;
-        pdev->io_base[i].base = pdev->info->iomem[i].base & TARGET_PAGE_MASK;
+        pdev->io_region[i].pdev = pdev;
+        pdev->io_region[i].base = pdev->info->iomem[i].base;
 
-        memory_region_init_io(&pdev->io_base[i].mr, &plugin_ops,
-                              &pdev->io_base[i], pdev->info->name,
+        memory_region_init_io(&pdev->io_region[i].mr, &plugin_ops,
+                              &pdev->io_region[i], pdev->info->name,
                               pdev->info->iomem[i].size);
 
         memory_region_add_subregion(get_system_memory(),
                                     pdev->info->iomem[i].base,
-                                    &pdev->io_base[i].mr);
+                                    &pdev->io_region[i].mr);
     }
 
     return 0;
@@ -260,7 +280,7 @@ static uint32_t attach_device(QemuPlugin_DeviceInfo *devinfo)
     DeviceState *qdev;
     QemuPlugin_SysBusDevice *pdev;
 
-    if (devinfo == NULL) {
+    if (devinfo == NULL || devinfo->nr_iomem > MAX_IOMEM) {
         return QP_ERROR;
     }
 
@@ -324,7 +344,7 @@ void plugin_device_init(void)
 
     QLIST_FOREACH(pdev, &g_plugin->devices_list, list) {
         if (pdev->info->pdevice_init != NULL) {
-            pdev->info->pdevice_init();
+            pdev->info->pdevice_init(pdev->info->opaque);
         } else {
             fprintf(stderr, "%s: error: no init callback\n",
                     pdev->info->name);
@@ -343,7 +363,7 @@ static void plugin_device_exit(void)
 
     QLIST_FOREACH(pdev, &g_plugin->devices_list, list) {
         if (pdev->info->pdevice_exit != NULL) {
-            pdev->info->pdevice_exit();
+            pdev->info->pdevice_exit(pdev->info->opaque);
         } else {
             fprintf(stderr, "%s: error: no init callback\n",
                     pdev->info->name);
@@ -362,7 +382,7 @@ static void plugin_cpu_reset(void *null)
 
     QLIST_FOREACH(pdev, &g_plugin->devices_list, list) {
         if (pdev->info->pdevice_reset != NULL) {
-            pdev->info->pdevice_reset();
+            pdev->info->pdevice_reset(pdev->info->opaque);
         } else {
             fprintf(stderr, "%s: error: no reset callback\n",
                     pdev->info->name);

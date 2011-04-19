@@ -2761,6 +2761,15 @@ STEXI
 Load Qemu plug-ins.
 ETEXI
 
+DEF("gnatbus", HAS_ARG, QEMU_OPTION_gnatbus, \
+    "-gnatbus device_host:device_port[,device_host:device_port]\n"
+    "                Connect GnatBus Devices.\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -gnatbus socket:device_host:device_port
+Connect a GnatBus Device
+ETEXI
+
 HXCOMM This is the last statement. Insert new options before this line!
 STEXI
 @end table

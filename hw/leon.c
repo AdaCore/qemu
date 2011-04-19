@@ -25,6 +25,7 @@
 #include "qemu-timer.h"
 #include "qemu-char.h"
 #include "qemu-plugin.h"
+#include "gnat-bus.h"
 #include "sysemu.h"
 #include "boards.h"
 #include "loader.h"
@@ -839,6 +840,10 @@ static void at697_hw_init(ram_addr_t  ram_size,
     /* Initialize plug-ins */
     plugin_init(cpu_irqs, MAX_PILS);
     plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(cpu_irqs, MAX_PILS);
+    gnatbus_device_init();
 
     /* Can directly load an application. */
     if (kernel_filename != NULL) {
