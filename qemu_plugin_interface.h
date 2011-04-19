@@ -13,20 +13,21 @@ typedef uint32_t target_addr_t;
 
 uint32_t qemu_plugin_init(const char *args);
 
+struct QemuPlugin_Emulator;
+typedef struct QemuPlugin_Emulator QemuPlugin_Emulator;
+
 /* Device interface */
 
-typedef uint64_t io_read_fn(target_addr_t addr, uint8_t size);
-typedef void     io_write_fn(target_addr_t addr, uint8_t size, uint64_t val);
+typedef uint32_t io_read_fn(void *opaque, target_addr_t addr, uint32_t size);
 
-typedef void reset_fn(void);
-typedef void init_fn(void);
-typedef void exit_fn(void);
+typedef void     io_write_fn(void          *opaque,
+                             target_addr_t  addr,
+                             uint32_t       size,
+                             uint32_t       val);
 
-typedef enum qemu_device_endian {
-    QEMU_DEVICE_NATIVE_ENDIAN,
-    QEMU_DEVICE_BIG_ENDIAN,
-    QEMU_DEVICE_LITTLE_ENDIAN,
-} qemu_device_endian;
+typedef void reset_fn(void *opaque);
+typedef void init_fn(void *opaque);
+typedef void exit_fn(void *opaque);
 
 #define NAME_LENGTH 64
 #define DESC_LENGTH 256
@@ -36,11 +37,14 @@ typedef struct QemuPlugin_DeviceInfo
 {
     uint32_t version;
 
-    uint32_t           vendor_id;
-    uint32_t           device_id;
-    qemu_device_endian endianness;
-    char               name[NAME_LENGTH];
-    char               desc[DESC_LENGTH];
+    uint32_t vendor_id;
+    uint32_t device_id;
+    char     name[NAME_LENGTH];
+    char     desc[DESC_LENGTH];
+
+    void *opaque;
+
+    QemuPlugin_Emulator *emulator;
 
     io_read_fn  *io_read;
     io_write_fn *io_write;
@@ -64,19 +68,23 @@ typedef enum QemuPlugin_ClockType {
     QP_HOST_CLOCK,
 } QemuPlugin_ClockType;
 
-typedef void       (*QemuPlugin_EventCallback)(void);
+typedef void (*EventCallback)(void     *opaque,
+                              uint32_t  event_id,
+                              uint64_t  expire_time);
 
-typedef struct QemuPlugin_Emulator
+struct QemuPlugin_Emulator
 {
     uint64_t (*get_time)(QemuPlugin_ClockType clock);
 
 
-    uint32_t (*add_event)(uint64_t                 expire_time,
-                          QemuPlugin_ClockType     clock,
-                          QemuPlugin_EventCallback event);
+    uint32_t (*add_event)(uint64_t              expire_time,
+                          QemuPlugin_ClockType  clock,
+                          uint32_t              event_id,
+                          EventCallback         event,
+                          void                 *opaque);
 
-    uint32_t (*remove_event)(QemuPlugin_ClockType     clock,
-                             QemuPlugin_EventCallback event);
+    uint32_t (*remove_event)(QemuPlugin_ClockType clock,
+                             uint32_t             event_id);
 
     uint32_t (*set_irq)(uint32_t line, uint32_t level);
 
@@ -91,7 +99,7 @@ typedef struct QemuPlugin_Emulator
     uint32_t (*attach_device)(QemuPlugin_DeviceInfo *dev);
 
     uint32_t version;
-} QemuPlugin_Emulator;
+};
 
 typedef enum QemuPlugin_State {
     QPS_LOADED,
