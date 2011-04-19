@@ -355,9 +355,11 @@ static uint32_t erc32_io_readl(void *opaque, target_phys_addr_t addr)
         break;
 
     case UART_A_DATA:
+    case UART_A_DATA + 3:       /* When only one byte read */
         ret = erc32_uart_read_reg(&s->uarta);
         break;
     case UART_B_DATA:
+    case UART_B_DATA + 3:       /* When only one byte read */
         ret = erc32_uart_read_reg(&s->uartb);
         break;
     case UART_STATUS_REGISTER:
@@ -413,6 +415,7 @@ static void erc32_io_writel(void               *opaque,
         break;
 
     case UART_A_DATA:
+    case UART_A_DATA + 3:       /* When only one byte write */
     {
         unsigned char c = val & 0xFF;
         qemu_chr_write(s->uarta.chr, &c, 1);
@@ -425,14 +428,14 @@ static void erc32_io_writel(void               *opaque,
 }
 
 static CPUReadMemoryFunc *erc32_io_read[3] = {
-    NULL,
-    NULL,
+    erc32_io_readl,
+    erc32_io_readl,
     erc32_io_readl
 };
 
 static CPUWriteMemoryFunc *erc32_io_write[3] = {
-    NULL,
-    NULL,
+    erc32_io_writel,
+    erc32_io_writel,
     erc32_io_writel,
 };
 

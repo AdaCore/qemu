@@ -160,6 +160,7 @@ static uint32_t grlib_apbuart_readl(void *opaque, target_phys_addr_t addr)
     /* Unit registers */
     switch (addr) {
     case DATA_OFFSET:
+    case DATA_OFFSET + 3:       /* when only one byte read */
         return uart_pop(uart);
 
     case STATUS_OFFSET:
@@ -190,6 +191,7 @@ grlib_apbuart_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
     /* Unit registers */
     switch (addr) {
     case DATA_OFFSET:
+    case DATA_OFFSET + 3:       /* When only one byte write */
         c = value & 0xFF;
         qemu_chr_write(uart->chr, &c, 1);
         return;
@@ -214,11 +216,11 @@ grlib_apbuart_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
 }
 
 static CPUReadMemoryFunc * const grlib_apbuart_read[] = {
-    NULL, NULL, grlib_apbuart_readl,
+    grlib_apbuart_readl, grlib_apbuart_readl, grlib_apbuart_readl,
 };
 
 static CPUWriteMemoryFunc * const grlib_apbuart_write[] = {
-    NULL, NULL, grlib_apbuart_writel,
+    grlib_apbuart_writel, grlib_apbuart_writel, grlib_apbuart_writel,
 };
 
 static int grlib_apbuart_init(SysBusDevice *dev)
