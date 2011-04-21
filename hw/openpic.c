@@ -116,12 +116,12 @@ enum {
 #define MPIC_MSI_IRQ      (MPIC_MSG_IRQ + MPIC_MAX_MSG)
 #define MPIC_IPI_IRQ      (MPIC_MSI_IRQ + MPIC_MAX_MSI)
 
-#define MPIC_GLB_REG_START        0x0
-#define MPIC_GLB_REG_SIZE         0x10F0
+#define MPIC_PER_CPU_PRV_START    0x40
+#define MPIC_PER_CPU_PRV_SIZE     0x80
+#define MPIC_GLB_REG_START        0x1000
+#define MPIC_GLB_REG_SIZE         0x00F0
 #define MPIC_TMR_REG_START(grp)   (0x10F0 + (grp << 12))
 #define MPIC_TMR_REG_SIZE         0x220
-#define MPIC_TMRB_REG_START       0x20F0
-#define MPIC_TMRB_REG_SIZE        0x220
 #define MPIC_EXT_REG_START        0x10000
 #define MPIC_EXT_REG_SIZE         0x180
 #define MPIC_INT_REG_START        0x10200
@@ -404,7 +404,7 @@ static void openpic_set_irq(void *opaque, int n_IRQ, int level)
     IRQ_src_t *src;
 
     src = &opp->src[n_IRQ];
-    DPRINTF("openpic: set irq %d = %d ipvp=%08x\n",
+    DPRINTF("%s: set irq %d = %d ipvp=%08x\n",__func__,
             n_IRQ, level, src->ipvp);
     if (test_bit(&src->ipvp, IPVP_SENSE)) {
         /* level-sensitive irq */
@@ -475,14 +475,18 @@ static inline uint32_t read_IRQreg (openpic_t *opp, int n_IRQ, uint32_t reg)
 {
     uint32_t retval;
 
+    DPRINTF("%s: reading ",__func__);
     switch (reg) {
     case IRQ_IPVP:
+        DPRINTF("IPVP");
         retval = opp->src[n_IRQ].ipvp;
         break;
     case IRQ_IDE:
+        DPRINTF("IDE");
         retval = opp->src[n_IRQ].ide;
         break;
     }
+    DPRINTF(" => %08x\n",retval);
 
     return retval;
 }
@@ -1658,6 +1662,7 @@ qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
         target_phys_addr_t start_addr;
         ram_addr_t size;
     } const list[] = {
+        {mpic_cpu_read, mpic_cpu_write, MPIC_PER_CPU_PRV_START, MPIC_PER_CPU_PRV_SIZE},
         {mpic_glb_read, mpic_glb_write, MPIC_GLB_REG_START, MPIC_GLB_REG_SIZE},
         {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START(0), MPIC_TMR_REG_START(1) - MPIC_TMR_REG_START(0) + MPIC_TMR_REG_SIZE},
         //{mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START(1), MPIC_TMR_REG_SIZE},
