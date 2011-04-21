@@ -40,6 +40,9 @@
 #include "blockdev.h"
 #include "elf.h"
 
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
+
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
 
@@ -778,6 +781,14 @@ static void ppc_prep_init (ram_addr_t ram_size,
 
     /* Special port to get debug messages from Open-Firmware */
     register_ioport_write(0x0F00, 4, 1, &PPC_debug_write, NULL);
+
+    /* Initialize plug-ins */
+    plugin_init(i8259, 16);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(i8259, 16);
+    gnatbus_device_init();
 }
 
 static QEMUMachine prep_machine = {
