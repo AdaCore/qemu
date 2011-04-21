@@ -283,14 +283,14 @@ uint32_t * phony_mem;
 
 static void my_write (void *opaque, target_phys_addr_t addr, uint32_t value)
 {
-    printf("my_write : attempting to write to : 0x%08x <= 0x%x\n", addr +
-            MEM_START, value);
+    //printf("my_write : attempting to write to : 0x%08x <= 0x%x\n", addr +
+    //        MEM_START, value);
     uint32_t * mem = opaque;
     mem[addr] = value;
 }
 static uint32_t my_read (void *opaque, target_phys_addr_t addr)
 {
-    printf("my_read : attempting to read from : 0x%08x\n", addr + MEM_START);
+    //printf("my_read : attempting to read from : 0x%08x\n", addr + MEM_START);
     uint32_t * mem = opaque;
     return mem[addr];
 }
@@ -309,8 +309,8 @@ static CPUReadMemoryFunc * const my_cpu_read_fct[] = {
 static void my_write_bogus(void *opaque, target_phys_addr_t addr, uint32_t
         value)
 {
-    printf("my_write_bogus : attempting to write to : 0x%08x <= %08x\n", addr,
-            value);
+    //printf("my_write_bogus : attempting to write to : 0x%08x <= %08x\n", addr,
+    //        value);
 }
 
 static CPUWriteMemoryFunc * const my_cpu_write_bogus[] = {
