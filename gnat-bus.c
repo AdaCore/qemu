@@ -596,9 +596,9 @@ void gnatbus_master_init(qemu_irq *cpu_irqs, int nr_irq)
     QLIST_INIT(&g_qbmaster->events_list);
 
     /* Initialize timers */
-    g_qbmaster->timer = qemu_new_timer_ns(vm_clock,
-                                          gnatbus_timer_tick,
-                                          g_qbmaster);
+    g_qbmaster->timer = qemu_new_timer(vm_clock,
+                                       gnatbus_timer_tick,
+                                       g_qbmaster);
 
     /* Initialize bottom halves */
     g_qbmaster->bh = qemu_bh_new(gnatbus_timer_tick_bh,
