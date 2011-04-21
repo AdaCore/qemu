@@ -568,11 +568,11 @@ static void ppc_simple_init (ram_addr_t ram_size,
     int serial1_mem_mapping = 0xF8004500;
     int serial2_mem_mapping = 0xF8004600;
     if (serial_hds[0]) {
-        serial_mm_init(serial1_mem_mapping, 0, pic[26], 333000000,
+        serial_mm_init(serial1_mem_mapping, 0, pic[12+26], 333000000,
                 serial_hds[0], 1, 1);
     }
     if (serial_hds[1]) {
-        serial_mm_init(serial2_mem_mapping, 0, pic[12], 333000000,
+        serial_mm_init(serial2_mem_mapping, 0, pic[12+12], 333000000,
                 serial_hds[0], 1, 1);
     }
 
