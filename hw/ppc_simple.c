@@ -43,6 +43,15 @@
 
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
+//#define DEBUG_LOG
+
+#ifdef DEBUG_LOG
+#define DPRINTF(fmt, ...) do { \
+    printf("%s : " fmt, __func__, ## __VA_ARGS__); \
+} while(0)
+#else
+#define DPRINTF(fmt, ...) do { } while(0)
+#endif
 
 /* SMP is not enabled, for now */
 #define MAX_CPUS 1
@@ -283,14 +292,15 @@ uint32_t * phony_mem;
 
 static void my_write (void *opaque, target_phys_addr_t addr, uint32_t value)
 {
-    printf("my_write : attempting to write to : 0x%08x <= 0x%x\n", addr +
+    DPRINTF("my_write : attempting to write to : 0x%08x <= 0x%x\n", addr +
             MEM_START, value);
+    DPRINTF("my_write : addr was 0x%08x\n", addr);
     uint32_t * mem = opaque;
     mem[addr] = value;
 }
 static uint32_t my_read (void *opaque, target_phys_addr_t addr)
 {
-    printf("my_read : attempting to read from : 0x%08x\n", addr + MEM_START);
+    DPRINTF("my_read : attempting to read from : 0x%08x\n", addr + MEM_START);
     uint32_t * mem = opaque;
     return mem[addr];
 }
@@ -309,8 +319,8 @@ static CPUReadMemoryFunc * const my_cpu_read_fct[] = {
 static void my_write_bogus(void *opaque, target_phys_addr_t addr, uint32_t
         value)
 {
-    printf("my_write_bogus : attempting to write to : 0x%08x <= %08x\n", addr,
-            value);
+    //DPRINTF("my_write_bogus : attempting to write to : 0x%08x <= %08x\n", addr,
+    //        value);
 }
 
 static CPUWriteMemoryFunc * const my_cpu_write_bogus[] = {
@@ -323,7 +333,7 @@ static CPUWriteMemoryFunc * const my_cpu_write_bogus[] = {
 #define GUR_SIZE        0x30
 static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
 {
-    // printf("my_read_gur : reading from Global Utility Register : 0x%08x\n",
+    // DPRINTF("my_read_gur : reading from Global Utility Register : 0x%08x\n",
     //         addr +
     //         GUR_START);
     switch (addr & 0x3) {
@@ -345,7 +355,7 @@ static CPUReadMemoryFunc * const my_cpu_read_fct_gur[] = {
 #define PMR_SIZE        0xA9
 static uint32_t my_read_pmr (void *opaque, target_phys_addr_t addr)
 {
-    // printf("my_read_pmr : reading from Performance Management Register : "
+    // DPRINTF("my_read_pmr : reading from Performance Management Register : "
     //         "0x%08x\n",
     //         addr +
     //         PMR_START);
@@ -362,7 +372,7 @@ static CPUReadMemoryFunc * const my_cpu_read_fct_pmr[] = {
 #define PIXIS_SIZE      0x19
 static uint32_t my_read_pixis (void *opaque, target_phys_addr_t addr)
 {
-    // printf("my_read_pixis : reading from PIXIS : "
+    // DPRINTF("my_read_pixis : reading from PIXIS : "
     //         "0x%08x\n",
     //         addr +
     //         PIXIS_START);
