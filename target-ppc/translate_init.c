@@ -5326,6 +5326,18 @@ static void init_proc_755 (CPUPPCState *env)
 
 #define check_pow_8641D     check_pow_7400
 
+/* e600 specific SPRs */
+static void gen_spr_e600 (CPUPPCState *env)
+{
+    const int defs[] = {SPR_SPRG4, SPR_SPRG5, SPR_SPRG6, SPR_SPRG7};
+    const char * const strs[] = {"SPRG4", "SPRG5", "SPRG6", "SPRG7"};
+    int i;
+    for (i = 0; i <= 3; i++) 
+        spr_register(env, defs[i], strs[i],
+            SPR_NOACCESS, SPR_NOACCESS, &spr_read_generic, &spr_write_generic,
+            0x00000000);
+}
+
 static void init_proc_8641D (CPUPPCState *env)
 {
     gen_spr_ne_601(env);
@@ -5334,6 +5346,8 @@ static void init_proc_8641D (CPUPPCState *env)
     gen_tbl(env);
     /* 74xx specific SPR */
     gen_spr_74xx(env);
+    /* e600 specific SPR */
+    gen_spr_e600(env);
     /* XXX : not implemented */
     spr_register(env, SPR_UBAMR, "UBAMR",
                  &spr_read_ureg, SPR_NOACCESS,
