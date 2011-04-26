@@ -609,43 +609,6 @@ static void fd_chr_close(struct CharDriverState *chr)
     qemu_chr_event(chr, CHR_EVENT_CLOSED);
 }
 
-void fd_chr_set_blocking(CharDriverState *chr)
-{
-    FDCharDriver *s = chr->opaque;
-    int           oldfl;
-
-
-    /* Remove fd from the active list.  */
-    qemu_set_fd_handler2(s->fd_in, NULL, NULL, NULL, NULL);
-
-    /* Unset blocking fd */
-    oldfl = fcntl(s->fd_in, F_GETFL);
-    if (oldfl == -1) {
-        fprintf(stderr, "%s File descriptor error\n", __func__);
-        abort();
-    }
-    fcntl(s->fd_in, F_SETFL, oldfl & ~O_NONBLOCK);
-
-}
-
-void fd_chr_set_nonblocking(CharDriverState *chr)
-{
-    FDCharDriver *s     = chr->opaque;
-    int           oldfl = 0;
-
-    /* Set blocking fd */
-    oldfl = fcntl(s->fd_in, F_GETFL);
-    if (oldfl == -1) {
-        fprintf(stderr, "%s File descriptor error\n", __func__);
-        abort();
-    }
-    fcntl(s->fd_in, F_SETFL, oldfl | O_NONBLOCK);
-
-    /* Put fd in the active list.  */
-    qemu_set_fd_handler2(s->fd_in, fd_chr_read_poll,
-                         fd_chr_read, NULL, chr);
-}
-
 /* open a character device to a unix fd */
 static CharDriverState *qemu_chr_open_fd(int fd_in, int fd_out)
 {
@@ -2106,16 +2069,6 @@ return_err:
 /***********************************************************/
 /* TCP Net console */
 
-typedef struct {
-    int fd, listen_fd;
-    int connected;
-    int max_size;
-    int do_telnetopt;
-    int do_nodelay;
-    int is_unix;
-    int msgfd;
-} TCPCharDriver;
-
 static void tcp_chr_accept(void *opaque);
 
 static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
@@ -2129,7 +2082,7 @@ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
     }
 }
 
-static int tcp_chr_read_poll(void *opaque)
+int tcp_chr_read_poll(void *opaque)
 {
     CharDriverState *chr = opaque;
     TCPCharDriver *s = chr->opaque;
@@ -2221,7 +2174,7 @@ static void unix_process_msgfd(CharDriverState *chr, struct msghdr *msg)
     }
 }
 
-static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
 {
     TCPCharDriver *s = chr->opaque;
     struct msghdr msg = { NULL, };
@@ -2247,14 +2200,14 @@ static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
     return ret;
 }
 #else
-static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
 {
     TCPCharDriver *s = chr->opaque;
     return recv(s->fd, buf, len, 0);
 }
 #endif
 
-static void tcp_chr_read(void *opaque)
+void tcp_chr_read(void *opaque)
 {
     CharDriverState *chr = opaque;
     TCPCharDriver *s = chr->opaque;

@@ -121,7 +121,18 @@ int qemu_set_fd_handler(int fd,
                         IOHandler *fd_write,
                         void *opaque);
 
-void fd_chr_set_blocking(CharDriverState *chr);
-void fd_chr_set_nonblocking(CharDriverState *chr);
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len);
+void tcp_chr_read(void *opaque);
+int tcp_chr_read_poll(void *opaque);
+
+typedef struct {
+    int fd, listen_fd;
+    int connected;
+    int max_size;
+    int do_telnetopt;
+    int do_nodelay;
+    int is_unix;
+    int msgfd;
+} TCPCharDriver;
 
 #endif

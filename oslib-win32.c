@@ -79,6 +79,12 @@ void socket_set_nonblock(int fd)
     ioctlsocket(fd, FIONBIO, &opt);
 }
 
+void socket_set_block(int fd)
+{
+    unsigned long opt = 0;
+    ioctlsocket(fd, FIONBIO, &opt);
+}
+
 int inet_aton(const char *cp, struct in_addr *ia)
 {
     uint32_t addr = inet_addr(cp);

@@ -3,8 +3,9 @@
 #include "qemu-timer.h"
 #include "sysemu.h"
 #include "hw/sysbus.h"
-#include "qemu-thread.h"
+#include "cpus.h"
 #include "qemu_socket.h"
+#include "qemu-char.h"
 #include "trace.h"
 #include "gnat-bus.h"
 
@@ -21,6 +22,28 @@ GnatBus_Master *g_qbmaster = NULL;
 
 /* Socket communication tools */
 
+static void dev_set_blocking(GnatBus_Device *qbdev)
+{
+    TCPCharDriver *s = qbdev->chr->opaque;
+
+    /* Remove fd from the active list.  */
+    qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
+
+    socket_set_block(s->fd);
+
+}
+
+static void dev_set_nonblocking(GnatBus_Device *qbdev)
+{
+    TCPCharDriver *s = qbdev->chr->opaque;
+
+    socket_set_nonblock(s->fd);
+
+    /* Put fd in the active list.  */
+    qemu_set_fd_handler2(s->fd, tcp_chr_read_poll,
+                         tcp_chr_read, NULL, qbdev->chr);
+}
+
 int gnatbus_send(GnatBus_Device *qbdev, const uint8_t *buf, int len)
 {
     return qbdev->chr->chr_write(qbdev->chr, buf, len);
@@ -28,16 +51,10 @@ int gnatbus_send(GnatBus_Device *qbdev, const uint8_t *buf, int len)
 
 static int gnatbus_recv(GnatBus_Device *qbdev, uint8_t *buf, int len)
 {
-    typedef struct {
-        int fd_in, fd_out;
-        int max_size;
-    } FDCharDriver;
-
-    FDCharDriver *s         = qbdev->chr->opaque;
     int           read_size = 0;
 
     do {
-        read_size = read(s->fd_in, buf, len);
+        read_size = tcp_chr_recv(qbdev->chr, (char *)buf, len);
     } while (read_size == -1 && (errno == EINTR || errno == EAGAIN));
 
     return read_size;
@@ -238,11 +255,11 @@ void gnatbus_device_init(void)
     trace_gnatbus_device_init();
 
     QLIST_FOREACH(qbdev, &g_qbmaster->devices_list, list) {
-        fd_chr_set_blocking(qbdev->chr);
+        dev_set_blocking(qbdev);
 
         resp = send_and_wait_resp(qbdev, (GnatBusPacket_Request *)&init);
 
-        fd_chr_set_nonblocking(qbdev->chr);
+        dev_set_nonblocking(qbdev);
 
         /* We don't really need to read the response */
         qemu_free(resp);
@@ -284,11 +301,11 @@ static void gnatbus_cpu_reset(void *null)
     trace_gnatbus_device_reset();
 
     QLIST_FOREACH(qbdev, &g_qbmaster->devices_list, list) {
-        fd_chr_set_blocking(qbdev->chr);
+        dev_set_blocking(qbdev);
 
         resp = send_and_wait_resp(qbdev, (GnatBusPacket_Request *)&reset);
 
-        fd_chr_set_nonblocking(qbdev->chr);
+        dev_set_nonblocking(qbdev);
 
         /* We don't really need to read the response */
         qemu_free(resp);
@@ -419,12 +436,12 @@ static inline void gnatbus_write_generic(void               *opaque,
 
     trace_gnatbus_send_write(write->address, write->length);
 
-    fd_chr_set_blocking(io_base->qbdev->chr);
+    dev_set_blocking(io_base->qbdev);
 
     resp = (GnatBusPacket_Error *)send_and_wait_resp(io_base->qbdev,
                                                      (GnatBusPacket_Request *)write);
 
-    fd_chr_set_nonblocking(io_base->qbdev->chr);
+    dev_set_nonblocking(io_base->qbdev);
 
     /* We don't really need to read the response */
     qemu_free(resp);
@@ -470,12 +487,12 @@ static inline uint32_t gnatbus_read_generic(void               *opaque,
 
     trace_gnatbus_send_read(read.address, read.length);
 
-    fd_chr_set_blocking(io_base->qbdev->chr);
+    dev_set_blocking(io_base->qbdev);
 
     resp = (GnatBusPacket_Data *)send_and_wait_resp(io_base->qbdev,
                                                     (GnatBusPacket_Request *)&read);
 
-    fd_chr_set_nonblocking(io_base->qbdev->chr);
+    dev_set_nonblocking(io_base->qbdev);
 
     if (resp == NULL
         || resp->parent.type != GnatBusResponse_Data
@@ -549,20 +566,20 @@ static int gnatbus_init(const char *optarg)
                           gnatbus_chr_event,
                           qbdev);
 
-    fd_chr_set_blocking(qbdev->chr);
+    dev_set_blocking(qbdev);
 
     packet = gnatbus_receive_packet_sync(qbdev);
 
     if (packet == NULL) {
         printf("%s: Device initialization failure: Cannot read Register packet\n", __func__);
-        fd_chr_set_nonblocking(qbdev->chr);
+        dev_set_nonblocking(qbdev);
         return -1;
     }
 
     status = gnatbus_process_packet(qbdev, packet);
     qemu_free(packet);
 
-    fd_chr_set_nonblocking(qbdev->chr);
+    dev_set_nonblocking(qbdev);
 
     if (status != 0 || ! qbdev->start_ok) {
         printf("%s: Device initialization failure\n", __func__);

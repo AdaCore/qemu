@@ -79,6 +79,13 @@ void socket_set_nonblock(int fd)
     fcntl(fd, F_SETFL, f | O_NONBLOCK);
 }
 
+void socket_set_block(int fd)
+{
+    int f;
+    f = fcntl(fd, F_GETFL);
+    fcntl(fd, F_SETFL, f & ~O_NONBLOCK);
+}
+
 void qemu_set_cloexec(int fd)
 {
     int f;
