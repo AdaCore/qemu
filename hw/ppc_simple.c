@@ -47,14 +47,14 @@
 
 #ifdef DEBUG_LOG
 #define DPRINTF(fmt, ...) do { \
-    printf("%s : " fmt, __func__, ## __VA_ARGS__); \
+    printf(fmt, ## __VA_ARGS__); \
 } while(0)
 #else
 #define DPRINTF(fmt, ...) do { } while(0)
 #endif
 
 /* SMP is not enabled, for now */
-#define MAX_CPUS 1
+#define MAX_CPUS 2
 
 #define MAX_IDE_BUS 2
 
@@ -82,6 +82,8 @@ qemu_log_mask(CPU_LOG_IOPORT, fmt, ## __VA_ARGS__)
 #else
 #define PPC_IO_DPRINTF(fmt, ...) do { } while (0)
 #endif
+
+CPUState *my_cpus[] = {NULL, NULL};
 
 /* PCI intack register */
 /* Read-only register (?) */
@@ -297,6 +299,14 @@ static void my_write (void *opaque, target_phys_addr_t addr, uint32_t value)
     DPRINTF("my_write : addr was 0x%08x\n", addr);
     uint32_t * mem = opaque;
     mem[addr] = value;
+    switch (addr & 0xFFFF) {
+    case 0x1010:
+        DPRINTF("%s: Writing to MCM PCR <= 0x%08x\n", __func__, value);
+        if (value & (1 << 25)) {
+            DPRINTF("%s: Enabling Core 1\n", __func__);
+            my_cpus[1]->halted = 0;
+        }
+    }
 }
 static uint32_t my_read (void *opaque, target_phys_addr_t addr)
 {
@@ -319,8 +329,8 @@ static CPUReadMemoryFunc * const my_cpu_read_fct[] = {
 static void my_write_bogus(void *opaque, target_phys_addr_t addr, uint32_t
         value)
 {
-    //DPRINTF("my_write_bogus : attempting to write to : 0x%08x <= %08x\n", addr,
-    //        value);
+    DPRINTF("my_write_bogus : attempting to write to : 0x%08x <= %08x\n", addr,
+            value);
 }
 
 static CPUWriteMemoryFunc * const my_cpu_write_bogus[] = {
@@ -389,6 +399,22 @@ static CPUReadMemoryFunc * const my_cpu_read_fct_pixis[] = {
     &my_read_pixis,
 };
 
+static void main_cpu_reset(void *opaque)
+{
+    CPUState *env = opaque;
+
+    cpu_reset(env);
+    env->halted = 0;
+}
+
+static void secondary_cpu_reset(void *opaque)
+{
+    CPUState *env = opaque;
+
+    cpu_reset(env);
+    env->halted = 1;
+}
+
 /* PowerPC PREP hardware initialisation */
 static void ppc_simple_init (ram_addr_t ram_size,
                            const char *boot_device,
@@ -397,7 +423,8 @@ static void ppc_simple_init (ram_addr_t ram_size,
                            const char *initrd_filename,
                            const char *cpu_model)
 {
-    CPUState *env = NULL;
+
+    CPUState **env = my_cpus;
     char *filename;
     int linux_boot, i, bios_size;
     ram_addr_t ram_offset, bios_offset;
@@ -413,19 +440,26 @@ static void ppc_simple_init (ram_addr_t ram_size,
     if (cpu_model == NULL)
         cpu_model = "602";
     for (i = 0; i < smp_cpus; i++) {
-        env = cpu_init(cpu_model);
-        if (!env) {
+        env[i] = cpu_init(cpu_model);
+        /* Set the processor ID */
+        if (!env[i]) {
             fprintf(stderr, "Unable to find PowerPC CPU definition\n");
             exit(1);
         }
-        if (env->flags & POWERPC_FLAG_RTC_CLK) {
+        env[i]->spr[SPR_MSSCR0] |= (i << 5);
+        if (env[i]->flags & POWERPC_FLAG_RTC_CLK) {
             /* POWER / PowerPC 601 RTC clock frequency is 7.8125 MHz */
-            cpu_ppc_tb_init(env, 7812500UL);
+            cpu_ppc_tb_init(env[i], 7812500UL);
         } else {
             /* Set time-base frequency to 100 Mhz */
-            cpu_ppc_tb_init(env, 100UL * 1000UL * 1000UL);
+            cpu_ppc_tb_init(env[i], 100UL * 1000UL * 1000UL);
         }
-        qemu_register_reset((QEMUResetHandler*)&cpu_reset, env);
+        if (i == 0) {
+            qemu_register_reset(main_cpu_reset, env[i]);
+        } else {
+            qemu_register_reset(secondary_cpu_reset, env[i]);
+            env[i]->halted = 1;
+        }
     }
 
     /* allocate RAM */
@@ -511,41 +545,26 @@ static void ppc_simple_init (ram_addr_t ram_size,
     openpic_irqs = qemu_mallocz(smp_cpus * sizeof(qemu_irq *));
     openpic_irqs[0] =
             qemu_mallocz(smp_cpus * sizeof(qemu_irq) * OPENPIC_OUTPUT_NB);
+
     for (i = 0; i < smp_cpus; i++) {
             /* Mac99 IRQ connection between OpenPIC outputs pins
              * and PowerPC input pins
              */
-            switch (PPC_INPUT(env)) {
+            switch (PPC_INPUT(env[i])) {
             case PPC_FLAGS_INPUT_6xx:
                 openpic_irqs[i] = openpic_irqs[0] + (i * OPENPIC_OUTPUT_NB);
                 openpic_irqs[i][OPENPIC_OUTPUT_INT] =
-                    ((qemu_irq *)env->irq_inputs)[PPC6xx_INPUT_INT];
+                    ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_INT];
                 openpic_irqs[i][OPENPIC_OUTPUT_CINT] =
-                    ((qemu_irq *)env->irq_inputs)[PPC6xx_INPUT_INT];
+                    ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_INT];
                 openpic_irqs[i][OPENPIC_OUTPUT_MCK] =
-                    ((qemu_irq *)env->irq_inputs)[PPC6xx_INPUT_MCP];
+                    ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_MCP];
                 /* Not connected ? */
                 openpic_irqs[i][OPENPIC_OUTPUT_DEBUG] = NULL;
                 /* Check this */
                 openpic_irqs[i][OPENPIC_OUTPUT_RESET] =
-                    ((qemu_irq *)env->irq_inputs)[PPC6xx_INPUT_HRESET];
+                    ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_HRESET];
                 break;
-#if defined(TARGET_PPC64)
-        case PPC_FLAGS_INPUT_970:
-            openpic_irqs[i] = openpic_irqs[0] + (i * OPENPIC_OUTPUT_NB);
-            openpic_irqs[i][OPENPIC_OUTPUT_INT] =
-                ((qemu_irq *)env->irq_inputs)[PPC970_INPUT_INT];
-            openpic_irqs[i][OPENPIC_OUTPUT_CINT] =
-                ((qemu_irq *)env->irq_inputs)[PPC970_INPUT_INT];
-            openpic_irqs[i][OPENPIC_OUTPUT_MCK] =
-                ((qemu_irq *)env->irq_inputs)[PPC970_INPUT_MCP];
-            /* Not connected ? */
-            openpic_irqs[i][OPENPIC_OUTPUT_DEBUG] = NULL;
-            /* Check this */
-            openpic_irqs[i][OPENPIC_OUTPUT_RESET] =
-                ((qemu_irq *)env->irq_inputs)[PPC970_INPUT_HRESET];
-            break;
-#endif /* defined(TARGET_PPC64) */
         default:
             hw_error("Bus model not supported on mac99 machine\n");
             exit(1);
