@@ -32,6 +32,7 @@
  * Serial interrupts, as implemented in Raven chipset are not supported yet.
  *
  */
+#include "cpu.h"
 #include "hw.h"
 #include "ppc_mac.h"
 #include "pci.h"
@@ -131,7 +132,7 @@ enum {
 #define MPIC_MSI_REG_START        0x11C00
 #define MPIC_MSI_REG_SIZE         0x100
 #define MPIC_CPU_REG_START        0x20000
-#define MPIC_CPU_REG_SIZE         0x100
+#define MPIC_CPU_REG_SIZE         0x010C0
 
 enum mpic_ide_bits {
     IDR_EP     = 0,
@@ -595,7 +596,8 @@ static void write_mailbox_register (openpic_t *opp, int n_mbx,
 #endif
 #endif /* 0 : Code provision for Intel model */
 
-static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t val)
+static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t
+        val)
 {
     openpic_t *opp = opaque;
     IRQ_dst_t *dst;
@@ -765,7 +767,6 @@ static uint32_t openpic_timer_read (void *opaque, uint32_t addr)
 
     return retval;
 }
-#endif
 
 static void openpic_src_write (void *opaque, uint32_t addr, uint32_t val)
 {
@@ -809,8 +810,10 @@ static uint32_t openpic_src_read (void *opaque, uint32_t addr)
 
     return retval;
 }
+#endif
 
-static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t val)
+static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t
+        val)
 {
     openpic_t *opp = opaque;
     IRQ_src_t *src;
@@ -822,6 +825,8 @@ static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t v
         return;
     addr &= 0x1FFF0;
     idx = addr / 0x1000;
+    if (idx != 0)
+        DPRINTF("\t%s: Processor ID is %d\n", __func__, idx);
     dst = &opp->dst[idx];
     addr &= 0xFF0;
     switch (addr) {
@@ -882,6 +887,8 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
         return retval;
     addr &= 0x1FFF0;
     idx = addr / 0x1000;
+    if (idx != 0)
+        DPRINTF("\t%s: Processor ID is %d\n", __func__, idx);
     dst = &opp->dst[idx];
     addr &= 0xFF0;
     switch (addr) {
@@ -939,6 +946,29 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
     DPRINTF("%s: => %08x\n", __func__, retval);
 
     return retval;
+}
+
+static void openpic_cpu_prv_write (void *opaque, target_phys_addr_t addr,
+        uint32_t val)
+{
+    int idx;
+    CPUPPCState * env = (CPUPPCState *)cpu_single_env;
+    idx = env->cpu_index;
+    DPRINTF("Redirecting write from 0x%08x", addr);
+    addr += 0x20000 + idx * 0x1000;
+    DPRINTF(" to 0x%08x\n", addr);
+    openpic_cpu_write(opaque, addr, val);
+}
+
+static uint32_t openpic_cpu_prv_read (void *opaque, target_phys_addr_t addr)
+{
+    int idx;
+    CPUPPCState * env = (CPUPPCState *)cpu_single_env;
+    idx = env->cpu_index;
+    DPRINTF("Redirecting write from 0x%08x", addr);
+    addr += 0x20000 + idx * 0x1000;
+    DPRINTF(" to 0x%08x\n", addr);
+    return openpic_cpu_read(opaque, addr);
 }
 
 static void openpic_buggy_write (void *opaque,
@@ -1012,7 +1042,6 @@ static CPUReadMemoryFunc * const openpic_read[] = {
     &openpic_buggy_read,
     &openpic_readl,
 };
-#endif
 
 static void openpic_map(PCIDevice *pci_dev, int region_num,
                         pcibus_t addr, pcibus_t size, int type)
@@ -1054,7 +1083,6 @@ static void openpic_save_IRQ_queue(QEMUFile* f, IRQ_queue_t *q)
     qemu_put_sbe32s(f, &q->priority);
 }
 
-#ifndef USE_MPIC
 static void openpic_save(QEMUFile* f, void *opaque)
 {
     openpic_t *opp = (openpic_t *)opaque;
@@ -1174,14 +1202,12 @@ static int openpic_load(QEMUFile* f, void *opaque, int version_id)
 
     return pci_device_load(&opp->pci_dev, f);
 }
-#endif
 
 static void openpic_irq_raise(openpic_t *opp, int n_CPU, IRQ_src_t *src)
 {
     qemu_irq_raise(opp->dst[n_CPU].irqs[OPENPIC_OUTPUT_INT]);
 }
 
-#ifndef USE_MPIC
 qemu_irq *openpic_init (PCIBus *bus, int *pmem_index, int nb_cpus,
                         qemu_irq **irqs, qemu_irq irq_out)
 {
@@ -1193,8 +1219,8 @@ qemu_irq *openpic_init (PCIBus *bus, int *pmem_index, int nb_cpus,
     if (nb_cpus != 1)
         return NULL;
     if (bus) {
-        opp = (openpic_t *)pci_register_device(bus, "OpenPIC", sizeof(openpic_t),
-                                               -1, NULL, NULL);
+        opp = (openpic_t *)pci_register_device(bus, "OpenPIC",
+                sizeof(openpic_t), -1, NULL, NULL);
         pci_conf = opp->pci_dev.config;
         pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_IBM);
         pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_IBM_OPENPIC2);
@@ -1269,7 +1295,7 @@ static void mpic_reset (void *opaque)
 
     mpp->glbc = 0x80000000;
     /* Initialise controller registers */
-    mpp->frep = 0x004f0002;
+    mpp->frep = 0x004f0002 + (((mpp->nb_cpus - 1) << 8) & 0x1f00);
     mpp->veni = VENI;
     mpp->pint = 0x00000000;
     mpp->spve = 0x0000FFFF;
@@ -1299,7 +1325,8 @@ static void mpic_reset (void *opaque)
     mpp->glbc = 0x00000000;
 }
 
-static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t val)
+static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t
+        val)
 {
     openpic_t *mpp = opaque;
     int idx, cpu, grp;
@@ -1361,7 +1388,8 @@ static uint32_t mpic_timer_read (void *opaque, target_phys_addr_t addr)
         if ((addr &0xF0) == 0XF0)
             retval = mpp->dst[cpu].tfrr;
         else
-            retval = read_IRQreg(mpp, MPIC_TMR_IRQ + grp * MAX_GRP + idx, IRQ_IDE);
+            retval = read_IRQreg(mpp, MPIC_TMR_IRQ + grp * MAX_GRP + idx,
+                    IRQ_IDE);
         break;
     }
     DPRINTF("%s: => %08x\n", __func__, retval);
@@ -1592,6 +1620,18 @@ static CPUReadMemoryFunc * const mpic_tmr_read[] = {
     &mpic_timer_read,
 };
 
+static CPUWriteMemoryFunc * const mpic_cpu_prv_write[] = {
+    &openpic_buggy_write,
+    &openpic_buggy_write,
+    &openpic_cpu_prv_write,
+};
+
+static CPUReadMemoryFunc * const mpic_cpu_prv_read[] = {
+    &openpic_buggy_read,
+    &openpic_buggy_read,
+    &openpic_cpu_prv_read,
+};
+
 static CPUWriteMemoryFunc * const mpic_cpu_write[] = {
     &openpic_buggy_write,
     &openpic_buggy_write,
@@ -1662,10 +1702,13 @@ qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
         target_phys_addr_t start_addr;
         ram_addr_t size;
     } const list[] = {
-        {mpic_cpu_read, mpic_cpu_write, MPIC_PER_CPU_PRV_START, MPIC_PER_CPU_PRV_SIZE},
+        {mpic_cpu_prv_read, mpic_cpu_prv_write, MPIC_PER_CPU_PRV_START,
+            MPIC_PER_CPU_PRV_SIZE},
         {mpic_glb_read, mpic_glb_write, MPIC_GLB_REG_START, MPIC_GLB_REG_SIZE},
-        {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START(0), MPIC_TMR_REG_START(1) - MPIC_TMR_REG_START(0) + MPIC_TMR_REG_SIZE},
-        //{mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START(1), MPIC_TMR_REG_SIZE},
+        {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START(0),
+            MPIC_TMR_REG_START(1) - MPIC_TMR_REG_START(0) + MPIC_TMR_REG_SIZE},
+        //{mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START(1),
+        //MPIC_TMR_REG_SIZE},
         {mpic_ext_read, mpic_ext_write, MPIC_EXT_REG_START, MPIC_EXT_REG_SIZE},
         {mpic_int_read, mpic_int_write, MPIC_INT_REG_START, MPIC_INT_REG_SIZE},
         {mpic_msg_read, mpic_msg_write, MPIC_MSG_REG_START, MPIC_MSG_REG_SIZE},
@@ -1674,8 +1717,8 @@ qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
     };
 
     /* XXX: for now, only one CPU is supported */
-    if (nb_cpus != 1)
-        return NULL;
+    //if (nb_cpus != 1)
+    //    return NULL;
 
     mpp = qemu_mallocz(sizeof(openpic_t));
 

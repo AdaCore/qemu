@@ -202,7 +202,7 @@ hw-obj-$(CONFIG_HPET) += hpet.o
 hw-obj-$(CONFIG_APPLESMC) += applesmc.o
 
 # PPC devices
-hw-obj-$(CONFIG_OPENPIC) += openpic.o
+#hw-obj-$(CONFIG_OPENPIC) += openpic.o
 hw-obj-$(CONFIG_PREP_PCI) += prep_pci.o
 # Mac shared devices
 hw-obj-$(CONFIG_MACIO) += macio.o
