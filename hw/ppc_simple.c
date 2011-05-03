@@ -378,27 +378,6 @@ static CPUReadMemoryFunc * const my_cpu_read_fct_pmr[] = {
     &my_read_pmr,
 };
 
-#define PIXIS_START     0xf8100000
-#define PIXIS_SIZE      0x19
-static uint32_t my_read_pixis (void *opaque, target_phys_addr_t addr)
-{
-    // DPRINTF("my_read_pixis : reading from PIXIS : "
-    //         "0x%08x\n",
-    //         addr +
-    //         PIXIS_START);
-    switch (addr & 0xff) {
-    case 0x10: /* PIXIS_VCTL */
-        return 0x1;
-    }
-    return 0;
-}
-
-static CPUReadMemoryFunc * const my_cpu_read_fct_pixis[] = {
-    &my_read_pixis,
-    &my_read_pixis,
-    &my_read_pixis,
-};
-
 static void main_cpu_reset(void *opaque)
 {
     CPUState *env = opaque;
@@ -414,6 +393,46 @@ static void secondary_cpu_reset(void *opaque)
     cpu_reset(env);
     env->halted = 1;
 }
+
+#define PIXIS_START     0xf8100000
+#define PIXIS_SIZE      0x19
+static uint32_t my_read_pixis (void *opaque, target_phys_addr_t addr)
+{
+    // DPRINTF("my_read_pixis : reading from PIXIS : "
+    //         "0x%08x\n",
+    //         addr +
+    //         PIXIS_START);
+    switch (addr & 0xff) {
+    case 0x10: /* PIXIS_VCTL */
+        return 0x1;
+    }
+    return 0;
+}
+
+static void my_write_pixis (void *opaque, target_phys_addr_t addr, uint32_t val)
+{
+    // DPRINTF("my_read_pixis : reading from PIXIS : "
+    //         "0x%08x\n",
+    //         addr +
+    //         PIXIS_START);
+    switch (addr & 0xff) {
+    case 0x04: /* PIXIS_RST : Reset the whole system */
+        qemu_system_reset_request();
+        break;
+    }
+}
+
+static CPUReadMemoryFunc * const my_cpu_read_fct_pixis[] = {
+    &my_read_pixis,
+    &my_read_pixis,
+    &my_read_pixis,
+};
+
+static CPUWriteMemoryFunc * const my_cpu_write_fct_pixis[] = {
+    &my_write_pixis,
+    &my_write_pixis,
+    &my_write_pixis,
+};
 
 /* PowerPC PREP hardware initialisation */
 static void ppc_simple_init (ram_addr_t ram_size,
@@ -584,8 +603,8 @@ static void ppc_simple_init (ram_addr_t ram_size,
             NULL, DEVICE_BIG_ENDIAN);
     cpu_register_physical_memory(PMR_START, PMR_SIZE, io_mem);
 
-    io_mem = cpu_register_io_memory(my_cpu_read_fct_pixis, my_cpu_write_bogus,
-            NULL, DEVICE_BIG_ENDIAN);
+    io_mem = cpu_register_io_memory(my_cpu_read_fct_pixis,
+            my_cpu_write_fct_pixis, NULL, DEVICE_BIG_ENDIAN);
     cpu_register_physical_memory(PIXIS_START, PIXIS_SIZE, io_mem);
 
     int pic_mem_mapping = 0xF8040000;
