@@ -1338,6 +1338,11 @@ static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t
     cpu = addr >> 12;
     grp = cpu;
     idx = (addr >> 6) & 0x3;
+    if (!(addr < 0x1300 || (addr >= 0x20f0 && addr < 0x2300))) {
+        printf("%s : Register not yet implemented. addr = 0x%08x\n", __func__,
+                addr);
+        return;
+    }
     switch (addr & 0x30) {
     case 0x00: /* gtccr */
         break;
