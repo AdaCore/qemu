@@ -100,7 +100,7 @@ enum {
 #endif
 
 /* MPIC */
-#define MPIC_MAX_CPU      1
+#define MPIC_MAX_CPU      2
 #define MPIC_MAX_EXT     12
 #define MPIC_MAX_INT     48
 #define MPIC_MAX_MSG      4
@@ -1375,7 +1375,7 @@ static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t
         write_IRQreg(mpp, MPIC_TMR_IRQ + grp * MAX_GRP + idx, IRQ_IPVP, val);
         break;
     case 0x30: /* GTIDR & TFRR */
-        if ((addr & 0xF0) == 0xF0)
+        if ((addr & 0xFF0) == 0xF0)
             mpp->dst[cpu].tfrr = val;
         else
             write_IRQreg(mpp, MPIC_TMR_IRQ + grp * MAX_GRP + idx, IRQ_IDE, val);
@@ -1407,8 +1407,8 @@ static uint32_t mpic_timer_read (void *opaque, target_phys_addr_t addr)
     case 0x20: /* TIPV */
         retval = read_IRQreg(mpp, MPIC_TMR_IRQ + grp * MAX_GRP + idx, IRQ_IPVP);
         break;
-    case 0x30: /* TIDR */
-        if ((addr &0xF0) == 0XF0)
+    case 0x30: /* TIDR & TFFR */
+        if ((addr &0xFF0) == 0XF0)
             retval = mpp->dst[cpu].tfrr;
         else
             retval = read_IRQreg(mpp, MPIC_TMR_IRQ + grp * MAX_GRP + idx,
