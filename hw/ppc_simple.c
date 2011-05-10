@@ -416,9 +416,8 @@ static void my_write_pixis (void *opaque, target_phys_addr_t addr, uint32_t val)
     //         addr +
     //         PIXIS_START);
     switch (addr & 0xff) {
-    case 0x04: /* PIXIS_RST : Reset both cores */
-        secondary_cpu_reset(my_cpus[1]);
-        main_cpu_reset(my_cpus[0]);
+    case 0x04: /* PIXIS_RST : Reset the whole system */
+        qemu_system_reset_request();
         break;
     }
 }
