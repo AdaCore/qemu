@@ -3122,7 +3122,9 @@ void ppc_hw_interrupt (CPUPPCState *env)
     if (msr_ee != 0) {
         /* Watchdog timer on embedded PowerPC */
         if (env->pending_interrupts & (1 << PPC_INTERRUPT_WDT)) {
-            env->pending_interrupts &= ~(1 << PPC_INTERRUPT_WDT);
+            if (env->excp_model != POWERPC_EXCP_BOOKE) {
+                env->pending_interrupts &= ~(1 << PPC_INTERRUPT_WDT);
+            }
             powerpc_excp(env, env->excp_model, POWERPC_EXCP_WDT);
             return;
         }
@@ -3133,7 +3135,9 @@ void ppc_hw_interrupt (CPUPPCState *env)
         }
         /* Fixed interval timer on embedded PowerPC */
         if (env->pending_interrupts & (1 << PPC_INTERRUPT_FIT)) {
-            env->pending_interrupts &= ~(1 << PPC_INTERRUPT_FIT);
+            if (env->excp_model != POWERPC_EXCP_BOOKE) {
+                env->pending_interrupts &= ~(1 << PPC_INTERRUPT_FIT);
+            }
             powerpc_excp(env, env->excp_model, POWERPC_EXCP_FIT);
             return;
         }
@@ -3145,7 +3149,9 @@ void ppc_hw_interrupt (CPUPPCState *env)
         }
         /* Decrementer exception */
         if (env->pending_interrupts & (1 << PPC_INTERRUPT_DECR)) {
-            env->pending_interrupts &= ~(1 << PPC_INTERRUPT_DECR);
+            if (env->excp_model != POWERPC_EXCP_BOOKE) {
+                env->pending_interrupts &= ~(1 << PPC_INTERRUPT_DECR);
+            }
             powerpc_excp(env, env->excp_model, POWERPC_EXCP_DECR);
             return;
         }
