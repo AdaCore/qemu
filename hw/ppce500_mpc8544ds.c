@@ -252,9 +252,7 @@ static void mpc8544ds_init(ram_addr_t ram_size,
         exit(1);
     }
 
-    /* XXX register timer? */
-    ppc_emb_timers_init(env, 400000000, PPC_INTERRUPT_DECR);
-    ppc_dcr_init(env, NULL, NULL);
+    ppc_booke_timers_init(env, 400000000);
 
     /* Register reset handler */
     qemu_register_reset(mpc8544ds_cpu_reset, env);
