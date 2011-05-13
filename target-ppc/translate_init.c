@@ -3260,6 +3260,9 @@ static void init_proc_401 (CPUPPCState *env)
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
     ppc40x_irq_init(env);
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(16, 20, 24, 28);
 }
 
 /* PowerPC 401x2                                                             */
@@ -3297,6 +3300,9 @@ static void init_proc_401x2 (CPUPPCState *env)
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
     ppc40x_irq_init(env);
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(16, 20, 24, 28);
 }
 
 /* PowerPC 401x3                                                             */
@@ -3330,6 +3336,9 @@ static void init_proc_401x3 (CPUPPCState *env)
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
     ppc40x_irq_init(env);
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(16, 20, 24, 28);
 }
 
 /* IOP480                                                                    */
@@ -3367,6 +3376,9 @@ static void init_proc_IOP480 (CPUPPCState *env)
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
     ppc40x_irq_init(env);
+
+    SET_FIT_PERIOD(8, 12, 16, 20);
+    SET_WDT_PERIOD(16, 20, 24, 28);
 }
 
 /* PowerPC 403                                                               */
@@ -3397,6 +3409,9 @@ static void init_proc_403 (CPUPPCState *env)
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
     ppc40x_irq_init(env);
+
+    SET_FIT_PERIOD(8, 12, 16, 20);
+    SET_WDT_PERIOD(16, 20, 24, 28);
 }
 
 /* PowerPC 403 GCX                                                           */
@@ -3446,6 +3461,9 @@ static void init_proc_403GCX (CPUPPCState *env)
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
     ppc40x_irq_init(env);
+
+    SET_FIT_PERIOD(8, 12, 16, 20);
+    SET_WDT_PERIOD(16, 20, 24, 28);
 }
 
 /* PowerPC 405                                                               */
@@ -3494,6 +3512,9 @@ static void init_proc_405 (CPUPPCState *env)
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
     ppc40x_irq_init(env);
+
+    SET_FIT_PERIOD(8, 12, 16, 20);
+    SET_WDT_PERIOD(16, 20, 24, 28);
 }
 
 /* PowerPC 440 EP                                                            */
@@ -3575,6 +3596,9 @@ static void init_proc_440EP (CPUPPCState *env)
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     /* XXX: TODO: allocate internal IRQ controller */
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(20, 24, 28, 32);
 }
 
 /* PowerPC 440 GP                                                            */
@@ -3638,6 +3662,9 @@ static void init_proc_440GP (CPUPPCState *env)
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     /* XXX: TODO: allocate internal IRQ controller */
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(20, 24, 28, 32);
 }
 
 /* PowerPC 440x4                                                             */
@@ -3701,6 +3728,9 @@ static void init_proc_440x4 (CPUPPCState *env)
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     /* XXX: TODO: allocate internal IRQ controller */
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(20, 24, 28, 32);
 }
 
 /* PowerPC 440x5                                                             */
@@ -3781,6 +3811,9 @@ static void init_proc_440x5 (CPUPPCState *env)
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     ppc40x_irq_init(env);
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(20, 24, 28, 32);
 }
 
 /* PowerPC 460 (guessed)                                                     */
@@ -3868,6 +3901,9 @@ static void init_proc_460 (CPUPPCState *env)
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     /* XXX: TODO: allocate internal IRQ controller */
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(20, 24, 28, 32);
 }
 
 /* PowerPC 460F (guessed)                                                    */
@@ -3958,6 +3994,9 @@ static void init_proc_460F (CPUPPCState *env)
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     /* XXX: TODO: allocate internal IRQ controller */
+
+    SET_FIT_PERIOD(12, 16, 20, 24);
+    SET_WDT_PERIOD(20, 24, 28, 32);
 }
 
 /* Freescale 5xx cores (aka RCPU) */
@@ -4337,7 +4376,7 @@ static void init_proc_e300 (CPUPPCState *env)
                                 PPC_CACHE | PPC_CACHE_LOCK | PPC_CACHE_ICBI | \
                                 PPC_CACHE_DCBZ | PPC_CACHE_DCBA |       \
                                 PPC_MEM_TLBSYNC | PPC_TLBIVAX)
-#define POWERPC_INSNS2_e500v1  (PPC2_BOOKE206)
+#define POWERPC_INSNS2_e500v1  (PPC2_BOOKE206 | PPC2_E500)
 #define POWERPC_MSRM_e500v1    (0x000000000606FF30ULL)
 #define POWERPC_MMU_e500v1     (POWERPC_MMU_BOOKE206)
 #define POWERPC_EXCP_e500v1    (POWERPC_EXCP_BOOKE)
@@ -4356,7 +4395,7 @@ static void init_proc_e300 (CPUPPCState *env)
                                 PPC_CACHE | PPC_CACHE_LOCK | PPC_CACHE_ICBI | \
                                 PPC_CACHE_DCBZ | PPC_CACHE_DCBA |       \
                                 PPC_MEM_TLBSYNC | PPC_TLBIVAX)
-#define POWERPC_INSNS2_e500v2  (PPC2_BOOKE206)
+#define POWERPC_INSNS2_e500v2  (PPC2_BOOKE206 | PPC2_E500)
 #define POWERPC_MSRM_e500v2    (0x000000000606FF30ULL)
 #define POWERPC_MMU_e500v2     (POWERPC_MMU_BOOKE206)
 #define POWERPC_EXCP_e500v2    (POWERPC_EXCP_BOOKE)
