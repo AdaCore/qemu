@@ -302,6 +302,9 @@ int cpu_exec(CPUState *env1)
 #endif
             /* if an exception is pending, we execute it here */
             if (env->exception_index >= 0) {
+#ifdef TARGET_PPC
+                env->reserve_addr = -1;
+#endif /* TARGET_PPC */
                 if (env->exception_index >= EXCP_INTERRUPT) {
                     /* exit request from the cpu execution loop */
                     ret = env->exception_index;
