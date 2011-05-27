@@ -348,7 +348,7 @@ static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
     //         GUR_START);
     switch (addr & 0x3) {
     case 0: // do PLL stuff here
-        return 0x00100004;
+        return 0x00100010;
     case 0x0c: /* PORDEVSR[CORE1TE] */
         return 0;
     }
