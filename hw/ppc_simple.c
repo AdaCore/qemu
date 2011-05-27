@@ -348,7 +348,11 @@ static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
     //         addr +
     //         GUR_START);
     switch (addr & 0x3) {
-    case 0: // do PLL stuff here
+    case 0: // PORPLL
+        // Set (MPX bus CLK)/SYSCLK ratio to 2, and (core CLK)/(MPX bus CLK) to
+        // 2 as well.
+        // The PPC decrementer always runs at (MPX bus CLK)/4 so only the first
+        // ratio influences the timebase frequency to be used.
         return 0x00100004;
     case 0x0c: /* PORDEVSR[CORE1TE] */
         return 0;
@@ -470,9 +474,18 @@ static void ppc_simple_init (ram_addr_t ram_size,
         if (env[i]->flags & POWERPC_FLAG_RTC_CLK) {
             /* POWER / PowerPC 601 RTC clock frequency is 7.8125 MHz */
             cpu_ppc_tb_init(env[i], 7812500UL);
+            printf("%s: Requesting RTC clock while ePIC timers are not"
+                   "implemented yet. Aborting.\n",__func__);
+            exit(-1);
         } else {
-            /* Set time-base frequency to 100 Mhz */
-            cpu_ppc_tb_init(env[i], 100UL * 1000UL * 1000UL);
+            /* Set time-base frequency to 25 Mhz.
+             * The (MPX bus CLK)/SYSCLK ratio was set to 2, and SYSCLK is 50MHz
+             * in the hpcNet8641 board we're emulating. The decrementer runs at
+             * (MPX bus CLK)/4 -> SYSCLK * 2 / 4 = 25MHz
+             * TODO : investigate if there is a way to specify the SYSCLK
+             * frequency from QEMU and not from the default board's value.
+             */
+            cpu_ppc_tb_init(env[i], 25UL * 1000UL * 1000UL);
         }
         if (i == 0) {
             qemu_register_reset(main_cpu_reset, env[i]);
