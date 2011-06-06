@@ -282,6 +282,9 @@ static void gnatbus_device_exit(void)
 
     QLIST_FOREACH(qbdev, &g_qbmaster->devices_list, list) {
         gnatbus_send(qbdev, (uint8_t *)&exit, sizeof(exit));
+        if (qbdev->chr) {
+            qemu_chr_fe_close(qbdev->chr);
+        }
     }
 }
 
