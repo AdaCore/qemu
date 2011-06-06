@@ -282,6 +282,9 @@ static void gnatbus_device_exit(void)
 
     QLIST_FOREACH(qbdev, &g_qbmaster->devices_list, list) {
         gnatbus_send(qbdev, (uint8_t *)&exit, sizeof(exit));
+        if (qbdev->chr) {
+            qemu_chr_close(qbdev->chr);
+        }
     }
 }
 
@@ -495,7 +498,7 @@ static inline uint32_t gnatbus_read_generic(void               *opaque,
     dev_set_nonblocking(io_base->qbdev);
 
     if (resp == NULL
-        || resp->parent.type != GnatBusResponse_Data
+        || (GnatBusResponseType)resp->parent.type != GnatBusResponse_Data
         || resp->length != size) {
         /* bad response */
     } else {
