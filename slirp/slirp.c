@@ -697,7 +697,7 @@ void if_encap(Slirp *slirp, const uint8_t *ip_data, int ip_data_len)
         return;
     
     if (!memcmp(slirp->client_ethaddr, zero_ethaddr, ETH_ALEN)) {
-        uint8_t arp_req[ETH_HLEN + sizeof(struct arphdr)];
+        uint8_t arp_req[max(ETH_HLEN + sizeof(struct arphdr), 64)];
         struct ethhdr *reh = (struct ethhdr *)arp_req;
         struct arphdr *rah = (struct arphdr *)(arp_req + ETH_HLEN);
         const struct ip *iph = (const struct ip *)ip_data;
