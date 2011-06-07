@@ -818,7 +818,7 @@ static int if_encap4(Slirp *slirp, struct mbuf *ifm, struct ethhdr *eh,
         return 1;
     }
     if (!arp_table_search(slirp, iph->ip_dst.s_addr, ethaddr)) {
-        uint8_t arp_req[ETH_HLEN + sizeof(struct slirp_arphdr)];
+        uint8_t arp_req[MAX(ETH_HLEN + sizeof(struct slirp_arphdr), 64)];
         struct ethhdr *reh = (struct ethhdr *)arp_req;
         struct slirp_arphdr *rah = (struct slirp_arphdr *)(arp_req + ETH_HLEN);
 
