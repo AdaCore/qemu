@@ -140,6 +140,7 @@ linux_aio=""
 cap_ng=""
 attr=""
 libattr=""
+virtfs="yes"
 xfs=""
 
 vhost_net="no"
@@ -785,6 +786,10 @@ for opt do
   ;;
   --enable-attr) attr="yes"
   ;;
+  --disable-virtfs) virtfs="no"
+  ;;
+  --enable-virtfs) virtfs="yes"
+  ;;
   --disable-blobs) blobs="no"
   ;;
   --with-pkgversion=*) pkgversion=" ($optarg)"
@@ -1092,6 +1097,8 @@ echo "  --disable-cap-ng         disable libcap-ng support"
 echo "  --enable-cap-ng          enable libcap-ng support"
 echo "  --disable-attr           disables attr and xattr support"
 echo "  --enable-attr            enable attr and xattr support"
+echo "  --disable-virtfs         disables virtfs and xvirtfs support"
+echo "  --enable-virtfs          enable virtfs and xvirtfs support"
 echo "  --disable-blobs          disable installing provided firmware blobs"
 echo "  --enable-docs            enable documentation build"
 echo "  --disable-docs           disable documentation build"
@@ -3283,8 +3290,12 @@ fi
 if test "$libattr" = "yes" ; then
   echo "CONFIG_LIBATTR=y" >> $config_host_mak
 fi
-if test "$virtfs" = "yes" ; then
-  echo "CONFIG_VIRTFS=y" >> $config_host_mak
+if test "$linux" = "yes" ; then
+  if test "$attr" = "yes" ; then
+      if test "$virtfs" = "yes" ; then
+          echo "CONFIG_VIRTFS=y" >> $config_host_mak
+      fi
+  fi
 fi
 if test "$blobs" = "yes" ; then
   echo "INSTALL_BLOBS=yes" >> $config_host_mak
