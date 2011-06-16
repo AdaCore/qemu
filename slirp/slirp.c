@@ -734,7 +734,7 @@ void if_encap(Slirp *slirp, const uint8_t *ip_data, int ip_data_len)
         memcpy(&eh->h_source[2], &slirp->vhost_addr, 4);
         eh->h_proto = htons(ETH_P_IP);
         memcpy(buf + sizeof(struct ethhdr), ip_data, ip_data_len);
-        slirp_output(slirp->opaque, buf, ip_data_len + ETH_HLEN);
+        slirp_output(slirp->opaque, buf, MAX(ip_data_len + ETH_HLEN,64));
     }
 }
 
