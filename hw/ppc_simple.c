@@ -40,6 +40,7 @@
 #include "blockdev.h"
 #include "elf.h"
 #include "openpic.h"
+#include "etsec.h"
 
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
@@ -624,6 +625,10 @@ static void ppc_simple_init (ram_addr_t ram_size,
                 serial_hds[0], 1, 1);
     }
 
+    for (i = 0; i < nb_nics; i++) {
+        etsec_create(0xF8024000 + 0x1000 * i, &nd_table[i],
+        pic[12+13], pic[12+14], pic[12+18]);
+    }
 }
 
 static QEMUMachine simple_machine = {
