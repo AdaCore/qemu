@@ -40,6 +40,7 @@
 #include "blockdev.h"
 #include "elf.h"
 #include "openpic.h"
+#include "etsec.h"
 
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
@@ -624,6 +625,18 @@ static void ppc_simple_init (ram_addr_t ram_size,
         }
     }
 
+    int etsec_irqs[4][3] = {
+        {13, 14, 18},
+        {19, 20, 24},
+        {15, 16, 17},
+        {21, 22, 23}
+    };
+    printf("%s : registering %d network eTSEC(s)\n", __func__, nb_nics);
+    for (i = 0; i < nb_nics; i++) {
+        etsec_create(0xF8024000 + 0x1000 * i, &nd_table[i],
+        pic[12+etsec_irqs[i][0]], pic[12+etsec_irqs[i][1]],
+        pic[12+etsec_irqs[i][2]]);
+    }
 }
 
 static QEMUMachine simple_machine = {
