@@ -1633,7 +1633,7 @@ static void spr_write_e500_l1csr0(DisasContext *ctx, int sprn, int gprn)
 {
     TCGv t0 = tcg_temp_new();
 
-    tcg_gen_andi_tl(t0, cpu_gpr[gprn], L1CSR0_DCE | L1CSR0_CPE);
+    tcg_gen_andi_tl(t0, cpu_gpr[gprn], ~0x102);
     gen_store_spr(sprn, t0);
     tcg_temp_free(t0);
 }
@@ -1642,7 +1642,7 @@ static void spr_write_e500_l1csr1(DisasContext *ctx, int sprn, int gprn)
 {
     TCGv t0 = tcg_temp_new();
 
-    tcg_gen_andi_tl(t0, cpu_gpr[gprn], L1CSR1_ICE | L1CSR1_CPE);
+    tcg_gen_andi_tl(t0, cpu_gpr[gprn], ~0x102);
     gen_store_spr(sprn, t0);
     tcg_temp_free(t0);
 }
@@ -4537,7 +4537,12 @@ static void init_proc_e200(CPUPPCState *env)
     spr_register(env, SPR_Exxx_L1CFG0, "L1CFG0",
                  &spr_read_generic, SPR_NOACCESS,
                  &spr_read_generic, SPR_NOACCESS,
-                 0x00000000);
+                 0x00383820);
+    /* XXX : not implemented */
+    spr_register(env, SPR_Exxx_L1CFG1, "L1CFG1",
+                 &spr_read_generic, SPR_NOACCESS,
+                 &spr_write_generic, SPR_NOACCESS,
+                 0x00383820);
     /* XXX : not implemented */
     spr_register(env, SPR_Exxx_L1CSR0, "L1CSR0",
                  SPR_NOACCESS, SPR_NOACCESS,
