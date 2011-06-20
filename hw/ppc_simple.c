@@ -625,9 +625,17 @@ static void ppc_simple_init (ram_addr_t ram_size,
                 serial_hds[0], 1, 1);
     }
 
+    int etsec_irqs[4][3] = {
+        {13, 14, 18},
+        {19, 20, 24},
+        {15, 16, 17},
+        {21, 22, 23}
+    };
+    printf("%s : registering %d network eTSEC(s)\n", __func__, nb_nics);
     for (i = 0; i < nb_nics; i++) {
         etsec_create(0xF8024000 + 0x1000 * i, &nd_table[i],
-        pic[12+13], pic[12+14], pic[12+18]);
+        pic[12+etsec_irqs[i][0]], pic[12+etsec_irqs[i][1]],
+        pic[12+etsec_irqs[i][2]]);
     }
 }
 
