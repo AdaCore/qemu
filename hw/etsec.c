@@ -29,6 +29,8 @@
 #include "etsec.h"
 #include "etsec_registers.h"
 
+//#define HEX_DUMP
+
 uint32_t get_nip(void);
 
 static uint32_t etsec_readl(void *opaque, target_phys_addr_t addr)
@@ -307,9 +309,10 @@ etsec_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
 {
     eTSEC *etsec = DO_UPCAST(NICState, nc, nc)->opaque;
 
-    //    printf("%s receive size:%d\n", etsec->nic->nc.name, size);
-    //    hex_dump(stdout, buf, size);
-
+#if defined(HEX_DUMP)
+        fprintf(stderr,"%s receive size:%d\n", etsec->nic->nc.name, size);
+        hex_dump(stderr, buf, size);
+#endif
     rx_ring_write(etsec, buf, size);
     return size;
 }

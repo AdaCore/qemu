@@ -6,6 +6,7 @@
 #include "etsec_registers.h"
 
 //#define ETSEC_RING_DEBUG
+//#define HEX_DUMP
 
 #ifdef ETSEC_RING_DEBUG
 #define RING_DEBUG(fmt, ...) printf ("%s:%s " fmt, __func__ , etsec->nic->nc.name, ## __VA_ARGS__)
@@ -191,6 +192,67 @@ static void tx_padding_and_crc(eTSEC *etsec, uint32_t min_frame_len)
     tx_append_crc(etsec);
 }
 
+static void process_tx_fcb(eTSEC        *etsec)
+{
+    uint8_t flags = (uint8_t)(*etsec->tx_buffer);
+    /* L3 header offset from start of frame */
+    uint8_t l3_header_offset = (uint8_t)*(etsec->tx_buffer + 3);
+    /* L4 header offset from start of L3 header */
+    uint8_t l4_header_offset = (uint8_t)*(etsec->tx_buffer + 2);
+    /* L3 header */
+    uint8_t *l3_header = etsec->tx_buffer + 8 + l3_header_offset;
+    /* L4 header */
+    uint8_t *l4_header = l3_header + l4_header_offset;
+
+    uint16_t crc16;
+
+    /* if packet is IP4 and IP checksum is requested */
+    if (flags & FCB_TX_IP && flags & FCB_TX_CIP) {
+        /* do IP4 checksum (TODO This funtion does TCP/UDP checksum but not sure
+         * if it also does IP4 checksum. */
+        net_checksum_calculate(etsec->tx_buffer + 8,
+                etsec->tx_buffer_len - 8);
+    }
+    /* TODO Check the correct usage of the PHCS field of the FCB in case the NPH
+     * flag is on */
+
+    /* if packet is IP4 and TCP or UDP */
+    if (flags & FCB_TX_IP && flags & FCB_TX_TUP) {
+        /* if UDP */
+        if (flags & FCB_TX_UDP) {
+            /* if checksum is requested */
+            if (flags & FCB_TX_CTU) {
+                /* do UDP checksum */
+                //int add = pow2roundup(etsec->tx_buffer_len) -
+                //    etsec->tx_buffer_len;
+                //if (add > 0) {
+                //    etsec->tx_buffer = qemu_realloc(etsec->tx_buffer,
+                //            etsec->tx_buffer_len + add);
+                //    memset(etsec->tx_buffer + etsec->tx_buffer_len, 0x0, add);
+                //    etsec->tx_buffer_len += add;
+                //}
+
+                //l3_packet_len = etsec->tx_buffer_len - l3_header_offset;
+                //crc16 = (uint16_t)crc32(~0, l3_header, l3_packet_len);
+                //*((uint16_t*)(l4_header + 6)) = htons(crc16);
+
+                net_checksum_calculate(etsec->tx_buffer + 8,
+                        etsec->tx_buffer_len - 8);
+            } else {
+                /* set checksum field to 0 */
+                l4_header[6] = 0;
+                l4_header[7] = 0;
+            }
+        } else if (flags & FCB_TX_CTU) { /* if TCP and checksum is requested */
+            /* do TCP checksum */
+            net_checksum_calculate(etsec->tx_buffer + 8, etsec->tx_buffer_len -
+                    8);
+            //l4_header[31] = 0;
+            //l4_header[32] = 0;
+        }
+    }
+}
+
 static void process_tx_bd(eTSEC         *etsec,
                           eTSEC_rxtx_bd *bd)
 {
@@ -222,6 +284,10 @@ static void process_tx_bd(eTSEC         *etsec,
         if (etsec->regs[MACCFG1].value & MACCFG1_TX_EN) {
             /* MAC Transmit enabled */
 
+            /* Process offload Tx FCB */
+            if (etsec->first_bd.flags & BD_TX_TOEUN)
+                process_tx_fcb(etsec);
+
             if (etsec->first_bd.flags & BD_TX_PADCRC
                 || etsec->regs[MACCFG2].value & MACCFG2_PADCRC) {
 
@@ -235,14 +301,21 @@ static void process_tx_bd(eTSEC         *etsec,
                 tx_append_crc(etsec);
             }
 
-            RING_DEBUG("eTSEC Send packet size:%d\n", etsec->tx_buffer_len);
-#ifdef ETSEC_RING_DEBUG
-            hex_dump(stdout, etsec->tx_buffer, etsec->tx_buffer_len);
+#if defined(HEX_DUMP) || defined(ETSEC_RING_DEBUG)
+            fprintf(stderr,"eTSEC Send packet size:%d\n", etsec->tx_buffer_len);
+            hex_dump(stderr, etsec->tx_buffer, etsec->tx_buffer_len);
 #endif  /* ETSEC_RING_DEBUG */
 
-            qemu_send_packet(&etsec->nic->nc,
-                             etsec->tx_buffer,
-                             etsec->tx_buffer_len);
+            if (etsec->first_bd.flags & BD_TX_TOEUN) {
+                qemu_send_packet(&etsec->nic->nc,
+                        etsec->tx_buffer + 8,
+                        etsec->tx_buffer_len - 8);
+            } else {
+                qemu_send_packet(&etsec->nic->nc,
+                        etsec->tx_buffer,
+                        etsec->tx_buffer_len);
+            }
+
         }
 
         etsec->tx_buffer_len = 0;

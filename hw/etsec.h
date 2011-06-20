@@ -41,6 +41,16 @@ typedef struct eTSEC_rxtx_bd {
 #define BD_RX_OV        (1 << 1)
 #define BD_RX_TR        (1 << 0)
 
+/* Tx FCB flags */
+#define FCB_TX_VLN     (1 << 7)
+#define FCB_TX_IP      (1 << 6)
+#define FCB_TX_IP6     (1 << 5)
+#define FCB_TX_TUP     (1 << 4)
+#define FCB_TX_UDP     (1 << 3)
+#define FCB_TX_CIP     (1 << 2)
+#define FCB_TX_CTU     (1 << 1)
+#define FCB_TX_NPH     (1 << 0)
+
 /* eTSEC */
 
 #define REG_NUMBER 1024
