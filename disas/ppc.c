@@ -3660,7 +3660,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 
 { "wrteei",  X(31,163),	XE_MASK,	PPC403 | BOOKE,	{ E } },
 
-{ "dcbtls",  X(31,166),	X_MASK,		PPCCHLK,	{ CT, RA, RB }},
+{ "dcbtls",  X(31,166),	X_MASK,		PPC,		{ CT, RA, RB }},
 { "dcbtlse", X(31,174),	X_MASK,		PPCCHLK64,	{ CT, RA, RB }},
 
 { "mtmsrd",  X(31,178),	XRLARB_MASK,	PPC64,		{ RS, A_L } },
