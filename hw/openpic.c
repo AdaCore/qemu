@@ -581,6 +581,10 @@ static void write_mailbox_register (openpic_t *opp, int n_mbx,
 #endif
 #endif /* 0 : Code provision for Intel model */
 
+static void openpic_cpu_write (void               *opaque,
+                               target_phys_addr_t  addr,
+                               uint32_t            val);
+
 static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t val)
 {
     openpic_t *opp = opaque;
@@ -593,11 +597,13 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
     addr &= 0xFF;
     switch (addr) {
     case 0x00: /* FREP */
+        DPRINTF("%s: FREP\n", __func__);
         break;
     case 0x20: /* GLBC */
         if (val & 0x80000000 && opp->reset)
             opp->reset(opp);
         opp->glbc = val & ~0x80000000;
+        DPRINTF("%s: GLBC\n", __func__);
         break;
     case 0x80: /* VENI */
         break;
@@ -615,9 +621,12 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
         }
         opp->pint = val;
         break;
+    case 0xB0:
+        openpic_cpu_write(opaque, addr, val);
+        break;
 #if MAX_IPI > 0
     case 0xA0: /* IPI_IPVP */
-    case 0xB0:
+  //case 0xB0:
     case 0xC0:
     case 0xD0:
         {
@@ -629,14 +638,18 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
 #endif
     case 0xE0: /* SPVE */
         opp->spve = val & 0x000000FF;
+        DPRINTF("%s: SPVE\n", __func__);
         break;
     case 0xF0: /* TIFR */
         opp->tifr = val;
+        DPRINTF("%s: TIFR\n", __func__);
         break;
     default:
         break;
     }
 }
+
+static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr);
 
 static uint32_t openpic_gbl_read (void *opaque, target_phys_addr_t addr)
 {
@@ -651,18 +664,26 @@ static uint32_t openpic_gbl_read (void *opaque, target_phys_addr_t addr)
     switch (addr) {
     case 0x00: /* FREP */
         retval = opp->frep;
+        DPRINTF("%s: FREP\n", __func__);
         break;
     case 0x20: /* GLBC */
         retval = opp->glbc;
+        DPRINTF("%s: GLBC\n", __func__);
         break;
     case 0x80: /* VENI */
         retval = opp->veni;
+        DPRINTF("%s: VENI\n", __func__);
         break;
     case 0x90: /* PINT */
         retval = 0x00000000;
         break;
+    case 0xA0:
+        DPRINTF("%s: IACK\n", __func__);
+        retval = openpic_cpu_read(opaque, addr);
+        break;
+
 #if MAX_IPI > 0
-    case 0xA0: /* IPI_IPVP */
+  //case 0xA0: /* IPI_IPVP */
     case 0xB0:
     case 0xC0:
     case 0xD0:
@@ -675,9 +696,11 @@ static uint32_t openpic_gbl_read (void *opaque, target_phys_addr_t addr)
 #endif
     case 0xE0: /* SPVE */
         retval = opp->spve;
+        DPRINTF("%s: SPVE\n", __func__);
         break;
     case 0xF0: /* TIFR */
         retval = opp->tifr;
+        DPRINTF("%s: TIFR\n", __func__);
         break;
     default:
         break;
@@ -871,9 +894,11 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
     switch (addr) {
     case 0x80: /* PCTP */
         retval = dst->pctp;
+        DPRINTF("%s: PCTP\n", __func__);
         break;
     case 0x90: /* WHOAMI */
         retval = idx;
+        DPRINTF("%s: WHOAMI\n", __func__);
         break;
     case 0xA0: /* PIAC */
         DPRINTF("Lower OpenPIC INT output\n");
@@ -883,6 +908,7 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
         if (n_IRQ == -1) {
             /* No more interrupt pending */
             retval = IPVP_VECTOR(opp->spve);
+            DPRINTF("%s return SPVE 0x%08x\n", __func__, retval);
         } else {
             src = &opp->src[n_IRQ];
             if (!test_bit(&src->ipvp, IPVP_ACTIVITY) ||
@@ -908,16 +934,19 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
         }
         break;
     case 0xB0: /* PEOI */
+        DPRINTF("%s: PEOI\n", __func__);
         retval = 0;
         break;
 #if MAX_IPI > 0
     case 0x40: /* IDE */
     case 0x50:
+        DPRINTF("%s: IDE\n", __func__);
         idx = (addr - 0x40) >> 4;
         retval = read_IRQreg(opp, opp->irq_ipi0 + idx, IRQ_IDE);
         break;
 #endif
     default:
+        DPRINTF("%s: UNKNOWN\n", __func__);
         break;
     }
     DPRINTF("%s: => %08x\n", __func__, retval);
@@ -1005,16 +1034,16 @@ static void openpic_map(PCIDevice *pci_dev, int region_num,
     opp = (openpic_t *)pci_dev;
     /* Global registers */
     DPRINTF("Register OPENPIC gbl   %08x => %08x\n",
-            addr + 0x1000, addr + 0x1000 + 0x100);
+            (unsigned int)addr + 0x1000, (unsigned int)addr + 0x1000 + 0x100);
     /* Timer registers */
     DPRINTF("Register OPENPIC timer %08x => %08x\n",
-            addr + 0x1100, addr + 0x1100 + 0x40 * MAX_TMR);
+            (unsigned int)addr + 0x1100, (unsigned int)addr + 0x1100 + 0x40 * MAX_TMR);
     /* Interrupt source registers */
     DPRINTF("Register OPENPIC src   %08x => %08x\n",
-            addr + 0x10000, addr + 0x10000 + 0x20 * (OPENPIC_EXT_IRQ + 2));
+            (unsigned int)addr + 0x10000, (unsigned int)addr + 0x10000 + 0x20 * (OPENPIC_EXT_IRQ + 2));
     /* Per CPU registers */
     DPRINTF("Register OPENPIC dst   %08x => %08x\n",
-            addr + 0x20000, addr + 0x20000 + 0x1000 * MAX_CPU);
+            (unsigned int)addr + 0x20000, (unsigned int)addr + 0x20000 + 0x1000 * MAX_CPU);
     cpu_register_physical_memory(addr, 0x40000, opp->mem_index);
 #if 0 // Don't implement ISU for now
     opp_io_memory = cpu_register_io_memory(openpic_src_read,
