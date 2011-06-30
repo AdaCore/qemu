@@ -592,7 +592,7 @@ static void ppc_simple_init (ram_addr_t ram_size,
                 openpic_irqs[i][OPENPIC_OUTPUT_INT] =
                     ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_INT];
                 openpic_irqs[i][OPENPIC_OUTPUT_CINT] =
-                    ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_INT];
+                    ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_MCP];
                 openpic_irqs[i][OPENPIC_OUTPUT_MCK] =
                     ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_MCP];
                 /* Not connected ? */
