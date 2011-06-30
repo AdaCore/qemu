@@ -306,6 +306,9 @@ static void my_write (void *opaque, target_phys_addr_t addr, uint32_t value)
         if (value & (1 << 25)) {
             DPRINTF("%s: Enabling Core 1\n", __func__);
             my_cpus[1]->halted = 0;
+        } else {
+            DPRINTF("%s: Stopping Core 1\n", __func__);
+            my_cpus[1]->halted = 1;
         }
     }
 }
