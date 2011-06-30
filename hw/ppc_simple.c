@@ -630,15 +630,15 @@ static void ppc_simple_init (ram_addr_t ram_size,
     //PPC_IO_DPRINTF("OpenPIC init : pic_mem_index = 0x%x\n", pic_mem_index);
     //cpu_register_physical_memory(0xF8040000, 256 * 1024, pic_mem_index);
 
-    int serial1_mem_mapping = 0xF8004500;
-    int serial2_mem_mapping = 0xF8004600;
-    if (serial_hds[0]) {
-        serial_mm_init(serial1_mem_mapping, 0, pic[12+26], 333000000,
-                serial_hds[0], 1, 1);
-    }
-    if (serial_hds[1]) {
-        serial_mm_init(serial2_mem_mapping, 0, pic[12+12], 333000000,
-                serial_hds[0], 1, 1);
+    int serial_mem_mapping_start = 0xF8004500;
+    int serial_mem_mapping_size = 0x100;
+    int serial_irqs[] = {26,12};
+    for (i = 0; i < 2; i++) {
+        if (serial_hds[i]) {
+            serial_mm_init(serial_mem_mapping_start + i *
+                    serial_mem_mapping_size, 0, pic[12+serial_irqs[i]],
+                    333000000, serial_hds[i], 1, 1);
+        }
     }
 
     int etsec_irqs[4][3] = {
