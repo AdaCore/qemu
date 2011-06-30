@@ -575,7 +575,6 @@ static void ppc_simple_init (ram_addr_t ram_size,
             }
         }
     }
-    isa_mem_base = 0xc0000000;
 
     qemu_irq ** openpic_irqs;
     openpic_irqs = qemu_mallocz(smp_cpus * sizeof(qemu_irq *));
