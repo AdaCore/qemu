@@ -468,11 +468,11 @@ static void ppc_simple_init (ram_addr_t ram_size,
         cpu_model = "602";
     for (i = 0; i < smp_cpus; i++) {
         env[i] = cpu_init(cpu_model);
-        /* Set the processor ID */
         if (!env[i]) {
             fprintf(stderr, "Unable to find PowerPC CPU definition\n");
             exit(1);
         }
+        /* Set the processor ID */
         env[i]->spr[SPR_MSSCR0] |= (i << 5);
         if (env[i]->flags & POWERPC_FLAG_RTC_CLK) {
             /* POWER / PowerPC 601 RTC clock frequency is 7.8125 MHz */
@@ -601,9 +601,9 @@ static void ppc_simple_init (ram_addr_t ram_size,
                 openpic_irqs[i][OPENPIC_OUTPUT_RESET] =
                     ((qemu_irq *)env[i]->irq_inputs)[PPC6xx_INPUT_HRESET];
                 break;
-        default:
-            hw_error("Bus model not supported on mac99 machine\n");
-            exit(1);
+            default:
+                hw_error("Bus model not supported on mac99 machine\n");
+                exit(1);
         }
     }
     phony_mem = qemu_mallocz(MEM_SIZE);
@@ -647,7 +647,7 @@ static void ppc_simple_init (ram_addr_t ram_size,
         {15, 16, 17},
         {21, 22, 23}
     };
-    printf("%s : registering %d network eTSEC(s)\n", __func__, nb_nics);
+    DPRINTF("%s : registering %d network eTSEC(s)\n", __func__, nb_nics);
     for (i = 0; i < nb_nics; i++) {
         etsec_create(0xF8024000 + 0x1000 * i, &nd_table[i],
         pic[12+etsec_irqs[i][0]], pic[12+etsec_irqs[i][1]],
