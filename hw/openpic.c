@@ -1688,7 +1688,7 @@ static CPUReadMemoryFunc * const mpic_msi_read[] = {
     &mpic_src_msi_read,
 };
 
-qemu_irq *mpic_init(target_phys_addr_t base, int nb_cpus,
+qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
                         qemu_irq **irqs, qemu_irq irq_out)
 {
     openpic_t *mpp;
@@ -1709,13 +1709,14 @@ qemu_irq *mpic_init(target_phys_addr_t base, int nb_cpus,
     };
 
     /* XXX: for now, only one CPU is supported */
-    //if (nb_cpus != 1)
-    //    return NULL;
+    if (nb_cpus != 1)
+        return NULL;
 
     mpp = qemu_mallocz(sizeof(openpic_t));
 
-    int mem_index;
     for (i = 0; i < sizeof(list)/sizeof(list[0]); i++) {
+        int mem_index;
+
         mem_index = cpu_register_io_memory(list[i].read, list[i].write, mpp,
                                            DEVICE_BIG_ENDIAN);
         if (mem_index < 0) {
