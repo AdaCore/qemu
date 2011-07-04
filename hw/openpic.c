@@ -46,7 +46,6 @@
 #define DPRINTF(fmt, ...) do { } while (0)
 #endif
 
-#define USE_MPIC
 #define USE_MPCxxx /* Intel model is broken, for now */
 
 #if defined (USE_INTEL_GW80314)
@@ -410,7 +409,7 @@ static void openpic_set_irq(void *opaque, int n_IRQ, int level)
     IRQ_src_t *src;
 
     src = &opp->src[n_IRQ];
-    DPRINTF("%s: set irq %d = %d ipvp=%08x\n",__func__,
+    DPRINTF("openpic: set irq %d = %d ipvp=%08x\n",
             n_IRQ, level, src->ipvp);
     if (test_bit(&src->ipvp, IPVP_SENSE)) {
         /* level-sensitive irq */
@@ -595,8 +594,7 @@ static void write_mailbox_register (openpic_t *opp, int n_mbx,
 #endif
 #endif /* 0 : Code provision for Intel model */
 
-static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t
-        val)
+static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t val)
 {
     openpic_t *opp = opaque;
     IRQ_dst_t *dst;
@@ -809,8 +807,7 @@ static uint32_t openpic_src_read (void *opaque, uint32_t addr)
     return retval;
 }
 
-static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t
-        val)
+static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t val)
 {
     openpic_t *opp = opaque;
     IRQ_src_t *src;
@@ -1217,8 +1214,8 @@ qemu_irq *openpic_init (PCIBus *bus, int *pmem_index, int nb_cpus,
     if (nb_cpus != 1)
         return NULL;
     if (bus) {
-        opp = (openpic_t *)pci_register_device(bus, "OpenPIC",
-                sizeof(openpic_t), -1, NULL, NULL);
+        opp = (openpic_t *)pci_register_device(bus, "OpenPIC", sizeof(openpic_t),
+                                               -1, NULL, NULL);
         pci_conf = opp->pci_dev.config;
         pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_IBM);
         pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_IBM_OPENPIC2);
@@ -1320,8 +1317,7 @@ static void mpic_reset (void *opaque)
     mpp->glbc = 0x00000000;
 }
 
-static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t
-        val)
+static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t val)
 {
     openpic_t *mpp = opaque;
     int idx, cpu;
@@ -1811,4 +1807,3 @@ free:
     qemu_free(mpp);
     return NULL;
 }
-
