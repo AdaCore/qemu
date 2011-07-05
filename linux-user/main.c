@@ -3002,9 +3002,6 @@ int main(int argc, char **argv, char **envp)
             singlestep = 1;
         } else if (!strcmp(r, "strace")) {
             do_strace = 1;
-        } else if (!strcmp(r, "version")) {
-            version();
-            exit(0);
         } else if (!strcmp(r, "exec-trace")) {
             trace_init(argv[optind++]);
         } else {
