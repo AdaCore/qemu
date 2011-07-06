@@ -185,12 +185,15 @@ static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
     uint32_t ret;
     switch (addr & 0xfff) {
     case 0: // PORPLL
-        // Set (MPX bus CLK)/SYSCLK ratio to 2, and (core CLK)/(MPX bus CLK) to
-        // 2 as well.
+        // Set (MPX bus CLK)/SYSCLK ratio to MPX_TO_OSC_RATIO, and (core
+        // CLK)/(MPX bus CLK) to 2
         // The PPC decrementer always runs at (MPX bus CLK)/4 so only the first
         // ratio influences the timebase frequency to be used.
+        // The timebase emulation frequency is calculated based on the frequency
+        // reported by the PIXIS registers, and the MPX_TO_OSC_RATIO ratio.
         ret = 0x00100000;
         ret |= MPX_TO_OSC_RATIO << 1;
+        DPRINTF("%s: reading POR_PLL => 0x%08x\n", __func__, ret);
         break;
     case 0x0c: /* PORDEVSR[CORE1TE] */
         ret = 0;
@@ -371,9 +374,14 @@ static void ppc_simple_init (ram_addr_t ram_size,
             exit(-1);
         } else {
             /* Set time-base frequency
-             * if the (MPX bus CLK)/SYSCLK ratio was set to 2, and SYSCLK is
-             * 50MHz in the hpcNet8641 board we're emulating. The decrementer
-             * runs at (MPX bus CLK)/4 -> SYSCLK * 2 / 4 = 25MHz */
+             * The timebase frequency corresponds directly to the core's
+             * decrementer frequency. The decrementer always runs at (MPX bus
+             * clk)/4 hence the formula used below :
+             * SYSCLK * MPX_TO_OSC_RATIO / 4
+             * SYSCLK is the frequency reported by the PIXIS registers. Its
+             * value is taken from the pixisSpdTable array.
+             * See MPC8641D ref man section 4.4.4.1 and e600 ref man section
+             * 4.6.9 */
             uint32_t timebase = pixisSpdTable[OSC_FREQ_INDEX] * MPX_TO_OSC_RATIO
                 / 4;
             cpu_ppc_tb_init(env[i], timebase);
