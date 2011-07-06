@@ -3901,7 +3901,7 @@ static inline void gen_bcond(DisasContext *ctx, int type)
     }
 
     /* In some variants (CTR test or CR test), the branch is conditionnal.  */
-    if ((bo & 0x14) != 0) {
+    if ((bo & 0x04) == 0 || (bo & 0x10) == 0) {
         l1 = gen_new_label();
     }
 
@@ -3954,7 +3954,7 @@ static inline void gen_bcond(DisasContext *ctx, int type)
         gen_exit_tb(ctx, 0);
     }
 
-    if ((bo & 0x14) != 0) {
+    if ((bo & 0x04) == 0 || (bo & 0x10) == 0) {
         gen_set_label(l1);
         /* This field may have been modified by gen_exception for the taken
            branch in case of single stepping.  */
