@@ -141,6 +141,7 @@ CPU_CONVERT(le, 64, uint64_t)
 #define cpu_to_le32wu(p, v) cpu_to_le32w(p, v)
 #define le16_to_cpupu(p) le16_to_cpup(p)
 #define le32_to_cpupu(p) le32_to_cpup(p)
+#define be16_to_cpupu(p) be16_to_cpup(p)
 #define be32_to_cpupu(p) be32_to_cpup(p)
 
 #define cpu_to_be16wu(p, v) cpu_to_be16w(p, v)
@@ -183,6 +184,12 @@ static inline uint32_t be32_to_cpupu(const uint32_t *p)
 {
     const uint8_t *p1 = (const uint8_t *)p;
     return p1[3] | (p1[2] << 8) | (p1[1] << 16) | (p1[0] << 24);
+}
+
+static inline uint16_t be16_to_cpupu(const uint16_t *p)
+{
+    const uint8_t *p1 = (const uint8_t *)p;
+    return p1[1] | (p1[0] << 8);
 }
 
 static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
