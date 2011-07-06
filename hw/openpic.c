@@ -611,6 +611,14 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
         if (val & 0x80000000 && opp->reset)
             opp->reset(opp);
         opp->glbc = val & ~0x80000000;
+        if (val & 0x20000000) {
+            DPRINTF("%s: Setting ePIC to mixed mode. GCR <= 0x%08x\n", __func__,
+                    val);
+            opp->glbc |= 0x20000000;
+        } else {
+            DPRINTF("%s: Setting ePIC to pass-through mode. GCR <= 0x%08x\n",
+                    __func__, val);
+        }
         break;
     case 0x80: /* VENI */
         break;
