@@ -676,6 +676,7 @@ abi_long target_mremap(abi_ulong old_addr, abi_ulong old_size,
 
     mmap_lock();
 
+#if defined (MREMAP_FIXED)
     if (flags & MREMAP_FIXED) {
         host_addr = (void *) syscall(__NR_mremap, g2h(old_addr),
                                      old_size, new_size,
@@ -704,7 +705,9 @@ abi_long target_mremap(abi_ulong old_addr, abi_ulong old_size,
                 mmap_reserve(old_addr, old_size);
             }
         }
-    } else {
+    } else
+#endif
+      {
         int prot = 0;
         if (RESERVED_VA && old_size < new_size) {
             abi_ulong addr;
