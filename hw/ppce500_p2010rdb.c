@@ -33,6 +33,7 @@
 #include "flash.h"
 #include "etsec.h"
 #include "espi.h"
+#include "fsl_I2C.h"
 
 //#define DEBUG_P2010
 
@@ -60,6 +61,8 @@
 #define P2010RDB_ETSEC1_BASE        (P2010RDB_CCSRBAR_BASE + 0x24000)
 #define P2010RDB_MPIC_REGS_BASE     (P2010RDB_CCSRBAR_BASE + 0x40000)
 #define P2010RDB_GLOBAL_UTILITIES   (P2010RDB_CCSRBAR_BASE + 0xE0000)
+#define P2010RDB_I2C_1_BASE         (P2010RDB_CCSRBAR_BASE + 0x03000)
+#define P2010RDB_I2C_2_BASE         (P2010RDB_CCSRBAR_BASE + 0x03100)
 #define P2010RDB_VSC7385            (0xF1000000)
 #define P2010RDB_VSC7385_SIZE       (0x00020000)
 #define P2010RDB_PCI_REGS_SIZE      0x1000
@@ -729,6 +732,10 @@ static void p2010rdb_init(ram_addr_t ram_size,
 
     /* eSPI */
     espi_create(P2010RDB_ESPI_BASE, mpic[12+43]);
+
+    /* I2C */
+    fsl_i2c_create(P2010RDB_I2C_1_BASE, mpic[12+27]);
+    fsl_i2c_create(P2010RDB_I2C_2_BASE, mpic[12+27]);
 
     /* Load kernel. */
     if (kernel_filename) {
