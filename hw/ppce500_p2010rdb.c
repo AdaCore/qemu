@@ -33,6 +33,7 @@
 #include "flash.h"
 #include "etsec.h"
 #include "espi.h"
+#include "fsl_I2C.h"
 #include "exec-memory.h"
 
 #include "qemu-plugin.h"
@@ -63,6 +64,8 @@
 #define P2010RDB_ETSEC1_BASE        0x24000
 #define P2010RDB_MPIC_REGS_BASE     0x40000
 #define P2010RDB_GLOBAL_UTILITIES   0xE0000
+#define P2010RDB_I2C_1_BASE         0x03000
+#define P2010RDB_I2C_2_BASE         0x03100
 #define P2010RDB_VSC7385            0xF1000000
 #define P2010RDB_VSC7385_SIZE       0x00020000
 #define P2010RDB_PCI_REGS_SIZE      0x1000
@@ -825,6 +828,13 @@ static void fsl_e500_init(fsl_e500_config *config,
                      mpic[config->etsec_irq_rx[i]],
                      mpic[config->etsec_irq_err[i]]);
     }
+
+    /* eSPI */
+    espi_create(P2010RDB_ESPI_BASE, ccsr_space, mpic[config->espi_irq]);
+
+    /* I2C */
+    fsl_i2c_create(P2010RDB_I2C_1_BASE, ccsr_space, mpic[config->i2c_irq]);
+    fsl_i2c_create(P2010RDB_I2C_2_BASE, ccsr_space, mpic[config->i2c_irq]);
 
     /* Load pflash after serial initialization because pflash_cfi02_register
      * causes a race condition in monitor initialization which makes the monitor
