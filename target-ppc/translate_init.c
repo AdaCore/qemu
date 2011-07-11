@@ -7235,6 +7235,7 @@ enum {
 #define CPU_POWERPC_MPC8568E         CPU_POWERPC_e500v2_v22
 #define CPU_POWERPC_MPC8572          CPU_POWERPC_e500v2_v30
 #define CPU_POWERPC_MPC8572E         CPU_POWERPC_e500v2_v30
+#define CPU_POWERPC_P2010            CPU_POWERPC_e500v2_v30
     /* e600 family */
     /* e600 cores */
     CPU_POWERPC_e600               = 0x80040010,
@@ -7615,6 +7616,8 @@ enum {
     POWERPC_SVR_8568E              = 0x807D0011 | POWERPC_SVR_E500,
     POWERPC_SVR_8572               = 0x80E00010 | POWERPC_SVR_E500,
     POWERPC_SVR_8572E              = 0x80E80010 | POWERPC_SVR_E500,
+    POWERPC_SVR_P2010              = 0x80E30020 | POWERPC_SVR_E500,
+
 #if 0
     POWERPC_SVR_8610               = xxx,
 #endif
@@ -8761,6 +8764,9 @@ static const ppc_def_t ppc_defs[] = {
     /* MPC8572E                                                              */
     POWERPC_DEF_SVR("MPC8572E",
                     CPU_POWERPC_MPC8572E,     POWERPC_SVR_8572E,     e500v2),
+    /* p2010                                                              */
+    POWERPC_DEF_SVR("p2010",
+                    CPU_POWERPC_P2010,        POWERPC_SVR_P2010,     e500v2),
     /* e600 family                                                           */
     /* PowerPC e600 core                                                     */
     POWERPC_DEF("e600",          CPU_POWERPC_e600,                   7400),
