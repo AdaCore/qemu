@@ -28,9 +28,11 @@
 #include "kvm_ppc.h"
 #include "device_tree.h"
 #include "openpic.h"
-#include "ppce500.h"
 #include "loader.h"
 #include "elf.h"
+#include "flash.h"
+#include "etsec.h"
+#include "espi.h"
 
 //#define DEBUG_P2010
 
@@ -94,7 +96,6 @@ static void main_cpu_reset(void *opaque)
     CPUState  *env = s->env;
     ppcemb_tlb_t *tlb1 = booke206_get_tlbe(env, 1, 0, 0);
     ppcemb_tlb_t *tlb2 = booke206_get_tlbe(env, 1, 0, 1);
-
 
     cpu_reset(env);
 
@@ -605,7 +606,6 @@ static void p2010rdb_init(ram_addr_t ram_size,
                          const char *cpu_model)
 {
     CPUState           *env;
-    char               *filename;
     uint64_t            elf_entry;
     uint64_t            elf_lowaddr;
     target_phys_addr_t  entry       = 0;
@@ -616,8 +616,11 @@ static void p2010rdb_init(ram_addr_t ram_size,
     int                 bios_size   = 0;
     qemu_irq           *irqs, *mpic;
     ResetData          *reset_info;
+    DriveInfo          *dinfo;
+    int                 fl_sectors;
     int                 io_memory;
     int                 ram_offset;
+    int                 i;
 
     /* Setup CPU */
     env = cpu_ppc_init("p2010");
