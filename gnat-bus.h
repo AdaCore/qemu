@@ -47,6 +47,7 @@ struct GnatBus_Device {
     GnatBusPacket   *curr_packet;
     uint32_t         curr_packet_size;
     CharDriverState *chr;
+    int              status;
 
     QLIST_ENTRY(GnatBus_Device) list;
 };
