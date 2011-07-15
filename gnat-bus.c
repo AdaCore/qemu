@@ -46,6 +46,10 @@ static void dev_set_nonblocking(GnatBus_Device *qbdev)
 
 int gnatbus_send(GnatBus_Device *qbdev, const uint8_t *buf, int len)
 {
+    if (qbdev->status != CHR_EVENT_OPENED) {
+        return -1;
+    }
+
     return qbdev->chr->chr_write(qbdev->chr, buf, len);
 }
 
@@ -66,6 +70,10 @@ static GnatBusPacket *gnatbus_receive_packet_sync(GnatBus_Device *qbdev)
     uint32_t       init_packet_size;
     uint32_t       remaining_data;
     int            read_size;
+
+    if (qbdev->status != CHR_EVENT_OPENED) {
+        return NULL;
+    }
 
     init_packet_size = sizeof(GnatBusPacket);
     packet           = qemu_malloc(init_packet_size);
@@ -142,6 +150,10 @@ GnatBusPacket_Response *send_and_wait_resp(GnatBus_Device        *qbdev,
     GnatBusPacket          *packet;
     GnatBusPacket_Response *resp;
 
+    if (qbdev->status != CHR_EVENT_OPENED) {
+        return NULL;
+    }
+
     trace_gnatbus_send_and_wait_resp();
 
     request->id = gen_request_id();
@@ -181,6 +193,10 @@ static int gnatbus_receive_packet_async(GnatBus_Device *qbdev,
 {
     uint32_t  packet_size;
     char     *dst;
+
+    if (qbdev->status != CHR_EVENT_OPENED) {
+        return -1;
+    }
 
     trace_gnatbus_receive_packet_async(size);
 
@@ -235,6 +251,11 @@ static void gnatbus_chr_receive(void *opaque, const uint8_t *buf, int size)
 
 static void gnatbus_chr_event(void *opaque, int event)
 {
+    GnatBus_Device         *qbdev = opaque;
+
+    if (event == CHR_EVENT_CLOSED || event == CHR_EVENT_OPENED) {
+        qbdev->status = event;
+    }
 }
 
 /* Transmit Qemu events to devices */
@@ -425,6 +446,10 @@ static inline void gnatbus_write_generic(void               *opaque,
 
     assert(size <= 4);
 
+    if (io_base->qbdev->status != CHR_EVENT_OPENED) {
+        return;
+    }
+
     gnatbus_freeze_cpu();
 
     write = qemu_malloc(sizeof(GnatBusPacket_Write) + 4);
@@ -478,6 +503,10 @@ static inline uint32_t gnatbus_read_generic(void               *opaque,
     GnatBusPacket_Read      read;
     GnatBusPacket_Data     *resp;
     uint32_t                ret     = 0;
+
+    if (io_base->qbdev->status != CHR_EVENT_OPENED) {
+        return 0;
+    }
 
     assert(size <= 4);
 
@@ -562,6 +591,7 @@ static int gnatbus_init(const char *optarg)
     qbdev         = qemu_mallocz(sizeof *qbdev);
     qbdev->master = g_qbmaster;
     qbdev->chr    = chr;
+    qbdev->status = CHR_EVENT_OPENED;
 
     qemu_chr_add_handlers(qbdev->chr,
                           gnatbus_chr_can_receive,
