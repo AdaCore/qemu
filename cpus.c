@@ -1082,9 +1082,6 @@ bool cpu_exec_all(void)
     }
     for (; next_cpu != NULL && !exit_request; next_cpu = next_cpu->next_cpu) {
         CPUState *env = next_cpu;
-#ifdef TARGET_PPC
-        env->reserve_addr = -1;
-#endif /* TARGET_PPC */
 
         qemu_clock_enable(vm_clock,
                           (env->singlestep_enabled & SSTEP_NOTIMER) == 0);
