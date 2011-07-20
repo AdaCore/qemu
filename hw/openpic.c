@@ -67,7 +67,8 @@
 #define MAX_IRQ   128
 #define MAX_DBL     0
 #define MAX_MBX     0
-#define MAX_TMR     4*2
+#define MAX_TMR_PER_CPU 4
+#define MAX_TMR     MAX_TMR_PER_CPU * MAX_CPU
 #define VECTOR_BITS 8
 #define MAX_IPI     4
 #define VID         0x03 /* MPIC version ID */
@@ -141,6 +142,13 @@ enum {
 #define MPIC_MSI_REG_SIZE         0x100
 #define MPIC_CPU_REG_START        0x20000
 #define MPIC_CPU_REG_SIZE         0x100
+
+typedef struct iomem_entry_t {
+    CPUReadMemoryFunc * const *read;
+    CPUWriteMemoryFunc * const *write;
+    target_phys_addr_t start_addr;
+    ram_addr_t size;
+} iomem_entry_t;
 
 enum mpic_ide_bits {
     IDR_EP     = 0,
@@ -956,10 +964,13 @@ static void openpic_cpu_prv_write (void *opaque, target_phys_addr_t addr,
         uint32_t val)
 {
     int idx;
-    CPUPPCState * env = (CPUPPCState *)cpu_single_env;
-    idx = env->cpu_index;
+    idx = cpu_single_env->cpu_index;
     DPRINTF("Redirecting write from 0x%08x", addr);
-    addr += 0x20000 + idx * 0x1000;
+    /* the 0x20000 offset is useless because openpic_cpu_write masks addr with
+     * 0x1FF0
+     * addr += 0x20000 + idx * 0x1000;
+     */
+    addr += idx * 0x1000;
     DPRINTF(" to 0x%08x\n", addr);
     openpic_cpu_write(opaque, addr, val);
 }
@@ -967,10 +978,13 @@ static void openpic_cpu_prv_write (void *opaque, target_phys_addr_t addr,
 static uint32_t openpic_cpu_prv_read (void *opaque, target_phys_addr_t addr)
 {
     int idx;
-    CPUPPCState * env = (CPUPPCState *)cpu_single_env;
-    idx = env->cpu_index;
+    idx = cpu_single_env->cpu_index;
     DPRINTF("Redirecting write from 0x%08x", addr);
-    addr += 0x20000 + idx * 0x1000;
+    /* the 0x20000 offset is useless because openpic_cpu_write masks addr with
+     * 0x1FF0
+     * addr += 0x20000 + idx * 0x1000;
+     */
+    addr += idx * 0x1000;
     DPRINTF(" to 0x%08x\n", addr);
     return openpic_cpu_read(opaque, addr);
 }
@@ -1335,7 +1349,7 @@ static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t va
         return;
     addr &= 0xFFFF;
     cpu = addr >> 12;
-    idx = ((addr >> 6) & 0x3) + cpu * 4;
+    idx = ((addr >> 6) & 0x3) + cpu * MAX_TMR_PER_CPU;
     if (!(addr < 0x1300 || (addr >= 0x20f0 && addr < 0x2300))) {
         printf("%s : Register not yet implemented. addr = 0x%08x\n", __func__,
                 addr);
@@ -1375,7 +1389,7 @@ static uint32_t mpic_timer_read (void *opaque, target_phys_addr_t addr)
         return retval;
     addr &= 0xFFFF;
     cpu = addr >> 12;
-    idx = ((addr >> 6) & 0x3) + cpu * 4;
+    idx = ((addr >> 6) & 0x3) + cpu * MAX_TMR_PER_CPU;
     switch (addr & 0x30) {
     case 0x00: /* gtccr */
         retval = mpp->timers[idx].ticc;
@@ -1692,33 +1706,14 @@ static CPUReadMemoryFunc * const mpic_msi_read[] = {
     &mpic_src_msi_read,
 };
 
-qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
-                        qemu_irq **irqs, qemu_irq irq_out)
+static qemu_irq *mpic_init_internal (target_phys_addr_t base, int nb_cpus,
+                        qemu_irq **irqs, qemu_irq irq_out, const iomem_entry_t
+                        *list, uint8_t n)
 {
     openpic_t *mpp;
     int i;
-    struct {
-        CPUReadMemoryFunc * const *read;
-        CPUWriteMemoryFunc * const *write;
-        target_phys_addr_t start_addr;
-        ram_addr_t size;
-    } const list[] = {
-        {mpic_glb_read, mpic_glb_write, MPIC_GLB_REG_START, MPIC_GLB_REG_SIZE},
-        {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START, MPIC_TMR_REG_SIZE},
-        {mpic_ext_read, mpic_ext_write, MPIC_EXT_REG_START, MPIC_EXT_REG_SIZE},
-        {mpic_int_read, mpic_int_write, MPIC_INT_REG_START, MPIC_INT_REG_SIZE},
-        {mpic_msg_read, mpic_msg_write, MPIC_MSG_REG_START, MPIC_MSG_REG_SIZE},
-        {mpic_msi_read, mpic_msi_write, MPIC_MSI_REG_START, MPIC_MSI_REG_SIZE},
-        {mpic_cpu_read, mpic_cpu_write, MPIC_CPU_REG_START, MPIC_CPU_REG_SIZE},
-    };
-
-    /* XXX: for now, only one CPU is supported */
-    if (nb_cpus != 1)
-        return NULL;
-
     mpp = qemu_mallocz(sizeof(openpic_t));
-
-    for (i = 0; i < sizeof(list)/sizeof(list[0]); i++) {
+    for (i = 0; i < n; i++) {
         int mem_index;
 
         mem_index = cpu_register_io_memory(list[i].read, list[i].write, mpp,
@@ -1752,23 +1747,35 @@ free:
     return NULL;
 }
 
+qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
+                        qemu_irq **irqs, qemu_irq irq_out)
+{
+    iomem_entry_t const list[] = {
+        {mpic_glb_read, mpic_glb_write, MPIC_GLB_REG_START, MPIC_GLB_REG_SIZE},
+        {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START, MPIC_TMR_REG_SIZE},
+        {mpic_ext_read, mpic_ext_write, MPIC_EXT_REG_START, MPIC_EXT_REG_SIZE},
+        {mpic_int_read, mpic_int_write, MPIC_INT_REG_START, MPIC_INT_REG_SIZE},
+        {mpic_msg_read, mpic_msg_write, MPIC_MSG_REG_START, MPIC_MSG_REG_SIZE},
+        {mpic_msi_read, mpic_msi_write, MPIC_MSI_REG_START, MPIC_MSI_REG_SIZE},
+        {mpic_cpu_read, mpic_cpu_write, MPIC_CPU_REG_START, MPIC_CPU_REG_SIZE},
+    };
+
+    /* XXX: for now, only one CPU is supported */
+    if (nb_cpus != 1)
+        return NULL;
+
+    return mpic_init_internal(base, nb_cpus, irqs, irq_out, list,
+            sizeof(list)/sizeof(list[0]));
+}
+
 qemu_irq *smp_mpic_init(target_phys_addr_t base, int nb_cpus,
                         qemu_irq **irqs, qemu_irq irq_out)
 {
-    openpic_t *mpp;
-    int i;
-    struct {
-        CPUReadMemoryFunc * const *read;
-        CPUWriteMemoryFunc * const *write;
-        target_phys_addr_t start_addr;
-        ram_addr_t size;
-    } const list[] = {
+    iomem_entry_t const list[] = {
         {mpic_cpu_prv_read, mpic_cpu_prv_write, SMP_PER_CPU_PRV_START,
             SMP_PER_CPU_PRV_SIZE},
         {mpic_glb_read, mpic_glb_write, SMP_GLB_REG_START, SMP_GLB_REG_SIZE},
         {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START, MPIC_TMR_REG_SIZE},
-        //{mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START(1),
-        //MPIC_TMR_REG_SIZE},
         {mpic_ext_read, mpic_ext_write, MPIC_EXT_REG_START, MPIC_EXT_REG_SIZE},
         {mpic_int_read, mpic_int_write, MPIC_INT_REG_START, MPIC_INT_REG_SIZE},
         {mpic_msg_read, mpic_msg_write, MPIC_MSG_REG_START, MPIC_MSG_REG_SIZE},
@@ -1776,42 +1783,6 @@ qemu_irq *smp_mpic_init(target_phys_addr_t base, int nb_cpus,
         {mpic_cpu_read, mpic_cpu_write, MPIC_CPU_REG_START, 0x1000 * nb_cpus},
     };
 
-    /* XXX: for now, only one CPU is supported */
-    //if (nb_cpus != 1)
-    //    return NULL;
-
-    mpp = qemu_mallocz(sizeof(openpic_t));
-
-    for (i = 0; i < sizeof(list)/sizeof(list[0]); i++) {
-        int mem_index;
-
-        mem_index = cpu_register_io_memory(list[i].read, list[i].write, mpp,
-                                           DEVICE_BIG_ENDIAN);
-        if (mem_index < 0) {
-            goto free;
-        }
-        cpu_register_physical_memory(base + list[i].start_addr,
-                                     list[i].size, mem_index);
-    }
-
-    mpp->nb_cpus = nb_cpus;
-    mpp->max_irq = MPIC_MAX_IRQ;
-    mpp->irq_ipi0 = MPIC_IPI_IRQ;
-    mpp->irq_tim0 = MPIC_TMR_IRQ;
-
-    for (i = 0; i < nb_cpus; i++)
-        mpp->dst[i].irqs = irqs[i];
-    mpp->irq_out = irq_out;
-
-    mpp->irq_raise = mpic_irq_raise;
-    mpp->reset = mpic_reset;
-
-    //register_savevm(NULL, "mpic", 0, 2, openpic_save, openpic_load, mpp);
-    qemu_register_reset(mpic_reset, mpp);
-
-    return qemu_allocate_irqs(openpic_set_irq, mpp, mpp->max_irq);
-
-free:
-    qemu_free(mpp);
-    return NULL;
+    return mpic_init_internal(base, nb_cpus, irqs, irq_out, list,
+            sizeof(list)/sizeof(list[0]));
 }
