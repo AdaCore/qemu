@@ -68,7 +68,7 @@
 #define MAX_DBL     0
 #define MAX_MBX     0
 #define MAX_TMR_PER_CPU 4
-#define MAX_TMR     MAX_TMR_PER_CPU * MAX_CPU
+#define MAX_TMR     (MAX_TMR_PER_CPU * MAX_CPU)
 #define VECTOR_BITS 8
 #define MAX_IPI     4
 #define VID         0x03 /* MPIC version ID */
@@ -835,8 +835,9 @@ static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t v
         return;
     addr &= 0x1FFF0;
     idx = addr / 0x1000;
-    if (idx != 0)
+    if (idx != 0) {
         DPRINTF("\t%s: Processor ID is %d\n", __func__, idx);
+    }
     dst = &opp->dst[idx];
     addr &= 0xFF0;
     switch (addr) {
@@ -897,8 +898,9 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
         return retval;
     addr &= 0x1FFF0;
     idx = addr / 0x1000;
-    if (idx != 0)
+    if (idx != 0) {
         DPRINTF("\t%s: Processor ID is %d\n", __func__, idx);
+    }
     dst = &opp->dst[idx];
     addr &= 0xFF0;
     switch (addr) {
@@ -960,7 +962,7 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
     return retval;
 }
 
-static void openpic_cpu_prv_write (void *opaque, target_phys_addr_t addr,
+static void openpic_cpu_prv_write(void *opaque, target_phys_addr_t addr,
         uint32_t val)
 {
     int idx;
@@ -975,7 +977,7 @@ static void openpic_cpu_prv_write (void *opaque, target_phys_addr_t addr,
     openpic_cpu_write(opaque, addr, val);
 }
 
-static uint32_t openpic_cpu_prv_read (void *opaque, target_phys_addr_t addr)
+static uint32_t openpic_cpu_prv_read(void *opaque, target_phys_addr_t addr)
 {
     int idx;
     idx = cpu_single_env->cpu_index;
@@ -1369,10 +1371,11 @@ static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t va
         write_IRQreg(mpp, MPIC_TMR_IRQ + idx, IRQ_IPVP, val);
         break;
     case 0x30: /* GTIDR & TFRR */
-        if ((addr & 0xFF0) == 0xF0)
+        if ((addr & 0xFF0) == 0xF0) {
             mpp->dst[cpu].tfrr = val;
-        else
+        } else {
             write_IRQreg(mpp, MPIC_TMR_IRQ + idx, IRQ_IDE, val);
+        }
         break;
     }
 }
@@ -1401,10 +1404,11 @@ static uint32_t mpic_timer_read (void *opaque, target_phys_addr_t addr)
         retval = read_IRQreg(mpp, MPIC_TMR_IRQ + idx, IRQ_IPVP);
         break;
     case 0x30: /* TIDR & TFFR */
-        if ((addr &0xFF0) == 0XF0)
+        if ((addr & 0xFF0) == 0XF0) {
             retval = mpp->dst[cpu].tfrr;
-        else
+        } else {
             retval = read_IRQreg(mpp, MPIC_TMR_IRQ + idx, IRQ_IDE);
+        }
         break;
     }
     DPRINTF("%s: => %08x\n", __func__, retval);
@@ -1706,7 +1710,7 @@ static CPUReadMemoryFunc * const mpic_msi_read[] = {
     &mpic_src_msi_read,
 };
 
-static qemu_irq *mpic_init_internal (target_phys_addr_t base, int nb_cpus,
+static qemu_irq *mpic_init_internal(target_phys_addr_t base, int nb_cpus,
                         qemu_irq **irqs, qemu_irq irq_out, const iomem_entry_t
                         *list, uint8_t n)
 {
@@ -1747,7 +1751,7 @@ free:
     return NULL;
 }
 
-qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
+qemu_irq *mpic_init(target_phys_addr_t base, int nb_cpus,
                         qemu_irq **irqs, qemu_irq irq_out)
 {
     iomem_entry_t const list[] = {
@@ -1761,8 +1765,9 @@ qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
     };
 
     /* XXX: for now, only one CPU is supported */
-    if (nb_cpus != 1)
+    if (nb_cpus != 1) {
         return NULL;
+    }
 
     return mpic_init_internal(base, nb_cpus, irqs, irq_out, list,
             sizeof(list)/sizeof(list[0]));
