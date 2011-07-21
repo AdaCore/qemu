@@ -248,8 +248,8 @@ obj-ppc-y += openpic.o
 # PREP target
 obj-ppc-y += i8259.o mc146818rtc.o
 obj-ppc-y += ppc_prep.o
-# Simple target
-obj-ppc-y += ppc_simple.o
+# SMP target
+obj-ppc-y += ppc_smp.o
 # OldWorld PowerMac
 obj-ppc-y += ppc_oldworld.o
 # NewWorld PowerMac
