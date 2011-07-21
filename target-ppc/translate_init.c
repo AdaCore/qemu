@@ -3071,7 +3071,7 @@ static void init_excp_7400 (CPUPPCState *env)
 #endif
 }
 
-static void init_excp_8641D (CPUPPCState *env)
+static void init_excp_e600 (CPUPPCState *env)
 {
     init_excp_7400(env);
     env->hreset_vector = 0x0FFF00100UL;
@@ -5332,10 +5332,11 @@ static void gen_spr_e600 (CPUPPCState *env)
     const int defs[] = {SPR_SPRG4, SPR_SPRG5, SPR_SPRG6, SPR_SPRG7};
     const char * const strs[] = {"SPRG4", "SPRG5", "SPRG6", "SPRG7"};
     int i;
-    for (i = 0; i <= 3; i++) 
+    for (i = 0; i <= 3; i++) {
         spr_register(env, defs[i], strs[i],
             SPR_NOACCESS, SPR_NOACCESS, &spr_read_generic, &spr_write_generic,
             0x00000000);
+    }
 }
 
 static void init_proc_8641D (CPUPPCState *env)
@@ -5348,23 +5349,12 @@ static void init_proc_8641D (CPUPPCState *env)
     gen_spr_74xx(env);
     /* e600 specific SPR */
     gen_spr_e600(env);
-    /* XXX : not implemented */
-    spr_register(env, SPR_UBAMR, "UBAMR",
-                 &spr_read_ureg, SPR_NOACCESS,
-                 &spr_read_ureg, SPR_NOACCESS,
-                 0x00000000);
-    /* XXX: this seems not implemented on all revisions. */
-    /* XXX : not implemented */
-    spr_register(env, SPR_MSSCR1, "MSSCR1",
-                 SPR_NOACCESS, SPR_NOACCESS,
-                 &spr_read_generic, &spr_write_generic,
-                 0x00000000);
     /* Thermal management */
     gen_spr_thrm(env);
     /* Memory management */
     gen_low_BATs(env);
     gen_high_BATs(env);
-    init_excp_8641D(env);
+    init_excp_e600(env);
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
