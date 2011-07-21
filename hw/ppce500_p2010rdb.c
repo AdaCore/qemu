@@ -46,8 +46,6 @@
 #define INITRD_LOAD_PAD            0x2000000
 #define INITRD_PAD_MASK            0xFFFFFF
 
-#define RAM_SIZE                   (1024 * 1024 * 1204) /* 1Go */
-
 #define P2010RDB_CCSRBAR_BASE       0xf3000000 /* u-boot 0xffe00000 */ /* vxworks bootapp 0xF3000000 */
 #define P2010RDB_LOCAL_CONF         (P2010RDB_CCSRBAR_BASE + 0x00000)
 #define P2010RDB_DDR_CONTROLLER     (P2010RDB_CCSRBAR_BASE + 0x02000)
@@ -641,7 +639,6 @@ static void p2010rdb_init(ram_addr_t ram_size,
 
     ppc_booke_timers_init(env, 700000000UL >> 3);
     /* Register Memory */
-    ram_size = RAM_SIZE;
     ram_offset = qemu_ram_alloc(NULL, "p2010rdb.ram", ram_size);
     cpu_register_physical_memory(0x0, ram_size, ram_offset);
 
