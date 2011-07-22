@@ -483,7 +483,7 @@ static void ppc_smp_init(ram_addr_t ram_size,
     }
 
     qemu_irq *pic;
-    pic = smp_mpic_init(PIC_START, smp_cpus, openpic_irqs, NULL);
+    pic = mpic_init(PIC_START, smp_cpus, openpic_irqs, NULL);
 
     int serial_irqs[] = {26,12};
     for (i = 0; i < 2; i++) {

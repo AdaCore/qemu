@@ -2,6 +2,7 @@
  * OpenPIC emulation
  *
  * Copyright (c) 2004 Jocelyn Mayer
+ *               2011 Alexander Graf
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +33,6 @@
  * Serial interrupts, as implemented in Raven chipset are not supported yet.
  *
  */
-#include "cpu.h"
 #include "hw.h"
 #include "ppc_mac.h"
 #include "pci.h"
@@ -57,18 +57,17 @@
 #define MAX_MBX     4
 #define MAX_TMR     4
 #define VECTOR_BITS 8
-#define MAX_IPI     0
+#define MAX_IPI     4
 
 #define VID (0x00000000)
 
 #elif defined(USE_MPCxxx)
 
-#define MAX_CPU     2
+#define MAX_CPU    32
 #define MAX_IRQ   128
 #define MAX_DBL     0
 #define MAX_MBX     0
-#define MAX_TMR_PER_CPU 4
-#define MAX_TMR     (MAX_TMR_PER_CPU * MAX_CPU)
+#define MAX_TMR     4
 #define VECTOR_BITS 8
 #define MAX_IPI     4
 #define VID         0x03 /* MPIC version ID */
@@ -99,9 +98,9 @@ enum {
 #endif
 
 /* MPIC */
-#define MPIC_MAX_CPU      2
+#define MPIC_MAX_CPU      1
 #define MPIC_MAX_EXT     12
-#define MPIC_MAX_INT     48
+#define MPIC_MAX_INT     64
 #define MPIC_MAX_MSG      4
 #define MPIC_MAX_MSI      8
 #define MPIC_MAX_TMR      MAX_TMR
@@ -116,22 +115,10 @@ enum {
 #define MPIC_MSI_IRQ      (MPIC_MSG_IRQ + MPIC_MAX_MSG)
 #define MPIC_IPI_IRQ      (MPIC_MSI_IRQ + MPIC_MAX_MSI)
 
-#define SMP_PER_CPU_PRV_START     0x00
-#define SMP_PER_CPU_PRV_SIZE      0xc0
-#define SMP_GLB_REG_START         0x1000
-#define SMP_GLB_REG_SIZE          0x00F0
-
 #define MPIC_GLB_REG_START        0x0
 #define MPIC_GLB_REG_SIZE         0x10F0
-/* Timers region spans over external, performance monitor, and message related
- * registers (see MPC8641D ref man)
- * This is because we have 2 identical groups of 4 timers each.
- * First one is from 0x10f0 to 0x11f0
- * Secnd one is from 0x20f0 to 0x11f0
- * This is not very important because the spanned registers are not implemented,
- * nor are the timers themselves*/
 #define MPIC_TMR_REG_START        0x10F0
-#define MPIC_TMR_REG_SIZE         0x1220
+#define MPIC_TMR_REG_SIZE         0x220
 #define MPIC_EXT_REG_START        0x10000
 #define MPIC_EXT_REG_SIZE         0x180
 #define MPIC_INT_REG_START        0x10200
@@ -141,14 +128,7 @@ enum {
 #define MPIC_MSI_REG_START        0x11C00
 #define MPIC_MSI_REG_SIZE         0x100
 #define MPIC_CPU_REG_START        0x20000
-#define MPIC_CPU_REG_SIZE         0x100
-
-typedef struct iomem_entry_t {
-    CPUReadMemoryFunc * const *read;
-    CPUWriteMemoryFunc * const *write;
-    target_phys_addr_t start_addr;
-    ram_addr_t size;
-} iomem_entry_t;
+#define MPIC_CPU_REG_SIZE         0x100 + ((MAX_CPU - 1) * 0x1000)
 
 enum mpic_ide_bits {
     IDR_EP     = 0,
@@ -181,6 +161,16 @@ static inline int test_bit (uint32_t *field, int bit)
 {
     return (field[bit >> 5] & 1 << (bit & 0x1F)) != 0;
 }
+
+static int get_current_cpu(void)
+{
+  return cpu_single_env->cpu_index;
+}
+
+static uint32_t openpic_cpu_read_internal(void *opaque, target_phys_addr_t addr,
+                                          int idx);
+static void openpic_cpu_write_internal(void *opaque, target_phys_addr_t addr,
+                                       uint32_t val, int idx);
 
 enum {
     IRQ_EXTERNAL = 0x01,
@@ -517,7 +507,7 @@ static inline void write_IRQreg (openpic_t *opp, int n_IRQ,
         break;
     case IRQ_IDE:
         tmp = val & 0xC0000000;
-        tmp |= val & ((1 << MAX_CPU) - 1);
+        tmp |= val & ((1ULL << MAX_CPU) - 1);
         opp->src[n_IRQ].ide = tmp;
         DPRINTF("Set IDE %d to 0x%08x\n", n_IRQ, opp->src[n_IRQ].ide);
         break;
@@ -615,28 +605,28 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
     DPRINTF("%s: addr " TARGET_FMT_plx " <= %08x\n", __func__, addr, val);
     if (addr & 0xF)
         return;
-    addr &= 0xFF;
     switch (addr) {
-    case 0x00: /* FREP */
+    case 0x40:
+    case 0x50:
+    case 0x60:
+    case 0x70:
+    case 0x80:
+    case 0x90:
+    case 0xA0:
+    case 0xB0:
+        openpic_cpu_write_internal(opp, addr, val, get_current_cpu());
+        break;
+    case 0x1000: /* FREP */
         DPRINTF("%s: FREP\n", __func__);
         break;
-    case 0x20: /* GLBC */
+    case 0x1020: /* GLBC */
         if (val & 0x80000000 && opp->reset)
             opp->reset(opp);
         opp->glbc = val & ~0x80000000;
-        DPRINTF("%s: GLBC\n", __func__);
-        if (val & 0x20000000) {
-            DPRINTF("%s: Setting ePIC to mixed mode. GCR <= 0x%08x\n", __func__,
-                    val);
-            opp->glbc |= 0x20000000;
-        } else {
-            DPRINTF("%s: Setting ePIC to pass-through mode. GCR <= 0x%08x\n",
-                    __func__, val);
-        }
         break;
-    case 0x80: /* VENI */
+    case 0x1080: /* VENI */
         break;
-    case 0x90: /* PINT */
+    case 0x1090: /* PINT */
         for (idx = 0; idx < opp->nb_cpus; idx++) {
             if ((val & (1 << idx)) && !(opp->pint & (1 << idx))) {
                 DPRINTF("Raise OpenPIC RESET output for CPU %d\n", idx);
@@ -650,26 +640,21 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
         }
         opp->pint = val;
         break;
-    case 0xB0:
-        openpic_cpu_write(opaque, addr, val);
-        break;
-#if MAX_IPI > 0
-    case 0xA0: /* IPI_IPVP */
-  //case 0xB0:
-    case 0xC0:
-    case 0xD0:
+    case 0x10A0: /* IPI_IPVP */
+    case 0x10B0:
+    case 0x10C0:
+    case 0x10D0:
         {
             int idx;
-            idx = (addr - 0xA0) >> 4;
+            idx = (addr - 0x10A0) >> 4;
             write_IRQreg(opp, opp->irq_ipi0 + idx, IRQ_IPVP, val);
         }
         break;
-#endif
-    case 0xE0: /* SPVE */
+    case 0x10E0: /* SPVE */
         opp->spve = val & 0x000000FF;
         DPRINTF("%s: SPVE\n", __func__);
         break;
-    case 0xF0: /* TIFR */
+    case 0x10F0: /* TIFR */
         opp->tifr = val;
         DPRINTF("%s: TIFR\n", __func__);
         break;
@@ -689,45 +674,47 @@ static uint32_t openpic_gbl_read (void *opaque, target_phys_addr_t addr)
     retval = 0xFFFFFFFF;
     if (addr & 0xF)
         return retval;
-    addr &= 0xFF;
     switch (addr) {
-    case 0x00: /* FREP */
+    case 0x1000: /* FREP */
         retval = opp->frep;
         DPRINTF("%s: FREP\n", __func__);
         break;
-    case 0x20: /* GLBC */
+    case 0x1020: /* GLBC */
         retval = opp->glbc;
         DPRINTF("%s: GLBC\n", __func__);
         break;
-    case 0x80: /* VENI */
+    case 0x1080: /* VENI */
         retval = opp->veni;
         DPRINTF("%s: VENI\n", __func__);
         break;
-    case 0x90: /* PINT */
+    case 0x1090: /* PINT */
         retval = 0x00000000;
         break;
+    case 0x40:
+    case 0x50:
+    case 0x60:
+    case 0x70:
+    case 0x80:
+    case 0x90:
     case 0xA0:
-        DPRINTF("%s: IACK\n", __func__);
-        retval = openpic_cpu_read(opaque, addr);
-        break;
-
-#if MAX_IPI > 0
-  //case 0xA0: /* IPI_IPVP */
     case 0xB0:
-    case 0xC0:
-    case 0xD0:
+        retval = openpic_cpu_read_internal(opp, addr, get_current_cpu());
+        break;
+    case 0x10A0: /* IPI_IPVP */
+    case 0x10B0:
+    case 0x10C0:
+    case 0x10D0:
         {
             int idx;
-            idx = (addr - 0xA0) >> 4;
+            idx = (addr - 0x10A0) >> 4;
             retval = read_IRQreg(opp, opp->irq_ipi0 + idx, IRQ_IPVP);
         }
         break;
-#endif
-    case 0xE0: /* SPVE */
+    case 0x10E0: /* SPVE */
         retval = opp->spve;
         DPRINTF("%s: SPVE\n", __func__);
         break;
-    case 0xF0: /* TIFR */
+    case 0x10F0: /* TIFR */
         retval = opp->tifr;
         DPRINTF("%s: TIFR\n", __func__);
         break;
@@ -846,31 +833,30 @@ static uint32_t openpic_src_read (void *opaque, uint32_t addr)
     return retval;
 }
 
-static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t val)
+static void openpic_cpu_write_internal(void *opaque, target_phys_addr_t addr,
+                                       uint32_t val, int idx)
 {
     openpic_t *opp = opaque;
     IRQ_src_t *src;
     IRQ_dst_t *dst;
-    int idx, s_IRQ, n_IRQ;
+    int s_IRQ, n_IRQ;
 
-    DPRINTF("%s: addr " TARGET_FMT_plx " <= %08x\n", __func__, addr, val);
+    DPRINTF("%s: cpu %d addr " TARGET_FMT_plx " <= %08x\n", __func__, idx,
+            addr, val);
     if (addr & 0xF)
         return;
-    addr &= 0x1FFF0;
-    idx = addr / 0x1000;
-    if (idx != 0) {
-        DPRINTF("\t%s: Processor ID is %d\n", __func__, idx);
-    }
     dst = &opp->dst[idx];
     addr &= 0xFF0;
     switch (addr) {
 #if MAX_IPI > 0
-    case 0x40: /* PIPD */
+    case 0x40: /* IPIDR */
     case 0x50:
     case 0x60:
     case 0x70:
         idx = (addr - 0x40) >> 4;
-        write_IRQreg(opp, opp->irq_ipi0 + idx, IRQ_IDE, val);
+        /* we use IDE as mask which CPUs to deliver the IPI to still. */
+        write_IRQreg(opp, opp->irq_ipi0 + idx, IRQ_IDE,
+                     opp->src[opp->irq_ipi0 + idx].ide | val);
         openpic_set_irq(opp, opp->irq_ipi0 + idx, 1);
         openpic_set_irq(opp, opp->irq_ipi0 + idx, 0);
         break;
@@ -907,23 +893,24 @@ static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t v
     }
 }
 
-static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
+static void openpic_cpu_write(void *opaque, target_phys_addr_t addr, uint32_t val)
+{
+    openpic_cpu_write_internal(opaque, addr, val, (addr & 0x1f000) >> 12);
+}
+
+static uint32_t openpic_cpu_read_internal(void *opaque, target_phys_addr_t addr,
+                                          int idx)
 {
     openpic_t *opp = opaque;
     IRQ_src_t *src;
     IRQ_dst_t *dst;
     uint32_t retval;
-    int idx, n_IRQ;
+    int n_IRQ;
 
-    DPRINTF("%s: addr " TARGET_FMT_plx "\n", __func__, addr);
+    DPRINTF("%s: cpu %d addr " TARGET_FMT_plx "\n", __func__, idx, addr);
     retval = 0xFFFFFFFF;
     if (addr & 0xF)
         return retval;
-    addr &= 0x1FFF0;
-    idx = addr / 0x1000;
-    if (idx != 0) {
-        DPRINTF("\t%s: Processor ID is %d\n", __func__, idx);
-    }
     dst = &opp->dst[idx];
     addr &= 0xFF0;
     switch (addr) {
@@ -966,6 +953,17 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
                 reset_bit(&src->ipvp, IPVP_ACTIVITY);
                 src->pending = 0;
             }
+
+            if ((n_IRQ >= opp->irq_ipi0) &&  (n_IRQ < (opp->irq_ipi0 + 4))) {
+                src->ide &= ~(1 << idx);
+                if (src->ide && !test_bit(&src->ipvp, IPVP_SENSE)) {
+                    /* trigger on CPUs that didn't know about it yet */
+                    openpic_set_irq(opp, n_IRQ, 1);
+                    openpic_set_irq(opp, n_IRQ, 0);
+                    /* if all CPUs knew about it, set active bit again */
+                    set_bit(&src->ipvp, IPVP_ACTIVITY);
+                }
+            }
         }
         break;
     case 0xB0: /* PEOI */
@@ -975,9 +973,6 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
 #if MAX_IPI > 0
     case 0x40: /* IDE */
     case 0x50:
-    case 0x60:
-    case 0x70:
-        DPRINTF("%s: IDE\n", __func__);
         idx = (addr - 0x40) >> 4;
         retval = read_IRQreg(opp, opp->irq_ipi0 + idx, IRQ_IDE);
         break;
@@ -991,33 +986,9 @@ static uint32_t openpic_cpu_read (void *opaque, target_phys_addr_t addr)
     return retval;
 }
 
-static void openpic_cpu_prv_write(void *opaque, target_phys_addr_t addr,
-        uint32_t val)
+static uint32_t openpic_cpu_read(void *opaque, target_phys_addr_t addr)
 {
-    int idx;
-    idx = cpu_single_env->cpu_index;
-    DPRINTF("Redirecting write from 0x%08x", addr);
-    /* the 0x20000 offset is useless because openpic_cpu_write masks addr with
-     * 0x1FF0
-     * addr += 0x20000 + idx * 0x1000;
-     */
-    addr += idx * 0x1000;
-    DPRINTF(" to 0x%08x\n", addr);
-    openpic_cpu_write(opaque, addr, val);
-}
-
-static uint32_t openpic_cpu_prv_read(void *opaque, target_phys_addr_t addr)
-{
-    int idx;
-    idx = cpu_single_env->cpu_index;
-    DPRINTF("Redirecting write from 0x%08x", addr);
-    /* the 0x20000 offset is useless because openpic_cpu_write masks addr with
-     * 0x1FF0
-     * addr += 0x20000 + idx * 0x1000;
-     */
-    addr += idx * 0x1000;
-    DPRINTF(" to 0x%08x\n", addr);
-    return openpic_cpu_read(opaque, addr);
+    return openpic_cpu_read_internal(opaque, addr, (addr & 0x1f000) >> 12);
 }
 
 static void openpic_buggy_write (void *opaque,
@@ -1321,14 +1292,7 @@ qemu_irq *openpic_init (PCIBus *bus, MemoryRegion **pmem, int nb_cpus,
 
 static void mpic_irq_raise(openpic_t *mpp, int n_CPU, IRQ_src_t *src)
 {
-    int n_ci = IDR_CI0 - n_CPU;
-
-    if(test_bit(&src->ide, n_ci)) {
-        qemu_irq_raise(mpp->dst[n_CPU].irqs[OPENPIC_OUTPUT_CINT]);
-    }
-    else {
-        qemu_irq_raise(mpp->dst[n_CPU].irqs[OPENPIC_OUTPUT_INT]);
-    }
+    qemu_irq_raise(mpp->dst[n_CPU].irqs[OPENPIC_OUTPUT_INT]);
 }
 
 static void mpic_reset (void *opaque)
@@ -1338,12 +1302,20 @@ static void mpic_reset (void *opaque)
 
     mpp->glbc = 0x80000000;
     /* Initialise controller registers */
-    mpp->frep = 0x004f0002 + (((mpp->nb_cpus - 1) << 8) & 0x1f00);
+    mpp->frep = 0x004f0002 | ((mpp->nb_cpus - 1) << 8);
     mpp->veni = VENI;
     mpp->pint = 0x00000000;
     mpp->spve = 0x0000FFFF;
     /* Initialise IRQ sources */
-    for (i = 0; i < mpp->max_irq; i++) {
+    for (i = 0; i < mpp->irq_ipi0; i++) {
+        mpp->src[i].ipvp = 0x80800000;
+        mpp->src[i].ide  = 0x00000001;
+    }
+    for (i = mpp->irq_ipi0; i < mpp->irq_ipi0 + MAX_IPI; i++) {
+        mpp->src[i].ipvp = 0x80800000;
+        mpp->src[i].ide  = 0x00000000;
+    }
+    for (i = mpp->irq_ipi0 + MAX_IPI; i < mpp->max_irq; i++) {
         mpp->src[i].ipvp = 0x80800000;
         mpp->src[i].ide  = 0x00000001;
     }
@@ -1375,7 +1347,7 @@ static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t va
         return;
     addr &= 0xFFFF;
     cpu = addr >> 12;
-    idx = ((addr >> 6) & 0x3) + cpu * MAX_TMR_PER_CPU;
+    idx = (addr >> 6) & 0x3;
     switch (addr & 0x30) {
     case 0x00: /* gtccr */
         break;
@@ -1390,11 +1362,10 @@ static void mpic_timer_write (void *opaque, target_phys_addr_t addr, uint32_t va
         write_IRQreg(mpp, MPIC_TMR_IRQ + idx, IRQ_IPVP, val);
         break;
     case 0x30: /* GTIDR & TFRR */
-        if ((addr & 0xFF0) == 0xF0) {
+        if ((addr & 0xF0) == 0xF0)
             mpp->dst[cpu].tfrr = val;
-        } else {
+        else
             write_IRQreg(mpp, MPIC_TMR_IRQ + idx, IRQ_IDE, val);
-        }
         break;
     }
 }
@@ -1411,7 +1382,7 @@ static uint32_t mpic_timer_read (void *opaque, target_phys_addr_t addr)
         return retval;
     addr &= 0xFFFF;
     cpu = addr >> 12;
-    idx = ((addr >> 6) & 0x3) + cpu * MAX_TMR_PER_CPU;
+    idx = (addr >> 6) & 0x3;
     switch (addr & 0x30) {
     case 0x00: /* gtccr */
         retval = mpp->timers[idx].ticc;
@@ -1422,12 +1393,11 @@ static uint32_t mpic_timer_read (void *opaque, target_phys_addr_t addr)
     case 0x20: /* TIPV */
         retval = read_IRQreg(mpp, MPIC_TMR_IRQ + idx, IRQ_IPVP);
         break;
-    case 0x30: /* TIDR & TFFR */
-        if ((addr & 0xFF0) == 0XF0) {
+    case 0x30: /* TIDR */
+        if ((addr &0xF0) == 0XF0)
             retval = mpp->dst[cpu].tfrr;
-        } else {
+        else
             retval = read_IRQreg(mpp, MPIC_TMR_IRQ + idx, IRQ_IDE);
-        }
         break;
     }
     DPRINTF("%s: => %08x\n", __func__, retval);
@@ -1658,18 +1628,6 @@ static CPUReadMemoryFunc * const mpic_tmr_read[] = {
     &mpic_timer_read,
 };
 
-static CPUWriteMemoryFunc * const mpic_cpu_prv_write[] = {
-    &openpic_buggy_write,
-    &openpic_buggy_write,
-    &openpic_cpu_prv_write,
-};
-
-static CPUReadMemoryFunc * const mpic_cpu_prv_read[] = {
-    &openpic_buggy_read,
-    &openpic_buggy_read,
-    &openpic_cpu_prv_read,
-};
-
 static CPUWriteMemoryFunc * const mpic_cpu_write[] = {
     &openpic_buggy_write,
     &openpic_buggy_write,
@@ -1729,14 +1687,29 @@ static CPUReadMemoryFunc * const mpic_msi_read[] = {
     &mpic_src_msi_read,
 };
 
-static qemu_irq *mpic_init_internal(target_phys_addr_t base, int nb_cpus,
-                        qemu_irq **irqs, qemu_irq irq_out, const iomem_entry_t
-                        *list, uint8_t n)
+qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
+                        qemu_irq **irqs, qemu_irq irq_out)
 {
     openpic_t *mpp;
     int i;
+    struct {
+        CPUReadMemoryFunc * const *read;
+        CPUWriteMemoryFunc * const *write;
+        target_phys_addr_t start_addr;
+        ram_addr_t size;
+    } const list[] = {
+        {mpic_glb_read, mpic_glb_write, MPIC_GLB_REG_START, MPIC_GLB_REG_SIZE},
+        {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START, MPIC_TMR_REG_SIZE},
+        {mpic_ext_read, mpic_ext_write, MPIC_EXT_REG_START, MPIC_EXT_REG_SIZE},
+        {mpic_int_read, mpic_int_write, MPIC_INT_REG_START, MPIC_INT_REG_SIZE},
+        {mpic_msg_read, mpic_msg_write, MPIC_MSG_REG_START, MPIC_MSG_REG_SIZE},
+        {mpic_msi_read, mpic_msi_write, MPIC_MSI_REG_START, MPIC_MSI_REG_SIZE},
+        {mpic_cpu_read, mpic_cpu_write, MPIC_CPU_REG_START, MPIC_CPU_REG_SIZE},
+    };
+
     mpp = qemu_mallocz(sizeof(openpic_t));
-    for (i = 0; i < n; i++) {
+
+    for (i = 0; i < sizeof(list)/sizeof(list[0]); i++) {
         int mem_index;
 
         mem_index = cpu_register_io_memory(list[i].read, list[i].write, mpp,
@@ -1768,45 +1741,4 @@ static qemu_irq *mpic_init_internal(target_phys_addr_t base, int nb_cpus,
 free:
     qemu_free(mpp);
     return NULL;
-}
-
-qemu_irq *mpic_init(target_phys_addr_t base, int nb_cpus,
-                        qemu_irq **irqs, qemu_irq irq_out)
-{
-    iomem_entry_t const list[] = {
-        {mpic_glb_read, mpic_glb_write, MPIC_GLB_REG_START, MPIC_GLB_REG_SIZE},
-        {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START, MPIC_TMR_REG_SIZE},
-        {mpic_ext_read, mpic_ext_write, MPIC_EXT_REG_START, MPIC_EXT_REG_SIZE},
-        {mpic_int_read, mpic_int_write, MPIC_INT_REG_START, MPIC_INT_REG_SIZE},
-        {mpic_msg_read, mpic_msg_write, MPIC_MSG_REG_START, MPIC_MSG_REG_SIZE},
-        {mpic_msi_read, mpic_msi_write, MPIC_MSI_REG_START, MPIC_MSI_REG_SIZE},
-        {mpic_cpu_read, mpic_cpu_write, MPIC_CPU_REG_START, MPIC_CPU_REG_SIZE},
-    };
-
-    /* XXX: for now, only one CPU is supported */
-    if (nb_cpus != 1) {
-        return NULL;
-    }
-
-    return mpic_init_internal(base, nb_cpus, irqs, irq_out, list,
-            sizeof(list)/sizeof(list[0]));
-}
-
-qemu_irq *smp_mpic_init(target_phys_addr_t base, int nb_cpus,
-                        qemu_irq **irqs, qemu_irq irq_out)
-{
-    iomem_entry_t const list[] = {
-        {mpic_cpu_prv_read, mpic_cpu_prv_write, SMP_PER_CPU_PRV_START,
-            SMP_PER_CPU_PRV_SIZE},
-        {mpic_glb_read, mpic_glb_write, SMP_GLB_REG_START, SMP_GLB_REG_SIZE},
-        {mpic_tmr_read, mpic_tmr_write, MPIC_TMR_REG_START, MPIC_TMR_REG_SIZE},
-        {mpic_ext_read, mpic_ext_write, MPIC_EXT_REG_START, MPIC_EXT_REG_SIZE},
-        {mpic_int_read, mpic_int_write, MPIC_INT_REG_START, MPIC_INT_REG_SIZE},
-        {mpic_msg_read, mpic_msg_write, MPIC_MSG_REG_START, MPIC_MSG_REG_SIZE},
-        {mpic_msi_read, mpic_msi_write, MPIC_MSI_REG_START, MPIC_MSI_REG_SIZE},
-        {mpic_cpu_read, mpic_cpu_write, MPIC_CPU_REG_START, 0x1000 * nb_cpus},
-    };
-
-    return mpic_init_internal(base, nb_cpus, irqs, irq_out, list,
-            sizeof(list)/sizeof(list[0]));
 }
