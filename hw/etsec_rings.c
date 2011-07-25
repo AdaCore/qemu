@@ -8,6 +8,7 @@
 
 //#define ETSEC_RING_DEBUG
 //#define HEX_DUMP
+//#define DEBUG_BD
 
 #ifdef ETSEC_RING_DEBUG
 #define RING_DEBUG(fmt, ...) printf ("%s:%s " fmt, __func__ , etsec->nic->nc.name, ## __VA_ARGS__)
@@ -17,7 +18,7 @@
 
 #define RING_DEBUG_A(fmt, ...) printf ("%s:%s " fmt, __func__ , etsec->nic->nc.name, ## __VA_ARGS__)
 
-#ifdef ETSEC_RING_DEBUG
+#ifdef DEBUG_BD
 
 static void print_tx_bd_flags(uint16_t flags)
 {
@@ -70,7 +71,7 @@ static void print_bd(eTSEC_rxtx_bd bd, int mode, uint32_t index)
     printf("   Pointer : 0x%08x\n", bd.bufptr);
 }
 
-#endif  /* ETSEC_RING_DEBUG */
+#endif  /* DEBUG_BD */
 
 #ifdef HEX_DUMP
 
@@ -372,12 +373,12 @@ void walk_tx_ring(eTSEC *etsec, int ring_nbr)
     do {
         read_buffer_descriptor(etsec, bd_addr, &bd);
 
-#ifdef ETSEC_RING_DEBUG
+#ifdef DEBUG_BD
         print_bd(bd,
                  eTSEC_TRANSMIT,
                  (bd_addr - ring_base) / sizeof(eTSEC_rxtx_bd));
 
-#endif  /* ETSEC_RING_DEBUG */
+#endif  /* DEBUG_BD */
 
         /* Save flags before BD update */
         bd_flags = bd.flags;
@@ -412,25 +413,55 @@ static void fill_rx_bd(eTSEC          *etsec,
                        const uint8_t **buf,
                        size_t         *size)
 {
-    uint16_t to_write = MIN(*size, etsec->regs[MRBLR].value);
+    uint16_t to_write = MIN(etsec->rx_fcb_size + *size - etsec->rx_padding,
+                            etsec->regs[MRBLR].value);
+    uint32_t bufptr   = bd->bufptr;
+    uint8_t  padd[etsec->rx_padding];
+    uint8_t  rem;
+
+    RING_DEBUG("eTSEC fill Rx buffer @ 0x%08x size:%u(padding + crc:%u) + fcb:%u\n",
+               bufptr, *size, etsec->rx_padding, etsec->rx_fcb_size);
+
+    bd->length = 0;
+    if (etsec->rx_fcb_size != 0) {
+        cpu_physical_memory_write(bufptr, etsec->rx_fcb, etsec->rx_fcb_size);
+
+        bufptr             += etsec->rx_fcb_size;
+        bd->length         += etsec->rx_fcb_size;
+        to_write           -= etsec->rx_fcb_size;
+        etsec->rx_fcb_size  = 0;
+
+    }
 
     if (to_write > 0) {
-        RING_DEBUG("eTSEC fill Rx buffer @ 0x%08x size:%u\n",
-                   bd->bufptr, to_write);
-        cpu_physical_memory_write(bd->bufptr, *buf, to_write);
+        cpu_physical_memory_write(bufptr, *buf, to_write);
 
-        *buf  += to_write;
-        *size -= to_write;
+        *buf   += to_write;
+        bufptr += to_write;
+        *size  -= to_write;
 
-        bd->flags &= ~BD_RX_EMPTY;
-        bd->length = to_write;
+        bd->flags  &= ~BD_RX_EMPTY;
+        bd->length += to_write;
+    }
+
+    if (*size == etsec->rx_padding) {
+        /* The remaining bytes are for padding which is not actually allocated
+           in the buffer */
+
+        rem = MIN(etsec->regs[MRBLR].value - bd->length, etsec->rx_padding);
+
+        if (rem > 0){
+            memset(padd, 0x0, sizeof (padd));
+            etsec->rx_padding -= rem;
+            *size             -= rem;
+            bd->length        += rem;
+            cpu_physical_memory_write(bufptr, padd, rem);
+        }
     }
 }
 
 static void rx_init_frame(eTSEC *etsec, const uint8_t *buf, size_t size)
 {
-    uint32_t frame_len = size + 4; /* Add CRC32 field */
-    uint8_t  fcb[10] = {0};
     uint32_t fcb_size = 0;
     uint8_t  prsdep   = (etsec->regs[RCTRL].value >> RCTRL_PRSDEP_OFFSET)
         & RCTRL_PRSDEP_MASK;
@@ -440,31 +471,33 @@ static void rx_init_frame(eTSEC *etsec, const uint8_t *buf, size_t size)
         fcb_size = 8 + 2;          /* FCB size + align */
         /* I can't find this 2 bytes alignement in fsl documentation but VxWorks
            expects them */
-        frame_len += fcb_size;
 
         etsec->rx_fcb_size = fcb_size;
 
-        /* TODO: fill_FCB(etsec, fcb); */
+        /* TODO: fill_FCB(etsec); */
+        memset(etsec->rx_fcb, 0x0, sizeof(etsec->rx_fcb));
+
+    } else {
+        etsec->rx_fcb_size = 0;
     }
 
-    /* Allocate the new frame */
-    etsec->rx_buffer = qemu_realloc(etsec->rx_buffer, frame_len);
-
-    if (fcb_size != 0) {
-        /* Copy the FCB */
-        memcpy(etsec->rx_buffer, fcb, fcb_size);
+    if (etsec->rx_buffer == NULL) {
+        qemu_free(etsec->rx_buffer);
     }
 
-    /* Copy the frame */
-    memcpy(etsec->rx_buffer + fcb_size, buf, size);
+    /* Do not copy the frame for now */
+    etsec->rx_buffer     = (uint8_t*)buf;
+    etsec->rx_buffer_len = size;
+    etsec->rx_padding    = 4;
 
-    /* Clear CRC32 field */
-    memset(etsec->rx_buffer + frame_len - 4, 0x0, 4);
+    if (size < 60) {
+        etsec->rx_padding += 60 - size;
+    }
 
-    etsec->rx_buffer_len     = frame_len;
-    etsec->rx_fcb_size       = fcb_size;
     etsec->rx_first_in_frame = 1;
     etsec->rx_remaining_data = etsec->rx_buffer_len;
+    RING_DEBUG("%s: rx_buffer_len:%u rx_padding+crc:%u\n", __func__,
+               etsec->rx_buffer_len, etsec->rx_padding);
 }
 
 void rx_ring_write(eTSEC *etsec, const uint8_t *buf, size_t size)
@@ -492,12 +525,7 @@ void rx_ring_write(eTSEC *etsec, const uint8_t *buf, size_t size)
         return;
     }
 
-    if (etsec->regs[RCTRL].value & RCTRL_RSF && size < (64 - 4)) {
-        /* (64 - 4) because the CRC32 field is not currently in the frame we add
-        it later */
-        RING_DEBUG("%s: Drop short frame\n", __func__);
-        return;
-    }
+    /* Don't drop short packets, just add padding (later) */
 
     rx_init_frame(etsec, buf, size);
 
@@ -513,6 +541,7 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
     uint16_t            bd_flags;
     size_t              remaining_data;
     const uint8_t      *buf;
+    uint8_t            *tmp_buf;
     size_t              size;
 
 
@@ -522,9 +551,10 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
         return;
     }
 
-    remaining_data = etsec->rx_remaining_data;
-    buf            = etsec->rx_buffer + (etsec->rx_buffer_len - remaining_data);
-    size           = etsec->rx_buffer_len - etsec->rx_fcb_size;
+    remaining_data = etsec->rx_remaining_data + etsec->rx_padding;
+    buf            = etsec->rx_buffer
+        + (etsec->rx_buffer_len - etsec->rx_remaining_data);
+    size           = etsec->rx_buffer_len + etsec->rx_padding;
 
     /* ring_base = (etsec->regs[RBASEH].value & 0xF) << 32; */
     ring_base     += etsec->regs[RBASE0 + ring_nbr].value & ~0x7;
@@ -533,12 +563,12 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
     do {
         read_buffer_descriptor(etsec, bd_addr, &bd);
 
-#ifdef ETSEC_RING_DEBUG
+#ifdef DEBUG_BD
         print_bd(bd,
                  eTSEC_RECEIVE,
                  (bd_addr - ring_base) / sizeof(eTSEC_rxtx_bd));
 
-#endif  /* ETSEC_RING_DEBUG */
+#endif  /* DEBUG_BD */
 
         /* Save flags before BD update */
         bd_flags = bd.flags;
@@ -571,9 +601,9 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
                     bd.flags |= BD_RX_LG;
                 }
 
-                if (size < 64) {
+                if (size  < 64) {
                     /* Short frame */
-                    printf("%s Short frame\n", __func__);
+                    printf("%s Short frame: %d\n", __func__, size);
                     bd.flags |= BD_RX_SH;
                 }
 
@@ -622,9 +652,15 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
          */
         etsec->rx_remaining_data = remaining_data;
 
+        /* Copy the frame */
+        tmp_buf = qemu_malloc(size);
+        memcpy(tmp_buf, etsec->rx_buffer, size);
+        etsec->rx_buffer = tmp_buf;
+
         RING_DEBUG("no empty RxBD available any more\n");
     } else {
         etsec->rx_buffer_len = 0;
+        etsec->rx_buffer     = NULL;
     }
 
     RING_DEBUG("eTSEC End of ring_write: remaining_data:%u\n", remaining_data);
