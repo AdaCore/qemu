@@ -1673,7 +1673,7 @@ static void dump_asi(const char *txt, target_ulong addr, int asi, int size,
 
 /* Leon3 cache control */
 
-static void leon3_cache_control_int(void)
+static void leon3_cache_control_int(CPUSPARCState *env)
 {
     uint32_t state = 0;
 
@@ -1766,10 +1766,10 @@ static uint64_t leon3_cache_control_ld(target_ulong addr, int size)
     return ret;
 }
 
-void leon3_irq_manager(void *irq_manager, int intno)
+void leon3_irq_manager(CPUSPARCState *env, void *irq_manager, int intno)
 {
     leon3_irq_ack(irq_manager, intno);
-    leon3_cache_control_int();
+    leon3_cache_control_int(env);
 }
 
 uint64_t helper_ld_asi(target_ulong addr, int asi, int size, int sign)

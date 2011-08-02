@@ -163,7 +163,7 @@ static void erc32_check_irqs(struct Erc32IntState *s)
     }
 }
 
-static void erc32_intctl_ack(void *irq_manager, int intno)
+static void erc32_intctl_ack(CPUSPARCState *env, void *irq_manager, int intno)
 {
     struct Erc32IntState *intctl = (struct Erc32IntState *)irq_manager;
     uint32_t              mask;
