@@ -250,7 +250,7 @@ static void leon_check_irqs(struct LeonIntState *s)
     }
 }
 
-static void leon2_intctl_ack(void *irq_manager, int intno)
+static void leon2_intctl_ack(CPUSPARCState *env, void *irq_manager, int intno)
 {
     struct LeonIntState *intctl = (struct LeonIntState *)irq_manager;
     uint32_t             mask;

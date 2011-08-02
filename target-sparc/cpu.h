@@ -356,7 +356,9 @@ struct QEMUFile;
 void cpu_put_timer(struct QEMUFile *f, CPUTimer *s);
 void cpu_get_timer(struct QEMUFile *f, CPUTimer *s);
 
-typedef struct CPUSPARCState {
+typedef struct CPUSPARCState CPUSPARCState;
+
+struct CPUSPARCState {
     target_ulong gregs[8]; /* general registers */
     target_ulong *regwptr; /* pointer to current register window */
     target_ulong pc;       /* program counter */
@@ -478,11 +480,11 @@ typedef struct CPUSPARCState {
     sparc_def_t *def;
 
     void *irq_manager;
-    void (*qemu_irq_ack) (void *irq_manager, int intno);
+    void (*qemu_irq_ack) (CPUSPARCState *env, void *irq_manager, int intno);
 
     /* Leon3 cache control */
     uint32_t cache_control;
-} CPUSPARCState;
+};
 
 #ifndef NO_CPU_IO_DEFS
 /* helper.c */
@@ -521,7 +523,7 @@ void cpu_change_pstate(CPUState *env1, uint32_t new_pstate);
 int cpu_cwp_inc(CPUState *env1, int cwp);
 int cpu_cwp_dec(CPUState *env1, int cwp);
 void cpu_set_cwp(CPUState *env1, int new_cwp);
-void leon3_irq_manager(void *irq_manager, int intno);
+void leon3_irq_manager(CPUSPARCState *env, void *irq_manager, int intno);
 
 /* sun4m.c, sun4u.c */
 void cpu_check_irqs(CPUSPARCState *env);
