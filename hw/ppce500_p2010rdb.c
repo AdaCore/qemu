@@ -150,7 +150,14 @@ static void p2010_gbu_io_writel(void *opaque, target_phys_addr_t addr,
     CPUState           *env       = opaque;
     target_phys_addr_t  full_addr = addr + P2010RDB_GLOBAL_UTILITIES;
 
-    PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?", full_addr , val, env->nip);
+    switch (addr){
+    case 0xb0:
+        if (val & 2)
+            qemu_system_reset_request();
+        break;
+    default:
+        PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?", full_addr , val, env->nip);
+    }
 }
 
 static CPUReadMemoryFunc *p2010_gbu_io_read[3] = {
