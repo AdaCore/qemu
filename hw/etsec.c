@@ -273,7 +273,7 @@ static void etsec_reset(DeviceState *d)
 static void
 etsec_cleanup(VLANClientState *nc)
 {
-    printf("eTSEC cleanup\n");
+    /* printf("eTSEC cleanup\n"); */
 }
 
 static int
