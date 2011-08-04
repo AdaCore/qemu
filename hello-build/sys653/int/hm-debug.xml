@@ -1,0 +1,47 @@
+    <HealthMonitor>
+	<SystemHMTable Name="systemHm">
+	    <SystemState SystemState="HM_PARTITION_MODE">
+		<ErrorIDLevel
+			      ErrorIdentifier="HME_DEFAULT"
+			      ErrorLevel="HM_MODULE_LVL"/>
+	    </SystemState>
+	    <SystemState SystemState="HM_MODULE_MODE">
+		<ErrorIDLevel
+			      ErrorIdentifier="HME_DEFAULT"
+			      ErrorLevel="HM_MODULE_LVL"/>
+	    </SystemState>
+	    <SystemState SystemState="HM_PROCESS_MODE">
+		<ErrorIDLevel
+			      ErrorIdentifier="HME_APPLICATION_ERROR"
+			      ErrorLevel="HM_MODULE_LVL"/>
+	    </SystemState>
+	</SystemHMTable>
+	<ModuleHMTable Name="moduleHm">
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_DEFAULT"
+		 ErrorAction="hmDbg_DH_EventShow"/>
+	    </SystemState>
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_APPLICATION_ERROR"
+		 ErrorAction="hmDbg_DH_EventShow"/>
+		 <!--		 ErrorAction="hmDH_ModuleReboot"/> -->
+	    </SystemState>
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_LOST_TICKS"
+		 ErrorAction=""/>
+	    </SystemState>
+	    <Settings
+		stackSize="0x0400"
+		maxQueueDepth="2"
+		/>
+	</ModuleHMTable>
+	<PartitionHMTable Name="helloHm">
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_DEFAULT" ErrorAction=""/>
+	    </SystemState>
+	    <Settings
+		stackSize="0x0400"
+		maxQueueDepth="2"
+		/>
+	</PartitionHMTable>
+    </HealthMonitor>

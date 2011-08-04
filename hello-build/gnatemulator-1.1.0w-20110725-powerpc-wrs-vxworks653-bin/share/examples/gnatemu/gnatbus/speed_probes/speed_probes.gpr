@@ -1,0 +1,21 @@
+--  with "gtkada"; --  TO BE ADDED TO ACTIVATE GTKADA CASE
+
+project Speed_Probes extends "gnatbus_ada.gpr" is
+
+   type Head_Type is ("gtkada", "headless");
+   head : Head_Type := external("Head", "headless");
+
+   for Source_Dirs use ("src");
+   for Object_Dir use "obj";
+   for Exec_Dir use ".";
+   type Os_Type is
+      ("Windows_NT", "GNU/Linux");
+   Os : Os_Type := external ("OS", "GNU/Linux");
+   for Main use ("main_" & Head & ".adb");
+
+   package Naming is
+      for Body ("Data_Container") use "data_container-" & Head & ".adb";
+      for Spec ("Data_Container") use "data_container-" & Head & ".ads";
+   end Naming;
+end Speed_Probes;
+

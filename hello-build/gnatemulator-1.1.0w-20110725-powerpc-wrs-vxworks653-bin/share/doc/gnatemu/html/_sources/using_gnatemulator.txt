@@ -1,0 +1,95 @@
+Using GNATEmulator
+==================
+
+Launch GNATEmulator
+-------------------
+
+To launch a guest application just run::
+
+      leon-elf-gnatemu hello
+
+GNATEmulator will automatically load the ELF file (``hello``) and start
+execution at the entry point.
+
+To stop, press ``Control-a x``.
+
+Debugging
+---------
+
+This section explains how to set up a debugging session with GNATEmulator.
+
+Gdbserver in GNATEmulator
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+GNATEmulator provides a gdbserver interface to ease debugging of guest
+applications. Here are the three flags that control gdbserver:
+
+ - ``-gdb``: wait for gdb connection on 'dev'
+
+  This flags will initiate the gdbserver and wait for gdb connection.
+
+  For example::
+
+     leon-elf-gnatemu hello -gdb tcp::1234
+
+ - ``-s``: shorthand for ``-gdb tcp::1234``
+
+ - ``-S``: freeze CPU at start up
+
+  When this flag is present, GNATEmulator will freeze simulation and wait for a
+  ``continue`` command from gdb.
+
+Debugging with GDB
+^^^^^^^^^^^^^^^^^^
+
+To debug with gdb:
+
+ #) Run GNATEmulator with ``-s`` and ``-S`` flags (see `Gdbserver in GNATEmulator`_)::
+
+     $ leon-elf-gnatemu hello -s -S
+
+ #) Run gdb and connect to GNATEmulator with the ``target`` command::
+
+     $ leon-elf-gdb hello
+     (gdb) target remote localhost:1234
+     (gdb)
+
+Debugging with GPS
+^^^^^^^^^^^^^^^^^^
+
+To debug with GPS:
+
+ #) Run GNATEmulator with ``-s`` and ``-S`` flags (see `Gdbserver in GNATEmulator`_)::
+
+     $ leon-elf-gnatemu hello -s -S
+
+ #) Read the GPS documentation, section "Working in a Cross Environment ->
+    Debugger Issues" and use the following configuration::
+
+     targetname: "localhost:1234"
+     protocol: "remote"
+
+Redirecting serial port(s)
+--------------------------
+
+In GNATEmulator it is possible to redirect the serial communication ports.
+
+#) To a file::
+
+      leon-elf-gnatemu hello -serial file:/tmp/serial_output.txt
+
+#) To a TCP port::
+
+      leon-elf-gnatemu hello -serial tcp:hostname:1234
+
+   With the 'server' option, GNATEmulator will wait for the tcp connection::
+
+      leon-elf-gnatemu hello -serial tcp:hostname:1234,server
+
+If there is more than one serial port on the target, use a "-serial" flag for
+each port you want to redirect.
+
+For example, the first serial to a file and the second to a TCP port::
+
+      leon-elf-gnatemu hello -serial file:/tmp/serial1.txt  -serial tcp:localhost:1234
+

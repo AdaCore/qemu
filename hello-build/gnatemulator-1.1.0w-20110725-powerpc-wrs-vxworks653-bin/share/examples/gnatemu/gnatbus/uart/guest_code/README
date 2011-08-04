@@ -1,0 +1,14 @@
+Guest code for GNATbus uart example
+***********************************
+
+This example is available on leon-elf, leon3-elf, erc32-elf and ppc-elf.
+
+1) Compiling the example.
+
+   To compile, simply invoke gnatmake:
+
+   <target>-gnatmake -Pguest_uart.gpr  -XTARGET=<target>
+
+2) Running the example.
+
+   <target>-gnatemu main -eargs --gnatbus localhost:8032

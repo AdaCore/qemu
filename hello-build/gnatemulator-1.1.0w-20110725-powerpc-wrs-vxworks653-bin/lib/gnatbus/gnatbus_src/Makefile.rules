@@ -1,0 +1,15 @@
+SRC+=$(HELPER_DIR)/bus_interface.c $(HELPER_DIR)/packet_handlers.c
+C_FLAGS+=-I$(HELPER_DIR)
+
+OBJS=$(SRC:.c=.o)
+DEPS=$(SRC:.c=.d)
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(LD_FLAGS) -o $@ $(OBJS)
+
+%.o: %.c
+	$(CC) $(C_FLAGS) -c -o $@ $<
+
+

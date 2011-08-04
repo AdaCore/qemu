@@ -1,0 +1,190 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Running the VxWorks 653 example &mdash; GNATEmulator v1.0 documentation</title>
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNATEmulator v1.0 documentation" href="index.html" />
+    <link rel="up" title="Getting Started" href="getting_started.html" />
+    <link rel="next" title="Running the Leon Bareboard example" href="leon-elf-example.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="leon-elf-example.html" title="Running the Leon Bareboard example"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             accesskey="P">previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li>
+          <li><a href="getting_started.html" accesskey="U">Getting Started</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="running-the-vxworks-653-example">
+<h1>Running the VxWorks 653 example<a class="headerlink" href="#running-the-vxworks-653-example" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="first-run">
+<h2>First run<a class="headerlink" href="#first-run" title="Permalink to this headline">¶</a></h2>
+<p>The example can be built using the <strong class="command">make</strong> tool from the VxWorks
+Development Shell. Open the VxWorks Development Shell, go to the directory
+where the example has been installed (e.g.
+<tt class="file docutils literal"><span class="pre">%GNATEMULATOR_INSTALL_DIR%/share/examples/gnatemu/ppc-vx653/sys653</span></tt>)
+and then type:</p>
+<div class="highlight-python"><pre>$ make</pre>
+</div>
+<p>This command configures and builds the system. It generates a ROM
+image of the VxWorks 653 system in <tt class="file docutils literal"><span class="pre">int/demo/hello.flash</span></tt>.</p>
+<p>To run the example in the simulation environment, type:</p>
+<div class="highlight-python"><pre>$ make run</pre>
+</div>
+<p>To stop the simulator, press <tt class="kbd docutils literal"><span class="pre">Control-Ax</span></tt>.</p>
+</div>
+<div class="section" id="structure-of-the-example">
+<h2>Structure of the Example<a class="headerlink" href="#structure-of-the-example" title="Permalink to this headline">¶</a></h2>
+<p>The example is structured in 4 components that follow the organization of
+a typical VxWorks 653 system:</p>
+<blockquote>
+<ul>
+<li><p class="first">The <strong>Core OS</strong> is the kernel of the system and contains the BSP.  It is
+configured and built in the <tt class="file docutils literal"><span class="pre">mos</span></tt> subdirectory.  In the example the
+<tt class="file docutils literal"><span class="pre">mos</span></tt> directory does not contain any source. There is just a
+Makefile whose purpose is to build and configure the <strong>Core OS</strong> using
+existing VxWorks 653 libraries and <strong>GNATEmulator</strong> BSP sources. The
+<strong>Core OS</strong> is configured and compiled for a specific BSP/board.</p>
+<p>To include tools useful during the development of your application
+(Target Tools), you should call make with the following parameter:</p>
+<div class="highlight-python"><pre>$ make DEBUG=1</pre>
+</div>
+<p>Should you need to reconfigure the Core OS (to include/exclude Target
+Tools for example), you should clean the &#64;file{mos} subdirectory first
+by calling:</p>
+<div class="highlight-python"><pre>$ make clean</pre>
+</div>
+<p>in the <tt class="file docutils literal"><span class="pre">mos</span></tt> directory. Calling <strong class="command">make</strong> in the top-level
+example directory will clean the complete VxWorks 653 system. It removes
+the generated code and keeps the example infrastructure so that example
+can be regenerated from scratch.</p>
+</li>
+<li><p class="first">The <strong>Partition OS</strong> is a passive partition (i.e. it will not execute
+code by itself) that contains the OS code runnning in application
+partitions.</p>
+<p>Like the <tt class="file docutils literal"><span class="pre">mos</span></tt> directory, the <tt class="file docutils literal"><span class="pre">pos</span></tt> directory in the example
+does not contain any source. There is just a Makefile that is called to
+configure the partition (to define the size, the base virtual address
+and the functions that can be called).</p>
+<p>The compilation will generate a partition and stubs.  The stubs
+will be linked with the application (see below).</p>
+</li>
+<li><p class="first">The <strong>Application</strong>.  This example contains one application located in
+the <tt class="file docutils literal"><span class="pre">app</span></tt> directory.  Configuration related to the application is
+minimal: only memory contraints have to be defined.  To allow users to
+easily replace the example code by its own code, a wrapper
+(<tt class="file docutils literal"><span class="pre">appwrapper.c</span></tt>) is provided as the entry point of the
+application. The wrapper then calls function <tt class="file docutils literal"><span class="pre">hello</span></tt> in file
+<tt class="file docutils literal"><span class="pre">hello.c</span></tt>.</p>
+</li>
+<li><p class="first">The <strong>Integration</strong>. The components described above can be developped
+separately. The purpose of the integration component is to agregate
+these components into the final system. The logic for the integration is
+in directory <tt class="file docutils literal"><span class="pre">int</span></tt>. The directory contains makefiles and
+configuration files to build the final ROM image that will be run by the
+simulator.</p>
+</li>
+</ul>
+</blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="gnatemulator.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Running the VxWorks 653 example</a><ul>
+<li><a class="reference internal" href="#first-run">First run</a></li>
+<li><a class="reference internal" href="#structure-of-the-example">Structure of the Example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="getting_started.html"
+                        title="previous chapter">Getting Started</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="leon-elf-example.html"
+                        title="next chapter">Running the Leon Bareboard example</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/vxworks653-example.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="leon-elf-example.html" title="Running the Leon Bareboard example"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             >previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li>
+          <li><a href="getting_started.html" >Getting Started</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, AdaCore.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

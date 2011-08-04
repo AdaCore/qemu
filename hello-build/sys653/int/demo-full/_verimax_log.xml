@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<?xml-stylesheet type="text/xsl" href="_verimax_log.xsl"?>
+<Report TagLine="VerIMAx 1.33 (EXT) [API 1.2.3.5]"
+	Date="August 04, 2011" Time="12:10:32"
+	Day="4" Month="8" Year="2011" Hour="12" Minute="10" Second="32">
+	<VerimaxEventLog>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_ConfigRecord.xsd read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_TypeLib.xsd read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Schema file C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_TypeLib.xsd version 2.3.4 read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_CoreOS.xsd read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Schema file C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_CoreOS.xsd version 2.3.4 read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Application.xsd read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Schema file C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Application.xsd version 2.3.4 read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Partition.xsd read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Schema file C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Partition.xsd version 2.3.4 read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_XInclude.xsd read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Schema file C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_XInclude.xsd version 2.3.4 read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Schema file C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd version 2.3.4 read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_Extensions.xsd read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Schema file C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_Extensions.xsd version 2.3.4 read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Schema file C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_ConfigRecord.xsd version 2.3.4 read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\tmp\chouteau\sys653\int\demo-full\configRecord.xml read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\tmp\chouteau\sys653\int\demo-full\bsp.xml read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\tmp\chouteau\sys653\int\demo-full\app.xml read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\tmp\chouteau\sys653\int\demo-full\hello-pos.xml read - OK"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="File C:\tmp\chouteau\sys653\int\demo-full\hello-part.xml read - OK"/>
+		<Log
+			Type="VERSION"
+			TypeId="5"
+			XmlFile=""
+			XmlLine="0"
+			XmlColumn="0"
+			XsdFile=""
+			XsdLine="0"
+			XsdColumn="0"
+			Text="Configuration Checker - ver. VXCC.2.3.4-4"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\configRecord.xml"
+			XmlLine="1"
+			XmlColumn="2"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_ConfigRecord.xsd"
+			XsdLine="555"
+			XsdColumn="7"
+			Text="Processing ConfigRecord"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="9"
+			XmlColumn="2"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="84"
+			XsdColumn="7"
+			Text="Processing ConfigRecord/Module"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="39"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="3112"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/HealthMonitor"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="17"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="2685"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/Applications"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="22"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="2739"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/SharedDataRegions"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="23"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="2772"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/SharedLibraryRegions"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="28"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="2805"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/Partitions"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="29"
+			XmlColumn="3"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="6046"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/Partitions/Partition &quot;hello&quot;"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="18"
+			XmlColumn="3"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="3375"
+			XsdColumn="10"
+			Text="Processing ConfigRecord/Module/Applications/Application &quot;hello&quot;"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="33"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="2936"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/Schedules"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="14"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="2289"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/CoreOS"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="38"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="3026"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/Module/Connections"/>
+		<Log
+			Type="WARNING"
+			TypeId="3"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\hello-module.xml"
+			XmlLine="9"
+			XmlColumn="2"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_Module.xsd"
+			XsdLine="2262"
+			XsdColumn="8"
+			Text="The aceMemoryRegion/@Size attribute is non-zero, but there is no Ace element defined."/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\configRecord.xml"
+			XmlLine="25"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_ConfigRecord.xsd"
+			XsdLine="429"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/WR_MMU_Extensions"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\configRecord.xml"
+			XmlLine="3"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_ConfigRecord.xsd"
+			XsdLine="99"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/WR_DD_Extensions"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\configRecord.xml"
+			XmlLine="11"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_ConfigRecord.xsd"
+			XsdLine="99"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/WR_DD_Extensions"/>
+		<Log
+			Type="INFORMATION"
+			TypeId="4"
+			XmlFile="C:\tmp\chouteau\sys653\int\demo-full\configRecord.xml"
+			XmlLine="18"
+			XmlColumn="6"
+			XsdFile="C:\windriver\workbench-PSC-2.3.0.1\vxworks653-2.3.0.1\target\config\xml\schema\checker\arch\ppc\VXCC_WR_ConfigRecord.xsd"
+			XsdLine="99"
+			XsdColumn="9"
+			Text="Processing ConfigRecord/WR_DD_Extensions"/>
+	</VerimaxEventLog>
+	<defs>
+		<tab name="VerimaxEventLog">
+			<attrs>
+				<attr name="DumpRowName" tag="0" value="Log" type="str"/>
+			</attrs>
+			<col name="Type" type="text.15"/>
+			<col name="TypeId" type="uint"/>
+			<col name="XmlFile" type="text.4000"/>
+			<col name="XmlLine" type="uint"/>
+			<col name="XmlColumn" type="uint"/>
+			<col name="XsdFile" type="text.4000"/>
+			<col name="XsdLine" type="uint"/>
+			<col name="XsdColumn" type="uint"/>
+			<col name="Text" type="text.4095"/>
+		</tab>
+	</defs>
+</Report>

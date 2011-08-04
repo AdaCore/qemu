@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- wrSbc8560.xml - test configuration -->
+
+<!-- Copyright (c) 2007 Wind River Systems, Inc.
+ !
+ ! The right to copy, distribute, modify or otherwise make use
+ ! of this software may be licensed only pursuant to the terms
+ ! of an applicable Wind River license agreement.
+ -->
+
+<!--
+modification history
+====================
+01h,22oct07,xli   Updated for aceMemoryRegion size
+01g,25sep07,hya   moved aceMemoryRegion to fix build error
+01f,17sep07,mat   increased default kernelMemoryRegion size to 0x01400000
+01e,12jul07,hya   changed to support ACE.
+01d,24aug07,mat   Changed sysClkRateHz from 60 to 4000
+01c,23aug07,axw   Changed payloadMemory size to Hw specified
+01b,02jul07,mat   removed Ports element, to comply with 2.2 schema
+01a,16may07,xli   created from wrSbc8560
+	   
+-->
+
+<CoreOSDescription
+	xmlns="http://www.windriver.com/vxWorks653/ConfigRecord"
+	xmlns:xi="http://www.w3.org/2001/XInclude"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.windriver.com/vxWorks653/ConfigRecord ..\xml\cleanschema\CoreOS.xsd"
+	KernelName="coreOS">
+        <KernelConfiguration sysClkRateHz="4000" unsafeMethodTimeout="0.5" memoryAllocationDisabled="false" watchDogTimerDuration="0"
+	partitionVirtualAddress="0x40000000"
+        kernelVirtualAddress="0x00100000"
+        addressSpaceSize="0xFFFFFFFF"
+        addressSpaceRegionAllocationUnit="0x10000000"/>
+        <MemorySize MemorySizeBss="0x00058000" MemorySizeData="0x00018000" MemorySizeRoData="0x00030000" MemorySizeText="0x00300000"/>
+	<HardwareConfiguration>
+		<PhysicalMemory Size="0x20000000" Base_Address="0">
+			<kernelMemoryRegion Size="0x01400000"/>
+			<kernelConfigRecordRegion Size="0x00100000"/>
+			<kernelPgPool Size="0x00400000"/>
+			<portRegion Size="0x00200000"/>
+			<hmLogRegion Size="0x00100000"/>
+			<ramPayloadRegion Size="0x00000000" Base_Address="0x20000000"/>
+                        <aceMemoryRegion  Size="0x00500000" Base_Address="0x01c00000"/>
+			<userMemoryRegion Size="0x1DF00000" Base_Address="0x02100000"/>
+		</PhysicalMemory>
+		<kernelIO PoolName="kernelIO0" Size="0x01000000" Base_Address="0xff000000" VirtualAddress="0xff000000"></kernelIO>
+		<kernelIO PoolName="kernelIO1" Size="0x00100000" Base_Address="0xfe000000" VirtualAddress="0xfe000000"></kernelIO>
+		<kernelIO PoolName="kernelIO2" Size="0x01000000" Base_Address="0x28000000" VirtualAddress="0x28000000"></kernelIO>
+		<kernelIO PoolName="kernelIO3" Size="0x08000000" Base_Address="0x20000000" VirtualAddress="0x20000000"></kernelIO>
+		<kernelIO PoolName="kernelIO4" Size="0x08000000" Base_Address="0xe0000000" VirtualAddress="0xe0000000"></kernelIO>
+		<kernelIO PoolName="kernelIO5" Size="0x00040000" Base_Address="0x7ffc0000" VirtualAddress="0x7ffc0000"></kernelIO>
+<!-- ifdef INCLUDE_PCI
+		<kernelIO PoolName="kernelIO6" Size="0x4000000" Base_Address="0xfc000000" VirtualAddress="0xfc000000"  </kernelIO>
+		<kernelIO PoolName="kernelIO7" Size="0x4000000" Base_Address="0xfc000000" VirtualAddress="0xfc000000" </kernelIO>
+		<kernelIO PoolName="kernelIO8" Size="0x4000000" Base_Address="0xfc000000" VirtualAddress="0xfc000000" </kernelIO>
+-->
+                <payloadMemory Base_Address="0xff800000" Size="0x00800000"/>
+	</HardwareConfiguration>
+	<Extensions/>
+</CoreOSDescription>

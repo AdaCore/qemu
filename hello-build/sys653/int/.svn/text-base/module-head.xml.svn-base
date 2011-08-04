@@ -1,0 +1,38 @@
+<!-- 
+ ! Copyright (c) 2007 Wind River Systems, Inc.
+ !
+ ! The right to copy, distribute, modify or otherwise make use
+ ! of this software may be licensed only pursuant to the terms
+ ! of an applicable Wind River license agreement.
+-->
+
+<Module
+    xmlns="http://www.windriver.com/vxWorks653/ConfigRecord"
+    xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.windriver.com/vxWorks653/ConfigRecord Module.xsd">
+    <CoreOS>
+	<xi:include href="bsp.xml"/>
+    </CoreOS>
+    <Applications>
+	<Application Name="hello">
+	    <xi:include href="app.xml"/>
+	</Application>
+    </Applications>
+    <SharedDataRegions/>
+    <SharedLibraryRegions>
+	<SharedLibrary Name="pos">
+	    <xi:include href="hello-pos.xml"/>
+	</SharedLibrary>
+    </SharedLibraryRegions>
+    <Partitions>
+	<Partition Name="hello" Id="1">
+	    <xi:include href="hello-part.xml"/>
+	</Partition>
+    </Partitions>
+    <Schedules>
+	<Schedule Id="0">
+	    <PartitionWindow PartitionNameRef="hello" Duration="0.10"/>
+	</Schedule>
+    </Schedules>
+    <Connections/>

@@ -1,0 +1,15 @@
+GNATbus speed_probe example
+***************************
+
+1) Compiling the example.
+
+   To compile, simply invoke gprbuild:
+
+   $ gprbuild
+
+2) Running the example.
+
+   $ gnatbus_uart
+
+
+Read guest_code/README to build and run the guest executable.

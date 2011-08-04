@@ -1,0 +1,47 @@
+Introduction
+============
+
+About GNATEmulator
+------------------
+
+Simulators are useful tools in many respects. Installation, setup and
+deployment to a development team will prove to be easier and quicker than with
+a real target. Simulator usage on a native platform will also bring more
+flexibility in the development of the application.
+
+GNATEmulator is particularly suited for functional testing and unit
+testing. The product comes with a complete simulation environment and related
+BSP for non bareboard systems such as VxWorks 653. It allows for efficient 
+target code execution. It simulates a simple board and does not aim at 
+complete board simulation. This should be mostly transparent to the application 
+developer as the differences between the real target and the simulator should
+be handled and hidden by the platform provider.
+
+Product Content
+---------------
+
+The product is made of three components:
+
+ * **The Simulator**: This is the heart of the product. The main tool is
+   called :file:`gnatemu` and is prefixed by the relevant target name.
+   Under the hood it relies on **QEMU** processor and board simulator.
+   **GNATEmulator** efficiently runs the executable: the
+   target code is translated on the fly and basic block by basic block to
+   the host processor. The translated code is then kept in a cache so that
+   no new translation is required when the execution goes over a basic
+   block that has already been executed.
+   An important point to keep in mind is that **GNATEmulator** is translating
+   and executing instructions as fast as possible and thus won't be cycle
+   accurate. The clock used by **GNATEmulator** is the host system clock.
+   Timing events are thus dependent on the system clock.
+
+ * **The BSP**: On non bareboard systems, we might provide a BSP whenever it
+   is necessary. This is the case for example on **VxWorks 653**. On that
+   target we provide a **BSP** called ``qemu`` that should be installed in
+   your **Wind River Platform for Safety-Critical ARINC 653** installation.
+   This allow to instanciate a board that provides one UART (serial link),
+   one ethernet controller, a timer, a ROM and 128Mo of RAM.
+
+ * **The examples**: For each supported platforms we provide examples that
+   can be used as a reference for further development with **GNATEmulator**
+

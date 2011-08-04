@@ -1,0 +1,24 @@
+<!-- 
+ ! Copyright (c) 2007 Wind River Systems, Inc.
+ !
+ ! The right to copy, distribute, modify or otherwise make use
+ ! of this software may be licensed only pursuant to the terms
+ ! of an applicable Wind River license agreement.
+-->
+
+<PartitionDescription
+    xmlns="http://www.windriver.com/vxWorks653/ConfigRecord"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.windriver.com/vxWorks653/ConfigRecord Partition.xsd"
+    >
+    <Application NameRef="hello"/>
+    <SharedLibraryRegion NameRef="pos"/>
+    <Settings
+	RequiredMemorySize="0x1000000"
+	PartitionHMTable="helloHm"
+	numFiles="0xffffffff"
+	numDrivers="0xffffffff"
+	isrStackSize="0xffffffff"
+	maxEventQStallDuration="INFINITE_TIME"
+	/>
+</PartitionDescription>

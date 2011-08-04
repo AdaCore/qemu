@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- qemu.xml - test configuration -->
+
+<!-- Copyright (c) 2005-2007 Wind River Systems, Inc.
+ !
+ ! The right to copy, distribute, modify or otherwise make use
+ ! of this software may be licensed only pursuant to the terms
+ ! of an applicable Wind River license agreement.
+ -->
+
+<!--
+modification history
+====================
+01i,04oct07,mat  Moved RAM payload region base address to end of physical RAM
+01h,20sep07,mat  Updated XML namespace
+01g,25jun07,bbh  Reset ramPayloadRegion size to 0x0
+01f,29may07,mat  Removed deprecated Ports element, and
+                 addressSpaceSLAllocationUnit attribute
+01e,11jan07,agi  Added Base_Address attribute to aceMemoryRegion
+01d,06jun06,rlp  Updated to be 1.8 schema compliant.
+01c,05may06,rlp  Added kernelVirtualAddress attribute.
+01b,02may06,sfs  Added adrSpace attributes
+01a,29aug05,bbh  Modification history added.
+-->
+
+<CoreOSDescription 
+	xmlns="http://www.windriver.com/vxWorks653/ConfigRecord"
+	xmlns:xi="http://www.w3.org/2001/XInclude"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.windriver.com/vxWorks653/ConfigRecord ..\xml\cleanschema\CoreOS.xsd"
+	KernelName="coreOS">
+
+	<KernelConfiguration sysClkRateHz="50" unsafeMethodTimeout="0.5" memoryAllocationDisabled="false" watchDogTimerDuration="0"
+	partitionVirtualAddress="0x40000000"
+	kernelVirtualAddress="0x00100000"
+        addressSpaceSize="0xFFFFFFFF"
+        addressSpaceRegionAllocationUnit="0x10000000"/>
+	<MemorySize
+		MemorySizeText="0x001b0000"
+		MemorySizeRoData="0x00030000"
+		MemorySizeData="0x00020000"
+		MemorySizeBss="0x00050000"
+		/>
+	<HardwareConfiguration>
+		<PhysicalMemory Size="0x10000000" Base_Address="0">
+			<kernelMemoryRegion Size="0x01000000"/>
+			<kernelConfigRecordRegion Size="0x00020000"/>
+			<kernelPgPool  Size="0x00800000"/>
+			<portRegion    Size="0x00200000"/>
+			<hmLogRegion   Size="0x00100000"/>
+			<aceMemoryRegion Size="0x500000" Base_Address="0x03400000"/>
+			<userMemoryRegion Size="0x0b000000" Base_Address="0x04000000"/>
+		</PhysicalMemory>
+		<!-- ISA mem region.  Not used.  -->
+		<!--
+		<kernelIO PoolName="kernelIO0" Size="0x01000000" Base_Address="0xc0000000" VirtualAddress="0xc0000000"></kernelIO>
+		-->
+		<!-- ISA IO region.  Only contiguous area.  -->
+		<kernelIO PoolName="kernelIO1" Size="0x00010000" Base_Address="0x80000000" VirtualAddress="0x80000000"></kernelIO>
+		<!-- IACK area.  -->
+		<kernelIO PoolName="kernelIO2" Size="0x00001000" Base_Address="0xbffff000" VirtualAddress="0xbffff000"></kernelIO>
+		<!-- ROM area (4MB).  -->
+		<kernelIO PoolName="kernelIO3" Size="0x00400000" Base_Address="0xffc00000" VirtualAddress="0xffc00000"></kernelIO>
+		<payloadMemory Size="0x00400000" Base_Address="0xffc00000"/>
+	</HardwareConfiguration>
+	<Extensions/>
+</CoreOSDescription>

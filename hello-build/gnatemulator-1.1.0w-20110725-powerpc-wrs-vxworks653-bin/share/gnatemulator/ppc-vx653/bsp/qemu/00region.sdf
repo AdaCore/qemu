@@ -1,0 +1,455 @@
+/* region.sdf - vxWorks AE regions configuration file */
+
+/* Copyright 2004 Wind River Systems, Inc. */
+
+/*
+modification history
+--------------------
+01d,16nov04,f_l  Added a  page pool for ports and hmlog
+01c,27oct04,pgt  removed port memory pool
+01b,14oct04,rlp  Added a specific physical page pool for port resources.
+01a,06jul04,kp  created by teamF1.
+*/
+
+System wrSbc750gxMemMap {
+    NAME		wrSbc750gx memory map
+    SYNOPSIS		List of al pools and physical regions
+    POOLS		kernelMemPool \
+                      	configRecordPool \
+			kernelPgPool \
+			portPgPool \
+			hmlogPgPool \
+			reservedPgPool \
+                        sdPgPool \
+			slPgPool \
+			globalPgPool \
+		        ramPayloadPgPool \
+			kernelIoPool 
+    PHYSICAL_REGIONS	wrSbc750gxPhysRgn0
+}
+
+
+PhysicalRegion wrSbc750gxPhysRgn0 {
+    NAME		wrSbc750gxPhysRgn0
+    SYNOPSIS		Physical region # 0
+    PHYSICAL_ADDR	LOCAL_MEM_LOCAL_ADRS
+    LOGICAL_ADDR	LOCAL_MEM_LOCAL_ADRS
+    SIZE		LOCAL_MEM_SIZE
+    FLAGS		(PHYS_RGN_RAM | PHYS_RGN_VALID)
+    POOL_NAME		""
+}
+
+
+RegionPool kernelMemPool {
+    NAME		kernelMemPool
+    SYNOPSIS		NONE
+    TYPE		(RGN_ACCESS_KERNEL|RGN_MAP_DOMAIN|RGN_TYPE_RAM| \
+			RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS	kernelMemPoolRgn
+}
+
+RegionPool configRecordPool {
+    NAME	      configRecordPool
+    SYNOPSIS          Memory pool for configuration records
+    TYPE              (RGN_ACCESS_KERNEL|RGN_MAP_DOMAIN|RGN_TYPE_RAM| \
+		       RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS   configRecordPoolRgn
+}
+
+RegionPool kernelPgPool {
+    NAME		kernelPgPool
+    SYNOPSIS		None
+    TYPE		(RGN_ACCESS_KERNEL|RGN_MAP_PAGE|RGN_TYPE_RAM| \
+			RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS	kernelPgPoolRgn
+}
+
+RegionPool portPgPool {
+    NAME              portPgPool
+    SYNOPSIS          Memory pool for port resources
+    TYPE              (RGN_ACCESS_KERNEL|RGN_MAP_DOMAIN|RGN_TYPE_RAM| \
+    		      RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS   portPgPoolRgn
+}
+
+RegionPool hmlogPgPool {
+    NAME              hmlogPgPool
+    SYNOPSIS          Memory pool for hm log
+    TYPE              (RGN_ACCESS_KERNEL|RGN_MAP_DOMAIN|RGN_TYPE_RAM| \
+    		      RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS   hmlogPgPoolRgn
+}
+
+RegionPool reservedPgPool {
+    NAME		reservedPgPool
+    SYNOPSIS		None
+    TYPE		(RGN_ACCESS_APPL|RGN_MAP_PAGE|RGN_TYPE_RAM| \
+			RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS	reservedPgPoolRgn
+}
+
+RegionPool            sdPgPool {
+    NAME              sdPgPool
+    SYNOPSIS          Shared data memory pool
+    TYPE              (RGN_ACCESS_APPL|RGN_MAP_PAGE|RGN_TYPE_RAM| RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS   sdPgPoolRgn
+}
+
+RegionPool            slPgPool {
+    NAME              slPgPool
+    SYNOPSIS          Memory pool for all shared libraries, including SSL
+    TYPE              (RGN_ACCESS_APPL|RGN_MAP_PAGE|RGN_TYPE_RAM| RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS   slPgPoolRgn
+}
+
+RegionPool globalPgPool {
+    NAME		globalPgPool
+    SYNOPSIS		None
+    TYPE		(RGN_ACCESS_ALL|RGN_MAP_PAGE|RGN_TYPE_RAM| \
+			RGN_CFG_VALID_NOT|RGN_INFO_POOL)
+    LOGICAL_REGIONS	globalPgPoolRgn
+}
+
+RegionPool  ramPayloadPgPool {
+    NAME              ramPayloadPgPool
+    SYNOPSIS          memory pool for RAM payload image
+    TYPE              (RGN_ACCESS_KERNEL|RGN_MAP_PAGE|RGN_TYPE_RAM| RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS   ramPayloadPgPoolRgn
+}
+
+RegionPool kernelIoPool {
+    NAME		kernelIoPool
+    SYNOPSIS		None
+    TYPE		(RGN_ACCESS_KERNEL|RGN_MAP_BLOCK|RGN_TYPE_IO| \
+			RGN_CFG_VALID|RGN_INFO_POOL)
+    LOGICAL_REGIONS	kernelIoPoolRgn2
+}
+
+LogicalRegion kernelMemPoolRgn {
+    NAME		kernelMemPoolRgn
+    SYNOPSIS		None
+    LOGICAL_ADDR	KERNEL_MEM_POOL_RGN_LOG_START
+    VIRTUAL_ADDR	KERNEL_MEM_POOL_RGN_VIRT_START
+    SIZE		KERNEL_MEM_POOL_RGN_SIZE
+    PAGE_SIZE		0
+    FLAGS		(RGN_INFO_REGION|RGN_CFG_XLATE_NOT|RGN_CFG_VALID)
+    MMU_ATTRIBUTES	(MMU_ATTR_SUP_DATA|MMU_ATTR_CACHE_DEFAULT)
+    CFG_PARAMS		KERNEL_MEM_POOL_RGN_LOG_START \
+			KERNEL_MEM_POOL_RGN_VIRT_START \
+			KERNEL_MEM_POOL_RGN_SIZE
+}
+
+LogicalRegion configRecordPoolRgn  {
+    NAME              configRecordPoolRgn
+    SYNOPSIS          Logical region for configuration records
+    LOGICAL_ADDR      CONFIG_RECORD_POOL_RGN_LOG_START
+    VIRTUAL_ADDR      CONFIG_RECORD_POOL_RGN_VIRT_START
+    SIZE              CONFIG_RECORD_POOL_RGN_SIZE
+    FLAGS             (RGN_INFO_REGION|RGN_CFG_XLATE_NOT| \
+		       RGN_CFG_NO_ADD_TO_KHEAP|RGN_CFG_VALID)
+    MMU_ATTRIBUTES    (MMU_ATTR_SUP_DATA_RO|MMU_ATTR_CACHE_DEFAULT)
+    PAGE_SIZE         0
+    CFG_PARAMS        CONFIG_RECORD_POOL_RGN_LOG_START \
+		      CONFIG_RECORD_POOL_RGN_VIRT_START \
+		      CONFIG_RECORD_POOL_RGN_SIZE
+}
+
+LogicalRegion kernelPgPoolRgn {
+    NAME		kernelPgPoolRgn
+    SYNOPSIS		None
+    LOGICAL_ADDR	KERNEL_PG_POOL_RGN_LOG_START
+    VIRTUAL_ADDR	KERNEL_PG_POOL_RGN_VIRT_START
+    SIZE		KERNEL_PG_POOL_RGN_SIZE
+    PAGE_SIZE		0
+    FLAGS		(RGN_INFO_REGION|RGN_CFG_XLATE_NOT|RGN_CFG_VALID)
+    MMU_ATTRIBUTES	0
+    CFG_PARAMS		KERNEL_PG_POOL_RGN_LOG_START \
+			KERNEL_PG_POOL_RGN_VIRT_START \
+			KERNEL_PG_POOL_RGN_SIZE
+}
+
+LogicalRegion portPgPoolRgn  {
+    NAME              portPgPoolRgn
+    SYNOPSIS          Logical region for port resources
+    VIRTUAL_ADDR      PORT_PG_POOL_RGN_VIRT_START
+    LOGICAL_ADDR      PORT_PG_POOL_RGN_LOG_START
+    SIZE              PORT_PG_POOL_RGN_SIZE
+    FLAGS             (RGN_INFO_REGION|RGN_CFG_XLATE_NOT| \
+    		      RGN_CFG_NO_ADD_TO_KHEAP|RGN_CFG_VALID)
+    MMU_ATTRIBUTES    (MMU_ATTR_SUP_DATA|MMU_ATTR_CACHE_DEFAULT)
+    PAGE_SIZE         0
+    CFG_PARAMS        PORT_PG_POOL_RGN_LOG_START \
+    		      PORT_PG_POOL_RGN_VIRT_START \
+		      PORT_PG_POOL_RGN_SIZE
+}
+
+LogicalRegion hmlogPgPoolRgn  {
+    NAME              hmlogPgPoolRgn
+    SYNOPSIS          Logical region hm log
+    VIRTUAL_ADDR      HMLOG_PG_POOL_RGN_VIRT_START
+    LOGICAL_ADDR      HMLOG_PG_POOL_RGN_LOG_START
+    SIZE              HMLOG_PG_POOL_RGN_SIZE
+    FLAGS             (RGN_INFO_REGION|RGN_CFG_XLATE_NOT| \
+    		      RGN_CFG_NO_ADD_TO_KHEAP|RGN_CFG_VALID)
+    MMU_ATTRIBUTES    (MMU_ATTR_SUP_DATA|MMU_ATTR_CACHE_DEFAULT)
+    PAGE_SIZE         0
+    CFG_PARAMS        HMLOG_PG_POOL_RGN_LOG_START \
+    		      HMLOG_PG_POOL_RGN_VIRT_START \
+		      HMLOG_PG_POOL_RGN_SIZE
+}
+
+LogicalRegion reservedPgPoolRgn {
+    NAME		reservedPgPoolRgn
+    SYNOPSIS		None
+    LOGICAL_ADDR	RESERVED_PG_POOL_RGN_LOG_START
+    VIRTUAL_ADDR	RESERVED_PG_POOL_RGN_VIRT_START
+    SIZE		RESERVED_PG_POOL_RGN_SIZE
+    PAGE_SIZE		0
+    FLAGS		(RGN_INFO_REGION|RGN_CFG_XLATE_NOT|RGN_CFG_VALID)
+    MMU_ATTRIBUTES	0
+    CFG_PARAMS		RESERVED_PG_POOL_RGN_LOG_START \
+			RESERVED_PG_POOL_RGN_VIRT_START \
+			RESERVED_PG_POOL_RGN_SIZE
+}
+
+LogicalRegion  sdPgPoolRgn  {
+    NAME              sdPgPoolRgn
+    SYNOPSIS          Logical region for shared data area
+    VIRTUAL_ADDR      0
+    LOGICAL_ADDR      SD_PG_POOL_RGN_LOG_START
+    SIZE              SD_PG_POOL_RGN_SIZE
+    FLAGS             (RGN_INFO_REGION|RGN_CFG_XLATE_NOT|RGN_CFG_VALID)
+    MMU_ATTRIBUTES    0
+    PAGE_SIZE         0
+    CFG_PARAMS        SD_PG_POOL_RGN_LOG_START \
+                      SD_PG_POOL_RGN_SIZE
+}
+
+LogicalRegion  slPgPoolRgn  {
+    NAME              slPgPoolRgn
+    SYNOPSIS          Logical region for all shared libraries, including SSL
+    LOGICAL_ADDR      SL_PG_POOL_RGN_LOG_START
+    VIRTUAL_ADDR      0
+    SIZE              SL_PG_POOL_RGN_SIZE
+    FLAGS             (RGN_INFO_REGION|RGN_CFG_XLATE_NOT|RGN_CFG_VALID)
+    MMU_ATTRIBUTES    0
+    PAGE_SIZE         0
+    CFG_PARAMS        SL_PG_POOL_RGN_LOG_START \
+                      SL_PG_POOL_RGN_SIZE
+}
+
+LogicalRegion globalPgPoolRgn {
+    NAME		globalPgPoolRgn
+    SYNOPSIS		None
+    LOGICAL_ADDR	GLOBAL_PG_POOL_RGN_LOG_START
+    VIRTUAL_ADDR	GLOBAL_PG_POOL_RGN_VIRT_START
+    SIZE		GLOBAL_PG_POOL_RGN_SIZE
+    PAGE_SIZE		0
+    FLAGS		(RGN_INFO_REGION|RGN_CFG_XLATE_NOT|RGN_CFG_VALID_NOT)
+    MMU_ATTRIBUTES	0
+    CFG_PARAMS		GLOBAL_PG_POOL_RGN_LOG_START \
+			GLOBAL_PG_POOL_RGN_VIRT_START \
+			GLOBAL_PG_POOL_RGN_SIZE
+}
+
+LogicalRegion         ramPayloadPgPoolRgn  {
+    NAME              ramPayloadPgPoolRgn
+    SYNOPSIS          Logical region for the RAM payload image area
+    VIRTUAL_ADDR      0
+    LOGICAL_ADDR      RAM_PAYLOAD_ADRS
+    SIZE              RAM_PAYLOAD_SIZE
+    FLAGS             (RGN_INFO_REGION|RGN_CFG_XLATE_NOT|RGN_CFG_VALID)
+    MMU_ATTRIBUTES    0
+    PAGE_SIZE         0                      
+}
+
+LogicalRegion kernelIoPoolRgn2 {
+    NAME		kernelIoPoolRgn2
+    SYNOPSIS		flash region
+    LOGICAL_ADDR	FLASH_BASE_ADRS
+    VIRTUAL_ADDR	FLASH_BASE_ADRS
+    SIZE		FLASH_MEM_SIZE
+    PAGE_SIZE		0
+    FLAGS		(RGN_INFO_REGION|RGN_CFG_XLATE_NOT|RGN_CFG_VALID)
+    MMU_ATTRIBUTES	(MMU_ATTR_SUP_IO)
+}
+
+Parameter KERNEL_MEM_POOL_RGN_LOG_START {
+    NAME		kernel memory pool logical start address
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		LOCAL_MEM_LOCAL_ADRS
+}
+
+Parameter KERNEL_MEM_POOL_RGN_VIRT_START {
+    NAME		kernel memory pool virtual start address
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		LOCAL_MEM_LOCAL_ADRS
+}
+
+Parameter KERNEL_MEM_POOL_RGN_SIZE {
+    NAME		kernel memory pool size
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		CORE_OS_MEM_POOL_RGN_SIZE
+}
+
+Parameter CONFIG_RECORD_POOL_RGN_LOG_START  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          start address of the configuration record memory region
+    TYPE              uint
+    DEFAULT           (KERNEL_MEM_POOL_RGN_LOG_START+KERNEL_MEM_POOL_RGN_SIZE)
+}
+
+
+Parameter CONFIG_RECORD_POOL_RGN_VIRT_START  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          start address of the configuration record memory region
+    TYPE              uint
+    DEFAULT           (KERNEL_MEM_POOL_RGN_VIRT_START+KERNEL_MEM_POOL_RGN_SIZE)
+}
+
+
+Parameter CONFIG_RECORD_POOL_RGN_SIZE  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          size of the configuration record memory region
+    TYPE              uint
+    DEFAULT           0x00010000
+}
+
+Parameter KERNEL_PG_POOL_RGN_LOG_START {
+    NAME		kernel page pool logical start address
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		(CONFIG_RECORD_POOL_RGN_LOG_START+CONFIG_RECORD_POOL_RGN_SIZE)
+}
+
+Parameter KERNEL_PG_POOL_RGN_VIRT_START {
+    NAME		kernel page pool virtual start address
+    SYNOPSIS		None
+    TYPE		uint
+   DEFAULT		(CONFIG_RECORD_POOL_RGN_VIRT_START+CONFIG_RECORD_POOL_RGN_SIZE)
+}
+
+Parameter KERNEL_PG_POOL_RGN_SIZE {
+    NAME		kernel page pool size
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		0x00400000
+}
+
+Parameter PORT_PG_POOL_RGN_LOG_START  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          start address of the port memory region
+    TYPE              uint
+    DEFAULT           (KERNEL_PG_POOL_RGN_LOG_START+KERNEL_PG_POOL_RGN_SIZE)
+}
+
+Parameter PORT_PG_POOL_RGN_VIRT_START  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          start address of the port memory region
+    TYPE              uint
+    DEFAULT           (KERNEL_PG_POOL_RGN_VIRT_START+KERNEL_PG_POOL_RGN_SIZE)
+}
+
+Parameter PORT_PG_POOL_RGN_SIZE  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          size of the port memory region
+    TYPE              uint
+    DEFAULT           0x00200000
+}
+
+Parameter HMLOG_PG_POOL_RGN_LOG_START  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          start address of the hmlog memory region
+    TYPE              uint
+    DEFAULT           (PORT_PG_POOL_RGN_LOG_START+PORT_PG_POOL_RGN_SIZE)
+}
+
+Parameter HMLOG_PG_POOL_RGN_VIRT_START  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          start address of the hmlog memory region
+    TYPE              uint
+    DEFAULT           (PORT_PG_POOL_RGN_VIRT_START+PORT_PG_POOL_RGN_SIZE)
+}
+
+Parameter HMLOG_PG_POOL_RGN_SIZE  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          size of the hmlog memory region
+    TYPE              uint
+    DEFAULT           0x00100000
+}
+
+Parameter RESERVED_PG_POOL_RGN_LOG_START {
+    NAME		reserved page pool logical start address
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		(HMLOG_PG_POOL_RGN_LOG_START+HMLOG_PG_POOL_RGN_SIZE)
+}
+
+Parameter RESERVED_PG_POOL_RGN_VIRT_START {
+    NAME		reserved page pool virtual start address
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		(0)
+}
+
+Parameter RESERVED_PG_POOL_RGN_SIZE {
+    NAME		reserved page pool size
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		0
+}
+
+Parameter SD_PG_POOL_RGN_LOG_START  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          none
+    TYPE              uint
+    DEFAULT           (RESERVED_PG_POOL_RGN_LOG_START+RESERVED_PG_POOL_RGN_SIZE)
+}
+
+
+Parameter SD_PG_POOL_RGN_SIZE  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          none
+    TYPE              uint
+    DEFAULT           0 
+}
+
+Parameter SL_PG_POOL_RGN_LOG_START  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          none
+    TYPE              uint
+    DEFAULT           (SD_PG_POOL_RGN_LOG_START+SD_PG_POOL_RGN_SIZE)
+}
+
+
+Parameter SL_PG_POOL_RGN_SIZE  {
+    NAME              wrSbc750gx configuration Parameter
+    SYNOPSIS          none
+    TYPE              uint
+    DEFAULT           0x00400000 
+}
+
+Parameter GLOBAL_PG_POOL_RGN_LOG_START {
+    NAME		global page pool logical start address
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		(SL_PG_POOL_RGN_LOG_START + SL_PG_POOL_RGN_SIZE)
+}
+
+Parameter GLOBAL_PG_POOL_RGN_VIRT_START {
+    NAME		global page pool virtual start address
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		(0)
+}
+
+Parameter GLOBAL_PG_POOL_RGN_SIZE {
+    NAME		global page pool size
+    SYNOPSIS		None
+    TYPE		uint
+    DEFAULT		(RAM_PAYLOAD_ADRS - GLOBAL_PG_POOL_RGN_LOG_START)
+}
+

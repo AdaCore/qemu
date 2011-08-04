@@ -1,0 +1,159 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction &mdash; GNATEmulator v1.0 documentation</title>
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNATEmulator v1.0 documentation" href="index.html" />
+    <link rel="next" title="Getting Started" href="getting_started.html" />
+    <link rel="prev" title="GNATEmulator Documentation" href="gnatemulator.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="gnatemulator.html" title="GNATEmulator Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="about-gnatemulator">
+<h2>About GNATEmulator<a class="headerlink" href="#about-gnatemulator" title="Permalink to this headline">¶</a></h2>
+<p>Simulators are useful tools in many respects. Installation, setup and
+deployment to a development team will prove to be easier and quicker than with
+a real target. Simulator usage on a native platform will also bring more
+flexibility in the development of the application.</p>
+<p>GNATEmulator is particularly suited for functional testing and unit
+testing. The product comes with a complete simulation environment and related
+BSP for non bareboard systems such as VxWorks 653. It allows for efficient
+target code execution. It simulates a simple board and does not aim at
+complete board simulation. This should be mostly transparent to the application
+developer as the differences between the real target and the simulator should
+be handled and hidden by the platform provider.</p>
+</div>
+<div class="section" id="product-content">
+<h2>Product Content<a class="headerlink" href="#product-content" title="Permalink to this headline">¶</a></h2>
+<p>The product is made of three components:</p>
+<blockquote>
+<ul class="simple">
+<li><strong>The Simulator</strong>: This is the heart of the product. The main tool is
+called <tt class="file docutils literal"><span class="pre">gnatemu</span></tt> and is prefixed by the relevant target name.
+Under the hood it relies on <strong>QEMU</strong> processor and board simulator.
+<strong>GNATEmulator</strong> efficiently runs the executable: the
+target code is translated on the fly and basic block by basic block to
+the host processor. The translated code is then kept in a cache so that
+no new translation is required when the execution goes over a basic
+block that has already been executed.
+An important point to keep in mind is that <strong>GNATEmulator</strong> is translating
+and executing instructions as fast as possible and thus won&#8217;t be cycle
+accurate. The clock used by <strong>GNATEmulator</strong> is the host system clock.
+Timing events are thus dependent on the system clock.</li>
+<li><strong>The BSP</strong>: On non bareboard systems, we might provide a BSP whenever it
+is necessary. This is the case for example on <strong>VxWorks 653</strong>. On that
+target we provide a <strong>BSP</strong> called <tt class="docutils literal"><span class="pre">qemu</span></tt> that should be installed in
+your <strong>Wind River Platform for Safety-Critical ARINC 653</strong> installation.
+This allow to instanciate a board that provides one UART (serial link),
+one ethernet controller, a timer, a ROM and 128Mo of RAM.</li>
+<li><strong>The examples</strong>: For each supported platforms we provide examples that
+can be used as a reference for further development with <strong>GNATEmulator</strong></li>
+</ul>
+</blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="gnatemulator.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#about-gnatemulator">About GNATEmulator</a></li>
+<li><a class="reference internal" href="#product-content">Product Content</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gnatemulator.html"
+                        title="previous chapter">GNATEmulator Documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="getting_started.html"
+                        title="next chapter">Getting Started</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/overview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="gnatemulator.html" title="GNATEmulator Documentation"
+             >previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, AdaCore.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

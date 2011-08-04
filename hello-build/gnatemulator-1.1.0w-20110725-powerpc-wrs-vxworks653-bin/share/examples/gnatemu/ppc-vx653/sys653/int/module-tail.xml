@@ -1,0 +1,7 @@
+    <Payloads>
+	<PartitionPayload NameRef="hello"/>
+	<CoreOSPayload/>
+	<ConfigRecordPayload NameRef="configRecord" Base_Address="0xfff10000"/>
+	<SharedLibraryPayload NameRef="pos"/>
+    </Payloads>
+</Module>

@@ -1,0 +1,34 @@
+project GnatBus_Ada is
+
+  for Languages    use ("Ada", "C");
+  for Source_Dirs  use ("../gnatbus/common", "../gnatbus/gnatbus_src");
+
+  type OS_Type is ("Windows_NT", "GNU/Linux");
+  OS : OS_Type := external ("OS", "GNU/Linux");
+
+  package Naming is
+     for Spec_Suffix ("C")   use ".h";
+     for Body_Suffix ("C")   use ".c";
+     for Spec_Suffix ("Ada") use ".ads";
+     for Body_Suffix ("Ada") use ".adb";
+     for Casing              use "lowercase";
+     for Dot_Replacement     use "-";
+  end Naming;
+
+  package Compiler is
+     for Driver ("C") use "gcc";
+     for Driver ("Ada") use "gcc";
+     C_Switches := ("-I.");
+     for Default_Switches ("C")   use C_Switches;
+     for Default_Switches ("Ada") use ("-gnaty", "-gnatwa", "-gnat05");
+  end Compiler;
+
+  package Linker is
+     case OS is
+            when "Windows_NT" =>
+               for Default_Switches ("Ada") use ("-lws2_32");
+            when others =>
+              null;
+          end case;
+  end Linker;
+end GnatBus_Ada;

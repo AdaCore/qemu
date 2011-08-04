@@ -1,0 +1,49 @@
+Getting Started
+===============
+
+Installation
+------------
+
+The installation is automatically performed by the **InstallShield**. You will
+be prompted for an installation directory for the simulator and the example
+(later referred to as :envvar:`%GNATEMULATOR_INSTALL_DIR%`).
+
+If you are using **GNATEmulator** for **VxWorks 653** then once the product
+is installed, you should install the BSP in the **Wind River Platform for
+Safety-Critical ARINC 653** installation along with the default ones.
+In order to do that you need to copy the
+:file:`%GNATEMULATOR_INSTALL_DIR%\\share\\gnatemulator\\ppc-vx653\\bsp\\qemu`
+directory in :file:`%WIND_HOME%\\vxworks653-2.2.2\\target\\config\\qemu`.
+Note that the target PATH may be slighty different depending on your version of
+**VxWorks 653**.
+
+Setting your environment
+------------------------
+
+In order to set your environment for **GNATEmulator** you need to do:
+
+.. code-block:: bat
+
+  set PATH=%GNATEMULATOR_INSTALL_DIR%\bin;%PATH%
+
+Where :envvar:`%GNATEMULATOR_INSTALL_DIR%` is the root directory of your
+installation.
+
+If you need to build your own devices using **GNATBus**, then you should
+also do:
+
+.. code-block:: bat
+
+  set ADA_PROJECT_PATH=%GNATEMULATOR_INSTALL_DIR%\lib\gnat;%ADA_PROJECT_PATH%
+
+Note that if **GNATEmulator** has been installed in the same location as your
+native compiler then you don't need to set :envvar:`ADA_PROJECT_PATH`
+environment variable.
+
+Running the examples
+--------------------
+
+.. toctree::
+
+   vxworks653-example.rst
+   leon-elf-example.rst

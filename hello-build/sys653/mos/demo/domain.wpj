@@ -1,0 +1,3150 @@
+Document file - DO NOT EDIT
+
+<BEGIN> CORE_INFO_TYPE
+::prj_domain
+<END>
+
+<BEGIN> CORE_INFO_VERSION
+AE1.1
+<END>
+
+<BEGIN> BUILD__CURRENT
+PPC85XXgnu.debug
+<END>
+
+<BEGIN> BSP_DIR
+$(TGT_DIR)/config/wrSbc8560
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_DEFAULTFORCPU
+1
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(PRJ_DIR)/prjConfig.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(PRJ_DIR)/prjConfig.c_objects
+prjConfig.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(PRJ_DIR)/prjConfig.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(PRJ_DIR)/usrAppInit.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(PRJ_DIR)/usrAppInit.c_objects
+usrAppInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(PRJ_DIR)/usrAppInit.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(PRJ_DIR)/usrAppInit.h_dependDone
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(PRJ_DIR)/usrAppInit.h_infoTags
+dependDone
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_objects
+dataSegPad.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/romStart.c_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/romStart.c_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/romStart.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/romStart.c_objects
+romStart.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/romStart.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/version.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/version.c_objects
+version.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/comps/src/version.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_objects
+romInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_objects
+sysALib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_objects
+sysLib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_AR
+arppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_AS
+ccppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_BINCONV_FLAGS
+-O binary
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_BSP
+wrSbc8560
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CC
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CFLAGS_AS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CFLAGS_AS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CFLAGS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CFLAGS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CPP
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-E \
+	-P
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_CPPFILT
+c++filtppc --strip-underscores --format=gnu
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_DATA_SEG_ALIGN
+00080000 #Align data section for TLB locking
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_HEX_FLAGS
+--gap-fill=0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LD
+ldppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LDFLAGS
+-r
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LDPARTIAL
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ -nostdlib -r -Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LD_PARTIAL
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-nostdlib \
+	-r \
+	-Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LD_PARTIAL_FLAGS
+-X \
+	-r \
+	-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LD_ROM_EMUL_FLAGS
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxr6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LD_SCRIPT_RAM
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LD_SCRIPT_RAM_REL
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_LIBS
+$(TGT_DIR)/lib/libPPC85XXgnuvx.a
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_MV_BIN
+echo
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_NM
+nmppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_OPTION_DEFINE_MACRO
+-D
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_OPTION_GENERATE_DEPENDENCY_FILE
+-MD
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_OPTION_INCLUDE_DIR
+-I
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_RAM_HIGH_ADRS
+00e00000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_RAM_LOW_ADRS
+00010000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_ROM_LINK_ADRS
+fff00000
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_ROM_SIZE
+00100000 # number of bytes of ROM space
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_ROM_TEXT_ADRS
+fff00000 # ROM entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_ROM_WARM_ADRS
+fff00008 # ROM warm entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_SIZE
+sizeppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_USR_ENTRY
+usrInit
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_MACRO_VMA_START
+0x0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_RO_DEPEND_PATH
+$(TGT_DIR)/h
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_SUBSET
+cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_TC
+::tc_PPC85XXgnu.cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_DEFAULTFORCPU
+0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(PRJ_DIR)/prjConfig.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(PRJ_DIR)/prjConfig.c_objects
+prjConfig.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(PRJ_DIR)/prjConfig.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(PRJ_DIR)/usrAppInit.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(PRJ_DIR)/usrAppInit.c_objects
+usrAppInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(PRJ_DIR)/usrAppInit.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_objects
+dataSegPad.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_objects
+romStart.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_objects
+version.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_objects
+romInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_objects
+sysALib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_objects
+sysLib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_AR
+arppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_AS
+ccppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_BINCONV_FLAGS
+-O binary
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_BSP
+wrSbc8560
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CC
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CFLAGS_AS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CFLAGS_AS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CFLAGS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CFLAGS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CPP
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-E \
+	-P
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_CPPFILT
+c++filtppc --strip-underscores --format=gnu
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_DATA_SEG_ALIGN
+00080000 #Align data section for TLB locking
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_HEX_FLAGS
+--gap-fill=0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LD
+ldppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LDFLAGS
+-r
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LDPARTIAL
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ -nostdlib -r -Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LD_PARTIAL
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-nostdlib \
+	-r \
+	-Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LD_PARTIAL_FLAGS
+-X \
+	-r \
+	-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LD_ROM_EMUL_FLAGS
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxr6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LD_SCRIPT_RAM
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LD_SCRIPT_RAM_REL
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_LIBS
+$(TGT_DIR)/lib/libPPC85XXgnuvx.a
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_MV_BIN
+echo
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_NM
+nmppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_OPTION_DEFINE_MACRO
+-D
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_OPTION_GENERATE_DEPENDENCY_FILE
+-MD
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_OPTION_INCLUDE_DIR
+-I
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_RAM_HIGH_ADRS
+00e00000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_RAM_LOW_ADRS
+00010000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_ROM_LINK_ADRS
+fff00000
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_ROM_SIZE
+00100000 # number of bytes of ROM space
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_ROM_TEXT_ADRS
+fff00000 # ROM entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_ROM_WARM_ADRS
+fff00008 # ROM warm entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_SIZE
+sizeppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_USR_ENTRY
+usrInit
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_MACRO_VMA_START
+0x0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_RO_DEPEND_PATH
+$(TGT_DIR)/h
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_SUBSET
+cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_ramPayload_TC
+::tc_PPC85XXgnu.cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_DEFAULTFORCPU
+0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(PRJ_DIR)/prjConfig.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(PRJ_DIR)/prjConfig.c_objects
+prjConfig.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(PRJ_DIR)/prjConfig.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(PRJ_DIR)/usrAppInit.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(PRJ_DIR)/usrAppInit.c_objects
+usrAppInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(PRJ_DIR)/usrAppInit.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_objects
+dataSegPad.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_objects
+romStart.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_objects
+version.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_objects
+romInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_objects
+sysALib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_objects
+sysLib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_AR
+arppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_AS
+ccppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_BINCONV_FLAGS
+-O binary
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_BSP
+wrSbc8560
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CC
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CFLAGS_AS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CFLAGS_AS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CFLAGS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CFLAGS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CPP
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-E \
+	-P
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_CPPFILT
+c++filtppc --strip-underscores --format=gnu
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_DATA_SEG_ALIGN
+00080000 #Align data section for TLB locking
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_HEX_FLAGS
+--gap-fill=0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LD
+ldppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LDFLAGS
+-r
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LDPARTIAL
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ -nostdlib -r -Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LD_PARTIAL
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-nostdlib \
+	-r \
+	-Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LD_PARTIAL_FLAGS
+-X \
+	-r \
+	-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LD_ROM_EMUL_FLAGS
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxr6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LD_SCRIPT_RAM
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LD_SCRIPT_RAM_REL
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_LIBS
+$(TGT_DIR)/lib/libPPC85XXgnuvx.a
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_MV_BIN
+echo
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_NM
+nmppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_OPTION_DEFINE_MACRO
+-D
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_OPTION_GENERATE_DEPENDENCY_FILE
+-MD
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_OPTION_INCLUDE_DIR
+-I
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_RAM_HIGH_ADRS
+00e00000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_RAM_LOW_ADRS
+00010000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_ROM_LINK_ADRS
+fff00000
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_ROM_SIZE
+00100000 # number of bytes of ROM space
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_ROM_TEXT_ADRS
+fff00000 # ROM entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_ROM_WARM_ADRS
+fff00008 # ROM warm entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_SIZE
+sizeppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_USR_ENTRY
+usrInit
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_MACRO_VMA_START
+0x0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_RO_DEPEND_PATH
+$(TGT_DIR)/h
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_SUBSET
+cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.cert_romPayload_TC
+::tc_PPC85XXgnu.cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_DEFAULTFORCPU
+0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(PRJ_DIR)/prjConfig.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(PRJ_DIR)/prjConfig.c_objects
+prjConfig.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(PRJ_DIR)/prjConfig.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(PRJ_DIR)/usrAppInit.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(PRJ_DIR)/usrAppInit.c_objects
+usrAppInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(PRJ_DIR)/usrAppInit.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_objects
+dataSegPad.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/romStart.c_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/romStart.c_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/romStart.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/romStart.c_objects
+romStart.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/romStart.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/version.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/version.c_objects
+version.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/comps/src/version.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_objects
+romInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_objects
+sysALib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_objects
+sysLib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_AR
+arppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_AS
+ccppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_BINCONV_FLAGS
+-O binary
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_BSP
+wrSbc8560
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CC
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CFLAGS_AS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CFLAGS_AS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CFLAGS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CFLAGS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CPP
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-E \
+	-P
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_CPPFILT
+c++filtppc --strip-underscores --format=gnu
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_DATA_SEG_ALIGN
+00080000 #Align data section for TLB locking
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_HEX_FLAGS
+--gap-fill=0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LD
+ldppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LDFLAGS
+-r
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LDPARTIAL
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ -nostdlib -r -Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LD_PARTIAL
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-nostdlib \
+	-r \
+	-Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LD_PARTIAL_FLAGS
+-X \
+	-r \
+	-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LD_ROM_EMUL_FLAGS
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxr6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LD_SCRIPT_RAM
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LD_SCRIPT_RAM_REL
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_LIBS
+$(TGT_DIR)/lib/libPPC85XXgnuvx.a
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_MV_BIN
+echo
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_NM
+nmppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_OPTION_DEFINE_MACRO
+-D
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_OPTION_GENERATE_DEPENDENCY_FILE
+-MD
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_OPTION_INCLUDE_DIR
+-I
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_RAM_HIGH_ADRS
+00e00000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_RAM_LOW_ADRS
+00010000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_RELEASE
+0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_ROM_LINK_ADRS
+fff00000
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_ROM_SIZE
+00100000 # number of bytes of ROM space
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_ROM_TEXT_ADRS
+fff00000 # ROM entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_ROM_WARM_ADRS
+fff00008 # ROM warm entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_SIZE
+sizeppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_USR_ENTRY
+usrInit
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_MACRO_VMA_START
+0x0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_RELEASE
+0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_RO_DEPEND_PATH
+$(TGT_DIR)/h
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_SUBSET
+vx
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_TC
+::tc_PPC85XXgnu.debug
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_DEFAULTFORCPU
+0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(PRJ_DIR)/prjConfig.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(PRJ_DIR)/prjConfig.c_objects
+prjConfig.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(PRJ_DIR)/prjConfig.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(PRJ_DIR)/usrAppInit.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(PRJ_DIR)/usrAppInit.c_objects
+usrAppInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(PRJ_DIR)/usrAppInit.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_objects
+dataSegPad.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_objects
+romStart.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_objects
+version.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_objects
+romInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_objects
+sysALib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_objects
+sysLib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_AR
+arppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_AS
+ccppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_BINCONV_FLAGS
+-O binary
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_BSP
+wrSbc8560
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CC
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CFLAGS_AS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CFLAGS_AS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CFLAGS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CFLAGS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CPP
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-E \
+	-P
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_CPPFILT
+c++filtppc --strip-underscores --format=gnu
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_DATA_SEG_ALIGN
+00080000 #Align data section for TLB locking
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_HEX_FLAGS
+--gap-fill=0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LD
+ldppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LDFLAGS
+-r
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LDPARTIAL
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ -nostdlib -r -Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LD_PARTIAL
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-nostdlib \
+	-r \
+	-Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LD_PARTIAL_FLAGS
+-X \
+	-r \
+	-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LD_ROM_EMUL_FLAGS
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxr6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LD_SCRIPT_RAM
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LD_SCRIPT_RAM_REL
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_LIBS
+$(TGT_DIR)/lib/libPPC85XXgnuvx.a
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_MV_BIN
+echo
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_NM
+nmppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_OPTION_DEFINE_MACRO
+-D
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_OPTION_GENERATE_DEPENDENCY_FILE
+-MD
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_OPTION_INCLUDE_DIR
+-I
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_RAM_HIGH_ADRS
+00e00000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_RAM_LOW_ADRS
+00010000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_ROM_LINK_ADRS
+fff00000
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_ROM_SIZE
+00100000 # number of bytes of ROM space
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_ROM_TEXT_ADRS
+fff00000 # ROM entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_ROM_WARM_ADRS
+fff00008 # ROM warm entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_SIZE
+sizeppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_USR_ENTRY
+usrInit
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_MACRO_VMA_START
+0x0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_RO_DEPEND_PATH
+$(TGT_DIR)/h
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_SUBSET
+cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_ramPayload_TC
+::tc_PPC85XXgnu.cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_DEFAULTFORCPU
+0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(PRJ_DIR)/prjConfig.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(PRJ_DIR)/prjConfig.c_objects
+prjConfig.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(PRJ_DIR)/prjConfig.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(PRJ_DIR)/usrAppInit.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(PRJ_DIR)/usrAppInit.c_objects
+usrAppInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(PRJ_DIR)/usrAppInit.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_objects
+dataSegPad.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/dataSegPad.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_objects
+romStart.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/romStart.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_objects
+version.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/comps/src/version.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_BOOT_FILE
+TRUE
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653 \
+	$(ROM_FLAGS_EXTRA) \
+	
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_objects
+romInit.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_objects
+sysALib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysALib.s_toolMacro
+AS
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_infoTags
+toolMacro objects
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_objects
+sysLib.o
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_FILE_$(TGT_DIR)/config/wrSbc8560/sysLib.c_toolMacro
+CC
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_AR
+arppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_AS
+ccppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_BINCONV_FLAGS
+-O binary
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_BSP
+wrSbc8560
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CC
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CFLAGS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-MD \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CFLAGS_AS
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall \
+	-I$(PRJ_DIR) \
+	-I$(TGT_DIR)/config/wrSbc8560 \
+	-DBSP_NAME=wrSbc8560 \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/config/comps/src \
+	-I$(TGT_DIR)/src/drv \
+	-I$(TGT_DIR)/user/configSrc \
+	-I$(TGT_DIR)/val/h \
+	-I$(TGT_DIR)/src/certStack \
+	-DCPU=PPC85XX \
+	-DTOOL=gnu \
+	-DPRJ_BUILD \
+	-DCERT \
+	$(SUB_PROJECT_INCLUDES) \
+	$(SUB_PROJECT_INCLUDES) \
+	-DTORNADO_AE_653
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CFLAGS_AS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CFLAGS_AS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CFLAGS_DEBUG_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-g \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CFLAGS_PROJECT
+-mcpu=8540 \
+	-mstrict-align \
+	-mabi=no-spe \
+	-msoft-float \
+	-ansi \
+	-fno-zero-initialized-in-bss \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-O2 \
+	-fvolatile \
+	-fno-builtin \
+	-fno-reorder-blocks \
+	-I/h \
+	-I. \
+	-I$(TGT_DIR)/config/all \
+	-I$(TGT_DIR)/h \
+	-I$(TGT_DIR)/src/config \
+	-I$(TGT_DIR)/src/drv \
+	-DCPU=PPC85XX \
+	-DTORNADO_AE_653 \
+	-MD \
+	-Wall
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CPP
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-E \
+	-P
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_CPPFILT
+c++filtppc --strip-underscores --format=gnu
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_DATA_SEG_ALIGN
+00080000 #Align data section for TLB locking
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_HEX_FLAGS
+--gap-fill=0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LD
+ldppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LDFLAGS
+-r
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LDPARTIAL
+ccppc -B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ -nostdlib -r -Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LD_PARTIAL
+ccppc \
+	-B$(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/lib/gcc-lib/ \
+	-nostdlib \
+	-r \
+	-Wl,-X
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LD_PARTIAL_FLAGS
+-X \
+	-r \
+	-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LD_ROM_EMUL_FLAGS
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxr6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LD_SCRIPT_RAM
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.x
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LD_SCRIPT_RAM_REL
+-T \
+	$(TGT_DIR)/h/tool/gnu/ldscripts/vxw6ppc.xr
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_LIBS
+$(TGT_DIR)/lib/libPPC85XXgnuvx.a
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_MV_BIN
+echo
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_NM
+nmppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_OPTION_DEFINE_MACRO
+-D
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_OPTION_GENERATE_DEPENDENCY_FILE
+-MD
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_OPTION_INCLUDE_DIR
+-I
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_RAM_HIGH_ADRS
+00e00000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_RAM_LOW_ADRS
+00010000 # RAM text/data address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_ROM_LINK_ADRS
+fff00000
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_ROM_SIZE
+00100000 # number of bytes of ROM space
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_ROM_TEXT_ADRS
+fff00000 # ROM entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_ROM_WARM_ADRS
+fff00008 # ROM warm entry address
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_SIZE
+sizeppc
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_USR_ENTRY
+usrInit
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_MACRO_VMA_START
+0x0
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_RELEASE
+2
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_RO_DEPEND_PATH
+$(TGT_DIR)/h
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_SUBSET
+cert
+<END>
+
+<BEGIN> BUILD_PPC85XXgnu.debug_romPayload_TC
+::tc_PPC85XXgnu.cert
+<END>
+
+<BEGIN> BUILD__FILE_$(TGT_DIR)/config/comps/src/romStart.c_infoTags
+BOOT_FILE
+<END>
+
+<BEGIN> BUILD__FILE_$(TGT_DIR)/config/wrSbc8560/romInit.s_infoTags
+BOOT_FILE
+<END>
+
+<BEGIN> BUILD__LIST
+PPC85XXgnu.cert \
+	PPC85XXgnu.cert_romPayload \
+	PPC85XXgnu.cert_ramPayload \
+	PPC85XXgnu.debug_romPayload \
+	PPC85XXgnu.debug_ramPayload \
+	PPC85XXgnu.debug
+<END>
+
+<BEGIN> PROJECT_FILES
+$(PRJ_DIR)/prjConfig.c \
+	$(PRJ_DIR)/usrAppInit.c \
+	$(PRJ_DIR)/usrAppInit.h \
+	$(TGT_DIR)/config/comps/src/dataSegPad.c \
+	$(TGT_DIR)/config/comps/src/romStart.c \
+	$(TGT_DIR)/config/comps/src/version.c \
+	$(TGT_DIR)/config/wrSbc8560/romInit.s \
+	$(TGT_DIR)/config/wrSbc8560/sysALib.s \
+	$(TGT_DIR)/config/wrSbc8560/sysLib.c
+<END>
+
+<BEGIN> WCC__CDF_PATH
+$(TGT_DIR)/config/comps/vxWorks \
+	{$(TGT_DIR)/config/comps/vxWorks/$SUBSET} \
+	{$(TGT_DIR)/config/comps/vxWorks/arch/$ARCH} \
+	{$(TGT_DIR)/config/comps/vxWorks/arch/$ARCH/$CPU} \
+	{$(TGT_DIR)/config/comps/vxWorks/arch/$ARCH/$CPU/$TOOL} \
+	{$(TGT_DIR)/config/comps/vxWorks/arch/$ARCH/$SUBSET} \
+	{$(TGT_DIR)/config/comps/vxWorks/arch/$ARCH/$CPU/$SUBSET} \
+	$(TGT_DIR)/config/wrSbc8560 \
+	{$(TGT_DIR)/config/wrSbc8560/$SUBSET} \
+	$(PRJ_DIR)/
+<END>
+
+<BEGIN> WCC__CURRENT
+wrSbc8560
+<END>
+
+<BEGIN> WCC__LIST
+wrSbc8560
+<END>
+
+<BEGIN> WCC__MXR_LIBS
+lib$(CPU)$(TOOL)$(SUBSET).a
+<END>
+
+<BEGIN> WCC__OBJS_PATH
+$(TGT_DIR)/lib/obj$CPU$TOOL$SUBSET
+<END>
+
+<BEGIN> WCC_wrSbc8560_ADR_SPACE_ALLOC_UNIT
+0x04000000
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_AUX_CLK_RATE_MAX
+32552
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_AUX_CLK_RATE_MIN
+7
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_INCLUDE_CACHE_SUPPORT
+TRUE
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_INCLUDE_CONSTANT_RDY_Q
+TRUE
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_MII_MONITOR_DELAY
+0x2
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_PPP_TTY
+1
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_SYS_CLK_RATE_MAX
+8000
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_SYS_CLK_RATE_MIN
+1
+<END>
+
+<BEGIN> WCC_wrSbc8560_PARAM_WDB_COMM_TYPE
+WDB_COMM_END
+<END>
+

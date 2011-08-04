@@ -1,0 +1,23 @@
+/* 00bootkernel.ddf - configuration file for bootrom */
+
+/* Copyright 2004 Wind River Systems, Inc. */
+/* 
+modification history 
+--------------------
+01a,10jan04,ksn created by teamF1.
+*/
+
+
+
+Domain vxKernel {
+       TEXT_VIRT_ADDR	0x00100000
+       COMPONENTS +=	INCLUDE_BSP_MODULES \
+			INCLUDE_NULLNVRAM \
+			INCLUDE_END \
+			INCLUDE_NE2000END \
+			INCLUDE_PPCDECTIMER \
+			INCLUDE_SERIAL \
+			INCLUDE_SYSCLK \
+			INCLUDE_USR_DEVSPLIT \
+                        INCLUDE_NETWORK
+}

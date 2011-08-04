@@ -1,0 +1,34 @@
+GNATbus speed_probe example
+***************************
+
+GtkAda mode
+-----------
+
+   For this mode you need a valid installation of GtkAda.
+
+   1) Compiling the example.
+
+      To compile, un-comment the first line of speed_probes.gpr and invoke
+      gprbuild:
+
+      $ gprbuild -XHead=gtkada
+
+   2) Running the example.
+
+      $ main_gtkada
+
+Console mode
+------------
+
+   1) Compiling the example.
+
+      To compile, simply invoke gprbuild:
+
+      $ gprbuild
+
+   2) Running the example.
+
+      $ main_headless
+
+
+Read guest_code/README to build and run the guest executable.

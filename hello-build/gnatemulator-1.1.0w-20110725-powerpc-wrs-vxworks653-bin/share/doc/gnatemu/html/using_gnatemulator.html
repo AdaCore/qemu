@@ -1,0 +1,217 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using GNATEmulator &mdash; GNATEmulator v1.0 documentation</title>
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNATEmulator v1.0 documentation" href="index.html" />
+    <link rel="next" title="Extending GNATEmulator" href="extending_gnatemulator.html" />
+    <link rel="prev" title="Running the Leon Bareboard example" href="leon-elf-example.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="extending_gnatemulator.html" title="Extending GNATEmulator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="leon-elf-example.html" title="Running the Leon Bareboard example"
+             accesskey="P">previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-gnatemulator">
+<h1>Using GNATEmulator<a class="headerlink" href="#using-gnatemulator" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="launch-gnatemulator">
+<h2>Launch GNATEmulator<a class="headerlink" href="#launch-gnatemulator" title="Permalink to this headline">¶</a></h2>
+<p>To launch a guest application just run:</p>
+<div class="highlight-python"><pre>leon-elf-gnatemu hello</pre>
+</div>
+<p>GNATEmulator will automatically load the ELF file (<tt class="docutils literal"><span class="pre">hello</span></tt>) and start
+execution at the entry point.</p>
+<p>To stop, press <tt class="docutils literal"><span class="pre">Control-a</span> <span class="pre">x</span></tt>.</p>
+</div>
+<div class="section" id="debugging">
+<h2>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
+<p>This section explains how to set up a debugging session with GNATEmulator.</p>
+<div class="section" id="gdbserver-in-gnatemulator">
+<h3>Gdbserver in GNATEmulator<a class="headerlink" href="#gdbserver-in-gnatemulator" title="Permalink to this headline">¶</a></h3>
+<p>GNATEmulator provides a gdbserver interface to ease debugging of guest
+applications. Here are the three flags that control gdbserver:</p>
+<blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">-gdb</span></tt>: wait for gdb connection on &#8216;dev&#8217;</li>
+</ul>
+<blockquote>
+<p>This flags will initiate the gdbserver and wait for gdb connection.</p>
+<p>For example:</p>
+<div class="highlight-python"><pre>leon-elf-gnatemu hello -gdb tcp::1234</pre>
+</div>
+</blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">-s</span></tt>: shorthand for <tt class="docutils literal"><span class="pre">-gdb</span> <span class="pre">tcp::1234</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">-S</span></tt>: freeze CPU at start up</li>
+</ul>
+<blockquote>
+When this flag is present, GNATEmulator will freeze simulation and wait for a
+<tt class="docutils literal"><span class="pre">continue</span></tt> command from gdb.</blockquote>
+</blockquote>
+</div>
+<div class="section" id="debugging-with-gdb">
+<h3>Debugging with GDB<a class="headerlink" href="#debugging-with-gdb" title="Permalink to this headline">¶</a></h3>
+<p>To debug with gdb:</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">Run GNATEmulator with <tt class="docutils literal"><span class="pre">-s</span></tt> and <tt class="docutils literal"><span class="pre">-S</span></tt> flags (see <a class="reference internal" href="#gdbserver-in-gnatemulator">Gdbserver in GNATEmulator</a>):</p>
+<div class="highlight-python"><pre>$ leon-elf-gnatemu hello -s -S</pre>
+</div>
+</li>
+<li><p class="first">Run gdb and connect to GNATEmulator with the <tt class="docutils literal"><span class="pre">target</span></tt> command:</p>
+<div class="highlight-python"><pre>$ leon-elf-gdb hello
+(gdb) target remote localhost:1234
+(gdb)</pre>
+</div>
+</li>
+</ol>
+</blockquote>
+</div>
+<div class="section" id="debugging-with-gps">
+<h3>Debugging with GPS<a class="headerlink" href="#debugging-with-gps" title="Permalink to this headline">¶</a></h3>
+<p>To debug with GPS:</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">Run GNATEmulator with <tt class="docutils literal"><span class="pre">-s</span></tt> and <tt class="docutils literal"><span class="pre">-S</span></tt> flags (see <a class="reference internal" href="#gdbserver-in-gnatemulator">Gdbserver in GNATEmulator</a>):</p>
+<div class="highlight-python"><pre>$ leon-elf-gnatemu hello -s -S</pre>
+</div>
+</li>
+<li><p class="first">Read the GPS documentation, section &#8220;Working in a Cross Environment -&gt;
+Debugger Issues&#8221; and use the following configuration:</p>
+<div class="highlight-python"><pre>targetname: "localhost:1234"
+protocol: "remote"</pre>
+</div>
+</li>
+</ol>
+</blockquote>
+</div>
+</div>
+<div class="section" id="redirecting-serial-port-s">
+<h2>Redirecting serial port(s)<a class="headerlink" href="#redirecting-serial-port-s" title="Permalink to this headline">¶</a></h2>
+<p>In GNATEmulator it is possible to redirect the serial communication ports.</p>
+<ol class="arabic">
+<li><p class="first">To a file:</p>
+<div class="highlight-python"><pre>leon-elf-gnatemu hello -serial file:/tmp/serial_output.txt</pre>
+</div>
+</li>
+<li><p class="first">To a TCP port:</p>
+<div class="highlight-python"><pre>leon-elf-gnatemu hello -serial tcp:hostname:1234</pre>
+</div>
+<p>With the &#8216;server&#8217; option, GNATEmulator will wait for the tcp connection:</p>
+<div class="highlight-python"><pre>leon-elf-gnatemu hello -serial tcp:hostname:1234,server</pre>
+</div>
+</li>
+</ol>
+<p>If there is more than one serial port on the target, use a &#8220;-serial&#8221; flag for
+each port you want to redirect.</p>
+<p>For example, the first serial to a file and the second to a TCP port:</p>
+<div class="highlight-python"><pre>leon-elf-gnatemu hello -serial file:/tmp/serial1.txt  -serial tcp:localhost:1234</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="gnatemulator.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using GNATEmulator</a><ul>
+<li><a class="reference internal" href="#launch-gnatemulator">Launch GNATEmulator</a></li>
+<li><a class="reference internal" href="#debugging">Debugging</a><ul>
+<li><a class="reference internal" href="#gdbserver-in-gnatemulator">Gdbserver in GNATEmulator</a></li>
+<li><a class="reference internal" href="#debugging-with-gdb">Debugging with GDB</a></li>
+<li><a class="reference internal" href="#debugging-with-gps">Debugging with GPS</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#redirecting-serial-port-s">Redirecting serial port(s)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="leon-elf-example.html"
+                        title="previous chapter">Running the Leon Bareboard example</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="extending_gnatemulator.html"
+                        title="next chapter">Extending GNATEmulator</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/using_gnatemulator.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="extending_gnatemulator.html" title="Extending GNATEmulator"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="leon-elf-example.html" title="Running the Leon Bareboard example"
+             >previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, AdaCore.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

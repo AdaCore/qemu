@@ -1,0 +1,169 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting Started &mdash; GNATEmulator v1.0 documentation</title>
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNATEmulator v1.0 documentation" href="index.html" />
+    <link rel="next" title="Running the VxWorks 653 example" href="vxworks653-example.html" />
+    <link rel="prev" title="Introduction" href="overview.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="vxworks653-example.html" title="Running the VxWorks 653 example"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>The installation is automatically performed by the <strong>InstallShield</strong>. You will
+be prompted for an installation directory for the simulator and the example
+(later referred to as <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">%GNATEMULATOR_INSTALL_DIR%</span></tt>).</p>
+<p>If you are using <strong>GNATEmulator</strong> for <strong>VxWorks 653</strong> then once the product
+is installed, you should install the BSP in the <strong>Wind River Platform for
+Safety-Critical ARINC 653</strong> installation along with the default ones.
+In order to do that you need to copy the
+<tt class="file docutils literal"><span class="pre">%GNATEMULATOR_INSTALL_DIR%\share\gnatemulator\ppc-vx653\bsp\qemu</span></tt>
+directory in <tt class="file docutils literal"><span class="pre">%WIND_HOME%\vxworks653-2.2.2\target\config\qemu</span></tt>.
+Note that the target PATH may be slighty different depending on your version of
+<strong>VxWorks 653</strong>.</p>
+</div>
+<div class="section" id="setting-your-environment">
+<h2>Setting your environment<a class="headerlink" href="#setting-your-environment" title="Permalink to this headline">¶</a></h2>
+<p>In order to set your environment for <strong>GNATEmulator</strong> you need to do:</p>
+<div class="highlight-bat"><div class="highlight"><pre><span class="k">set</span> <span class="nv">PATH</span><span class="o">=</span><span class="nv">%GNATEMULATOR_INSTALL_DIR%</span>\bin;<span class="nv">%PATH%</span>
+</pre></div>
+</div>
+<p>Where <span class="target" id="index-1"></span><tt class="xref std std-envvar docutils literal"><span class="pre">%GNATEMULATOR_INSTALL_DIR%</span></tt> is the root directory of your
+installation.</p>
+<p>If you need to build your own devices using <strong>GNATBus</strong>, then you should
+also do:</p>
+<div class="highlight-bat"><div class="highlight"><pre><span class="k">set</span> <span class="nv">ADA_PROJECT_PATH</span><span class="o">=</span><span class="nv">%GNATEMULATOR_INSTALL_DIR%</span>\lib\gnat;<span class="nv">%ADA_PROJECT_PATH%</span>
+</pre></div>
+</div>
+<p>Note that if <strong>GNATEmulator</strong> has been installed in the same location as your
+native compiler then you don&#8217;t need to set <span class="target" id="index-2"></span><tt class="xref std std-envvar docutils literal"><span class="pre">ADA_PROJECT_PATH</span></tt>
+environment variable.</p>
+</div>
+<div class="section" id="running-the-examples">
+<h2>Running the examples<a class="headerlink" href="#running-the-examples" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vxworks653-example.html">Running the VxWorks 653 example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vxworks653-example.html#first-run">First run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vxworks653-example.html#structure-of-the-example">Structure of the Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="leon-elf-example.html">Running the Leon Bareboard example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="leon-elf-example.html#compiling-the-example">Compiling the example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="leon-elf-example.html#running-the-example">Running the example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="leon-elf-example.html#redirecting-the-uart">Redirecting the uart</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="gnatemulator.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting Started</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#setting-your-environment">Setting your environment</a></li>
+<li><a class="reference internal" href="#running-the-examples">Running the examples</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="overview.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vxworks653-example.html"
+                        title="next chapter">Running the VxWorks 653 example</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/getting_started.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="vxworks653-example.html" title="Running the VxWorks 653 example"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Introduction"
+             >previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, AdaCore.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

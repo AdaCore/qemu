@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Use this script to setup a vxWorks 6 environment from cygwin. To use
+# it:
+# * change WIND_HOME and VXWORKS_VERSION according to your setup;
+# * run these commands: 
+#    > ./cygwin_env_vx6 > my_env
+#    > source my_env
+
+# Path to the workbench installation
+WIND_HOME=/windriver/workbench-PSC-2.3.0.1
+
+# VxWorks version
+VXWORKS_VERSION=vxworks653-2.3.0.1
+
+$WIND_HOME/wrenv.sh -p $VXWORKS_VERSION -o print_env -f sh | \
+              tr '\\\\' '/' | \
+              sed -e "s;c://;/;g" -e "s;//;/;g" | \
+              sed -e "/^PATH=/s/;/:/g" -e "s/: export PATH:/; export PATH;/g" \
+                  -e "s#$WIND_HOME/$product/$platform/bin:##g" \
+                  -e "s#$WIND_HOME/$WIND_PLATFORM/host/$platform/bin:##g"
+
+# Workbench comes with cygwin tools, but it's preferable to use
+# the ones in /bin.  
+echo 'PATH=/bin:$PATH'

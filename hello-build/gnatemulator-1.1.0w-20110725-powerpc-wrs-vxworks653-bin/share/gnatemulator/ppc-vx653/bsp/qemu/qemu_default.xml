@@ -1,0 +1,269 @@
+<!-- qemu_default.xml - default project configuration -->
+
+<!-- Copyright (c) 2005-2007 Wind River Systems, Inc.
+ !
+ ! The right to copy, distribute, modify or otherwise make use
+ ! of this software may be licensed only pursuant to the terms
+ ! of an applicable Wind River license agreement.
+ -->
+
+<!--
+modification history
+--------------------
+01e,25sep07,bbh  Updated XML namespace
+01d,06jun06,rlp  Increased partition text section size.
+01c,02jun06,rlp  Updated to be 1.8 schema compliant.
+01b,07oct05,mat  Merged from 1.4.2
+01a,03sep05,gmk  Modification history added.
+-->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Module
+        xmlns="http://www.windriver.com/vxWorks653/ConfigRecord"
+        xmlns:xi="http://www.w3.org/2001/XInclude"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.windriver.com/vxWorks653/ConfigRecord ../xml/cleanschema/Module.xsd">
+    <CoreOS>
+        <xi:include href="qemu.xml"/>
+    </CoreOS>
+    <Applications>
+        <Application Name="qemu_part1">
+            <ApplicationDescription>
+                <MemorySize
+                        MemorySizeBss="0x1000"
+                        MemorySizeText="0x4000"
+                        MemorySizeData="0x1000"
+                        MemorySizeRoData="0x1000"
+                        MemorySizePersistentData="0x1000"
+                        MemorySizePersistentBss="0x1000"/>
+                <Ports/>
+            </ApplicationDescription>
+        </Application>
+    </Applications>
+    <SharedDataRegions>
+    <!--
+        <SharedData Name="flash">
+	</SharedData>
+	-->
+    </SharedDataRegions>
+    <SharedLibraryRegions>
+        <SharedLibrary Name="vxSysLib">
+            <SharedLibraryDescription SystemSharedLibrary="true" VirtualAddress="0x10000000">
+                <MemorySize
+                            MemorySizeText="0x40000"
+                            MemorySizeRoData="0x7000"
+                            MemorySizeData="0x7000"
+                            MemorySizeBss="0x3000"
+                            MemorySizePersistentData="0x1000"
+                            MemorySizePersistentBss="0x1000"/>
+            </SharedLibraryDescription>
+        </SharedLibrary>
+    </SharedLibraryRegions>
+    <Partitions>
+        <Partition Name="qemu_part1" Id="1">
+            <PartitionDescription>
+                <Application NameRef="qemu_part1"/>
+                <SharedLibraryRegion NameRef="vxSysLib"/>
+                <Settings
+                          RequiredMemorySize="0x300000"
+                          PartitionHMTable="part1Hm"
+                          watchDogDuration="0"
+                          allocDisable="0"
+                          numStackGuardPages="0xffffffff"
+                          numWorkerTasks="0"
+                          isrStackSize="0xffffffff"
+                          selSvrQSize="0xffffffff"
+                          maxEventQStallDuration="INFINITE_TIME"
+                          fpExcEnable="1"
+                          syscallPermissions="0xffffffff"
+                          numFiles="0xffffffff"
+                          maxGlobalFDs="10"
+                          numDrivers="0xffffffff"
+                          numLogMsgs="0xffffffff"/>
+		<!--
+		<SharedDataRegion NameRef="flash" UserAccess="READ_ONLY"/>
+		-->
+            </PartitionDescription>
+        </Partition>
+    </Partitions>
+    <Schedules>
+        <Schedule
+                  Id="0">
+            <PartitionWindow
+                             PartitionNameRef="qemu_part1"
+                             Duration="0.25"
+                             ReleasePoint="1"/>
+        </Schedule>
+    </Schedules>
+    <Connections/>
+    <HealthMonitor>
+        <SystemHMTable Name="systemHm">
+            <SystemState
+                         SystemState="HM_PARTITION_MODE">
+                <ErrorIDLevel
+                              ErrorIdentifier="HME_DEFAULT"
+                              ErrorLevel="HM_PARTITION_LVL"/>
+            </SystemState>
+            <SystemState
+                         SystemState="HM_MODULE_MODE">
+                <ErrorIDLevel
+                              ErrorIdentifier="HME_DEFAULT"
+                              ErrorLevel="HM_MODULE_LVL"/>
+            </SystemState>
+            <SystemState
+                         SystemState="HM_PROCESS_MODE">
+                <ErrorIDLevel
+                              ErrorIdentifier="HME_DEFAULT"
+                              ErrorLevel="HM_PROCESS_LVL"/>
+            </SystemState>
+        </SystemHMTable>
+        <ModuleHMTable Name="moduleHm">
+            <SystemState>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_UNKNOWN"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_NUMERIC_ERROR"
+                               ErrorAction=""/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_POWER_FAIL"
+                               ErrorAction="hmDH_HME_POWER_FAIL"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_KERNEL"
+                               ErrorAction="hmDH_HME_KERNEL"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_CONFIG_ERROR"
+                               ErrorAction="hmDH_EventLog"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_INIT_ERROR"
+                               ErrorAction="hmDH_HME_INIT_ERROR"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_PARTITION_OVERFLOW"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_PARTITION_MODE_SET"
+                               ErrorAction="hmDH_HME_PARTITION_MODE_SET"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_APEX_INTERNAL_ERROR"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_HM_INTERNAL_ERROR"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_PORT_INTERNAL_ERROR"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_LOST_TICKS"
+                               ErrorAction="hmDH_HME_LOST_TICKS"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_HM_ERROR"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_HMQ_OVERFLOW"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_DATA_LOSS"
+                               ErrorAction=""/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_HM_DEADLINE_MISSED"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HM_MSG"
+                               ErrorAction="hmDH_EventLog"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_DEFAULT"
+                               ErrorAction="hmDefaultHandler"/>
+            </SystemState>
+            <Settings
+                      maxQueueDepth="34"
+                      queueThreshold="32"
+                      stackSize="16384"
+                      maxLogEntries="100"
+                      logEntriesThreshold="98"
+                      attributeMask="0x00000001"
+                      notificationHandler=""
+                      notifMaxQueueDepth="0"
+                      eventFilterMask="0x00000000"
+                      maxErrorHandlerQueueDepth="0"
+                      errorHandlerQueueThreshold="0"/>
+        </ModuleHMTable>
+        <PartitionHMTable Name="part1Hm">
+            <SystemState>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_UNKNOWN"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_NUMERIC_ERROR"
+                               ErrorAction=""/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_POWER_FAIL"
+                               ErrorAction="hmDH_HME_POWER_FAIL"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_KERNEL"
+                               ErrorAction="hmDH_HME_KERNEL"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_CONFIG_ERROR"
+                               ErrorAction="hmDH_EventLog"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_INIT_ERROR"
+                               ErrorAction="hmDH_HME_INIT_ERROR"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_PARTITION_OVERFLOW"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_PARTITION_MODE_SET"
+                               ErrorAction="hmDH_HME_PARTITION_MODE_SET"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_APEX_INTERNAL_ERROR"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_HM_INTERNAL_ERROR"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_PORT_INTERNAL_ERROR"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_LOST_TICKS"
+                               ErrorAction="hmDH_HME_LOST_TICKS"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_HM_ERROR"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_HMQ_OVERFLOW"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_DATA_LOSS"
+                               ErrorAction=""/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_HM_DEADLINE_MISSED"
+                               ErrorAction="hmDefaultHandler"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HM_MSG"
+                               ErrorAction="hmDH_EventLog"/>
+                <ErrorIDAction
+                               ErrorIdentifier="HME_DEFAULT"
+                               ErrorAction="hmDefaultHandler"/>
+            </SystemState>
+            <Settings
+                      maxQueueDepth="34"
+                      queueThreshold="32"
+                      stackSize="16384"
+                      maxLogEntries="100"
+                      logEntriesThreshold="98"
+                      attributeMask="0x00000001"
+                      notificationHandler=""
+                      notifMaxQueueDepth="0"
+                      eventFilterMask="0xFFFFFFFF"
+                      maxErrorHandlerQueueDepth="128"
+                      errorHandlerQueueThreshold="126">
+                      <TrustedPartition NameRef="qemu_part1"/>
+             </Settings>
+        </PartitionHMTable>
+    </HealthMonitor>
+    <Payloads>
+	<CoreOSPayload/>
+	<SharedLibraryPayload NameRef="vxSysLib"/>
+	<ConfigRecordPayload NameRef="configRecord"/>
+	<PartitionPayload NameRef="qemu_part1"/>
+    </Payloads>
+</Module>

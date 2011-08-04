@@ -1,0 +1,33 @@
+/* 00certKernel.ddf - vxWorks CERT kernel configuration */
+
+/* Copyright 2004 Wind River Systems, Inc.
+*
+ * The right to copy, distribute, modify or otherwise make use
+ * of this software may be licensed only pursuant to the terms
+ * of an applicable Wind River license agreement.
+ */
+
+/* 
+modification history 
+--------------------
+01b,11jul05,dam Remove useless INCLUDE_HW_FP
+01a,23sep04,rlp created.
+
+DESCRIPTION
+This file contains default domain descriptions for CERT projects.  The project
+wizard read this file once during the project creation.  It allows BSP specific
+info about domains to be entered.  The modified version is then saved into
+the project file for later use.
+*/
+
+
+
+Domain vxKernel {
+       TEXT_VIRT_ADDR	0x00100000
+       COMPONENTS +=	INCLUDE_BSP_MODULES \
+			INCLUDE_NULLNVRAM \
+			INCLUDE_MMU_BASIC \
+			INCLUDE_PPCDECTIMER \
+			INCLUDE_SERIAL \
+			INCLUDE_SYSCLK
+}

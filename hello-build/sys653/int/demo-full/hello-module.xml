@@ -1,0 +1,97 @@
+<!-- 
+ ! Copyright (c) 2007 Wind River Systems, Inc.
+ !
+ ! The right to copy, distribute, modify or otherwise make use
+ ! of this software may be licensed only pursuant to the terms
+ ! of an applicable Wind River license agreement.
+-->
+
+<Module
+    xmlns="http://www.windriver.com/vxWorks653/ConfigRecord"
+    xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.windriver.com/vxWorks653/ConfigRecord Module.xsd">
+    <CoreOS>
+	<xi:include href="bsp.xml"/>
+    </CoreOS>
+    <Applications>
+	<Application Name="hello">
+	    <xi:include href="app.xml"/>
+	</Application>
+    </Applications>
+    <SharedDataRegions/>
+    <SharedLibraryRegions>
+	<SharedLibrary Name="pos">
+	    <xi:include href="hello-pos.xml"/>
+	</SharedLibrary>
+    </SharedLibraryRegions>
+    <Partitions>
+	<Partition Name="hello" Id="1">
+	    <xi:include href="hello-part.xml"/>
+	</Partition>
+    </Partitions>
+    <Schedules>
+	<Schedule Id="0">
+	    <PartitionWindow PartitionNameRef="hello" Duration="0.10"/>
+	</Schedule>
+    </Schedules>
+    <Connections/>
+    <HealthMonitor>
+	<SystemHMTable Name="systemHm">
+	    <SystemState SystemState="HM_PARTITION_MODE">
+		<ErrorIDLevel
+			      ErrorIdentifier="HME_DEFAULT"
+			      ErrorLevel="HM_MODULE_LVL"/>
+	    </SystemState>
+	    <SystemState SystemState="HM_MODULE_MODE">
+		<ErrorIDLevel
+			      ErrorIdentifier="HME_DEFAULT"
+			      ErrorLevel="HM_MODULE_LVL"/>
+	    </SystemState>
+	    <SystemState SystemState="HM_PROCESS_MODE">
+		<ErrorIDLevel
+			      ErrorIdentifier="HME_APPLICATION_ERROR"
+			      ErrorLevel="HM_MODULE_LVL"/>
+	    </SystemState>
+	</SystemHMTable>
+	<ModuleHMTable Name="moduleHm">
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_DEFAULT" ErrorAction=""/>
+	    </SystemState>
+	    <!--  Ignore partition mode set.  -->
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_PARTITION_MODE_SET"
+		 ErrorAction=""/>
+	    </SystemState>
+	    <!--  Standard method for the app to exit from qemu.  -->
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_APPLICATION_ERROR"
+		 ErrorAction="hmDH_ModuleReboot"/>
+	    </SystemState>
+	    <!--  Catch this -- do not restart the partition.  -->
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_MEMORY_VIOLATION"
+		 ErrorAction="hmDH_ModuleReboot"/>
+	    </SystemState>
+	    <Settings
+		stackSize="0x0400"
+		maxQueueDepth="2"
+		/>
+	</ModuleHMTable>
+	<PartitionHMTable Name="helloHm">
+	    <SystemState>
+		<ErrorIDAction ErrorIdentifier="HME_DEFAULT" ErrorAction=""/>
+	    </SystemState>
+	    <Settings
+		stackSize="0x0400"
+		maxQueueDepth="2"
+		/>
+	</PartitionHMTable>
+    </HealthMonitor>
+    <Payloads>
+	<PartitionPayload NameRef="hello"/>
+	<CoreOSPayload/>
+	<ConfigRecordPayload NameRef="configRecord"/> <!--  Base_Address="0xfff10000"/> -->
+	<SharedLibraryPayload NameRef="pos"/>
+    </Payloads>
+</Module>

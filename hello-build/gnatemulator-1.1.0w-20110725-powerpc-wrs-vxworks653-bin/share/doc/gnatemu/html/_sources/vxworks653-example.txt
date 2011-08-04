@@ -1,0 +1,78 @@
+Running the VxWorks 653 example
+*******************************
+
+First run
+=========
+
+The example can be built using the :command:`make` tool from the VxWorks
+Development Shell. Open the VxWorks Development Shell, go to the directory
+where the example has been installed (e.g.
+:file:`%GNATEMULATOR_INSTALL_DIR%/share/examples/gnatemu/ppc-vx653/sys653`)
+and then type::
+
+   $ make
+
+This command configures and builds the system. It generates a ROM
+image of the VxWorks 653 system in :file:`int/demo/hello.flash`.
+
+To run the example in the simulation environment, type::
+
+   $ make run
+
+To stop the simulator, press :kbd:`Control-Ax`.
+
+Structure of the Example
+========================
+
+The example is structured in 4 components that follow the organization of
+a typical VxWorks 653 system:
+
+  * The **Core OS** is the kernel of the system and contains the BSP.  It is
+    configured and built in the :file:`mos` subdirectory.  In the example the
+    :file:`mos` directory does not contain any source. There is just a
+    Makefile whose purpose is to build and configure the **Core OS** using
+    existing VxWorks 653 libraries and **GNATEmulator** BSP sources. The 
+    **Core OS** is configured and compiled for a specific BSP/board.
+
+    To include tools useful during the development of your application
+    (Target Tools), you should call make with the following parameter::
+
+        $ make DEBUG=1
+
+    Should you need to reconfigure the Core OS (to include/exclude Target
+    Tools for example), you should clean the @file{mos} subdirectory first
+    by calling::
+
+        $ make clean
+
+    in the :file:`mos` directory. Calling :command:`make` in the top-level
+    example directory will clean the complete VxWorks 653 system. It removes
+    the generated code and keeps the example infrastructure so that example
+    can be regenerated from scratch.
+
+  * The **Partition OS** is a passive partition (i.e. it will not execute
+    code by itself) that contains the OS code runnning in application
+    partitions.
+
+    Like the :file:`mos` directory, the :file:`pos` directory in the example
+    does not contain any source. There is just a Makefile that is called to
+    configure the partition (to define the size, the base virtual address
+    and the functions that can be called).
+
+    The compilation will generate a partition and stubs.  The stubs
+    will be linked with the application (see below).
+
+  * The **Application**.  This example contains one application located in
+    the :file:`app` directory.  Configuration related to the application is
+    minimal: only memory contraints have to be defined.  To allow users to
+    easily replace the example code by its own code, a wrapper
+    (:file:`appwrapper.c`) is provided as the entry point of the
+    application. The wrapper then calls function :file:`hello` in file
+    :file:`hello.c`.
+
+  * The **Integration**. The components described above can be developped
+    separately. The purpose of the integration component is to agregate
+    these components into the final system. The logic for the integration is
+    in directory :file:`int`. The directory contains makefiles and
+    configuration files to build the final ROM image that will be run by the
+    simulator.

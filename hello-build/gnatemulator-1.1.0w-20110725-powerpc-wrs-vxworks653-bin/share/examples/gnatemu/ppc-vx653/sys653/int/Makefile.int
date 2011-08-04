@@ -1,0 +1,64 @@
+#  (This looks like a -*- Makefile -*-)
+# Copyright (c) 2007 Wind River Systems, Inc.
+#
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+#
+
+# CPU = PPC604
+
+POS=full
+
+all: rom checkSize boot.txt syms_nox hello.flash
+
+include $(WIND_BASE)/target/config/make/Makefile.vars
+
+XML_FILE  = hello-module.xml
+SM_FILES  = $(shell $(XMLGEN_FILES) $(XML_FILE))
+SYM_FILES = $(shell $(XMLGEN_FILES) --sym $(XML_FILE))
+BIN_FILES = $(shell $(XMLGEN_FILES) --bin $(XML_FILE))
+
+MOS_DIR = ../../mos/demo
+POS_DIR = ../../pos-$(POS)/demo
+APP_DIR = ../../app/demo
+
+include $(WIND_BASE)/target/config/make/Makefile.rules
+
+# Copy chunks from mos/pos/app directories.
+payloadObjs_rom.o: ../../mos/demo/PPC604gnu.debug_romPayload/payloadObjs_rom.o
+	cp $< $@
+coreOS.sm: $(MOS_DIR)/$(CPU)gnu.debug/coreOS.sm
+	cp $< $@
+pos.sm:    $(POS_DIR)/pos-$(POS).sm
+	cp $< $@
+hello.sm:  $(APP_DIR)/hello.sm
+	cp $< $@
+
+# Downloadable symbol tables
+
+BINFLAGS_EXTRA = $(shell $(XMLGEN_BINFLAGS) -j $* configRecord.xml)
+$(BIN_FILES): configRecord.xml
+
+hello.flash: configRecord.xml $(SM_FILES)
+	powerpc-wrs-vxworksae-romgen -o $@
+
+syms_nox: $(SYM_FILES)
+	chmod -x *.sym
+
+checkSize: $(SM_FILES)
+	xmlgen --bbCheck $(addprefix -j ,$(basename $^)) configRecord.xml
+
+flags:
+	$(XMLGEN_BINFLAGS) -j hello configRecord.xml
+
+sys.bin: hello.flash
+# Note: dd from vxworks seems broken...
+# We remote the application from the ROM (the first MB) to create a generic
+# ROM.  This can be used to quickly build systems by just compiling an
+# application, creating a 1 MB binary image of it and finally appending
+# sys.bin to create a 4 MB flash image.
+	c:/cygwin/bin/dd if=$< of=$@ bs=1048576 count=3 skip=1
+
+install: sys.bin
+	cp $< ../../dist/sys-$(POS).bin

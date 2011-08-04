@@ -1,0 +1,5 @@
+Beginning configuration analysis
+
+If there are errors, this analysis will be stored in config.errors,
+otherwise it will be saved to config.report
+

@@ -1,0 +1,25 @@
+library project GnatBus_Ada_Lib is
+  for Languages    use ("Ada", "C");
+  for Source_Dirs  use ("../gnatbus/common", "../gnatbus/plugin_src");
+  for Library_Name use "GnatBus_Ada_Plugin";
+  for Library_Dir  use "../gnatbus/lib";
+
+  for Library_Kind use "dynamic";
+
+  package Naming is
+     for Spec_Suffix ("C")   use ".h";
+     for Body_Suffix ("C")   use ".c";
+     for Spec_Suffix ("Ada") use ".ads";
+     for Body_Suffix ("Ada") use ".adb";
+     for Casing              use "lowercase";
+     for Dot_Replacement     use "-";
+  end Naming;
+
+  package Compiler is
+     for Driver ("C") use "gcc";
+     for Driver ("Ada") use "gcc";
+     C_Switches := ("-I.", "-DADA_PLUGIN");
+     for Default_Switches ("C")   use C_Switches;
+     for Default_Switches ("Ada") use ("-gnaty", "-gnatwa", "-gnat05");
+  end Compiler;
+end GnatBus_Ada_Lib;

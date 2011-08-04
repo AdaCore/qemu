@@ -1,0 +1,34 @@
+# 
+# Copyright (c) 2007 Wind River Systems, Inc.
+#
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+#
+
+CPU = PPC604
+
+all: pos-cert.sm pos-cert-stubs.o install
+
+include $(WIND_BASE)/target/vThreads/config/make/Makefile.vars
+
+vpath %.c   $(WIND_BASE)/target/vThreads/config/comps/src
+vpath %.o   $(WIND_BASE)/target/vThreads/lib/obj$(CPU)gnuvx
+
+pos-cert.sm: sslMain.o vThreadsComponent.o apexComponent.o pos-cert-ept.o pos-cert.lds
+	$(LD) $(LDFLAGS) -T pos-cert.lds -o $@ $(filter %.o,$^)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+pos-cert-ept.c: pos-cert-api.xml
+	xmlgen --linkage --output-entrypoints $@ $<
+
+pos-cert-stubs.c: pos-cert-api.xml
+	xmlgen --linkage --arch $(TOOLARCH) --output-stubs $@ $<
+
+pos-cert.lds: hello-pos.xml
+	xmlgen --ldScript --arch $(TOOLARCH) -o $@ $<
+
+install: pos-cert-stubs.o
+	cp pos-cert-stubs.o ../../dist

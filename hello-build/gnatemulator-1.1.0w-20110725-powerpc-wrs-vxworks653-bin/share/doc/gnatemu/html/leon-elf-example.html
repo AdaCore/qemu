@@ -1,0 +1,178 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Running the Leon Bareboard example &mdash; GNATEmulator v1.0 documentation</title>
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNATEmulator v1.0 documentation" href="index.html" />
+    <link rel="up" title="Getting Started" href="getting_started.html" />
+    <link rel="next" title="Using GNATEmulator" href="using_gnatemulator.html" />
+    <link rel="prev" title="Running the VxWorks 653 example" href="vxworks653-example.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="using_gnatemulator.html" title="Using GNATEmulator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vxworks653-example.html" title="Running the VxWorks 653 example"
+             accesskey="P">previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li>
+          <li><a href="getting_started.html" accesskey="U">Getting Started</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="running-the-leon-bareboard-example">
+<h1>Running the Leon Bareboard example<a class="headerlink" href="#running-the-leon-bareboard-example" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial shows how to compile an interactive example and run it on qemu.</p>
+<div class="section" id="compiling-the-example">
+<h2>Compiling the example<a class="headerlink" href="#compiling-the-example" title="Permalink to this headline">¶</a></h2>
+<p>The example consists of 3 small ada units:</p>
+<blockquote>
+<ul class="simple">
+<li>hello.adb, the main subprogram.</li>
+<li>uart.ads and uart.adb which does the I/O using the uart.</li>
+</ul>
+</blockquote>
+<p>To compile, simply invoke gnatmake:</p>
+<div class="highlight-python"><pre>leon-elf-gnatmake -O --RTS=ravenscar-sfp hello</pre>
+</div>
+<p>The option &#8216;-O&#8217; is used to optimize the code generated,
+the option &#8216;&#8211;RTS=ravenscar-sfp&#8217; selects the small foot print ravenscar profile
+and &#8216;hello&#8217; is the name of the main unit.</p>
+</div>
+<div class="section" id="running-the-example">
+<h2>Running the example<a class="headerlink" href="#running-the-example" title="Permalink to this headline">¶</a></h2>
+<p>To launch the example just run:</p>
+<div class="highlight-python"><pre>leon-elf-gnatemu hello</pre>
+</div>
+<p>GNATEmulator will automatically load the ELF file (<tt class="file docutils literal"><span class="pre">hello</span></tt>) and start execution at the
+entry point.</p>
+<p>Here is a quick run scenario:</p>
+<div class="highlight-python"><pre>Menu:
+1) Hello
+2) Bye
+3) Quit
+You choice:
+1
+hello
+Menu:
+1) Hello
+2) Bye
+3) Quit
+You choice:
+2
+bye
+Menu:
+1) Hello
+2) Bye
+3) Quit
+You choice:
+3
+qemu: fatal: Trap 0x80 while interrupts disabled, Error state</pre>
+</div>
+<p>(The double trap which is an error is used to stop the simulator).</p>
+</div>
+<div class="section" id="redirecting-the-uart">
+<h2>Redirecting the uart<a class="headerlink" href="#redirecting-the-uart" title="Permalink to this headline">¶</a></h2>
+<p>It is possible to redirect the uart to a tcp port:</p>
+<div class="highlight-python"><pre>leon-elf-gnatemu hello -serial tcp::1234,server</pre>
+</div>
+<p>This will redirect uart1 to the tcp port 1234 of localhost.  With the &#8216;server&#8217;
+option, qemu will wait for the tcp connection.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="gnatemulator.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Running the Leon Bareboard example</a><ul>
+<li><a class="reference internal" href="#compiling-the-example">Compiling the example</a></li>
+<li><a class="reference internal" href="#running-the-example">Running the example</a></li>
+<li><a class="reference internal" href="#redirecting-the-uart">Redirecting the uart</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vxworks653-example.html"
+                        title="previous chapter">Running the VxWorks 653 example</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="using_gnatemulator.html"
+                        title="next chapter">Using GNATEmulator</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/leon-elf-example.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="using_gnatemulator.html" title="Using GNATEmulator"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vxworks653-example.html" title="Running the VxWorks 653 example"
+             >previous</a> |</li>
+        <li><a href="gnatemulator.html">GNATEmulator v1.0 documentation</a> &raquo;</li>
+          <li><a href="getting_started.html" >Getting Started</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, AdaCore.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+==========================
+GNATEmulator Documentation
+==========================
+
+.. |GNATEmulator| replace:: **GNAT Emulator**
+
+Contents:
+
+.. toctree::
+
+   overview.rst
+   getting_started.rst
+   using_gnatemulator.rst
+   extending_gnatemulator.rst
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+
