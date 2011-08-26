@@ -1189,7 +1189,9 @@ static int add_graphics_client(Monitor *mon, const QDict *qdict, QObject **ret_d
 {
     const char *protocol  = qdict_get_str(qdict, "protocol");
     const char *fdname = qdict_get_str(qdict, "fdname");
+#ifdef CONFIG_VNC
     int skipauth = qdict_get_try_bool(qdict, "skipauth", 0);
+#endif
     CharDriverState *s;
 
     if (strcmp(protocol, "spice") == 0) {
