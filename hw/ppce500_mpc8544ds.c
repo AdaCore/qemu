@@ -32,6 +32,7 @@
 #include "loader.h"
 #include "elf.h"
 #include "sysbus.h"
+#include "exec-memory.h"
 
 #define BINARY_DEVICE_TREE_FILE    "mpc8544ds.dtb"
 #define UIMAGE_LOAD_BASE           0
@@ -268,7 +269,8 @@ static void mpc8544ds_init(ram_addr_t ram_size,
     irqs = g_malloc0(sizeof(qemu_irq) * OPENPIC_OUTPUT_NB);
     irqs[OPENPIC_OUTPUT_INT] = ((qemu_irq *)env->irq_inputs)[PPCE500_INPUT_INT];
     irqs[OPENPIC_OUTPUT_CINT] = ((qemu_irq *)env->irq_inputs)[PPCE500_INPUT_CINT];
-    mpic = mpic_init(MPC8544_MPIC_REGS_BASE, 1, &irqs, NULL);
+    mpic = mpic_init(get_system_memory(), MPC8544_MPIC_REGS_BASE,
+                     1, &irqs, NULL);
 
     /* Serial */
     if (serial_hds[0]) {

@@ -65,6 +65,8 @@ typedef struct eTSEC_Register {
 typedef struct eTSEC {
     SysBusDevice  busdev;
 
+    MemoryRegion  io_area;
+
     eTSEC_Register regs[REG_NUMBER];
 
     NICState *nic;
@@ -100,6 +102,7 @@ typedef struct eTSEC {
 #define eTSEC_RECEIVE  2
 
 DeviceState *etsec_create(target_phys_addr_t  base,
+                          MemoryRegion       *mr,
                           NICInfo            *nd,
                           qemu_irq            tx_irq,
                           qemu_irq            rx_irq,

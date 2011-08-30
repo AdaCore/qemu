@@ -75,7 +75,9 @@ const fsl_I2C_Register_Definition fsl_I2C_registers_def[] = {
 #define REG_NUMBER 6
 
 typedef struct fsl_I2C {
-    SysBusDevice  busdev;
+    SysBusDevice busdev;
+
+    MemoryRegion io_area;
 
     fsl_I2C_Register regs[REG_NUMBER];
 
@@ -86,7 +88,8 @@ typedef struct fsl_I2C {
 
 uint32_t get_nip(void);
 
-static uint32_t fsl_i2c_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t fsl_i2c_read(void *opaque, target_phys_addr_t addr,
+                             unsigned size)
 {
     fsl_I2C          *fsl_i2c   = opaque;
     uint32_t          reg_index = (addr & 0xff) / 4;
@@ -117,8 +120,8 @@ static uint32_t fsl_i2c_readl(void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-static void
-fsl_i2c_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
+static void fsl_i2c_write(void *opaque, target_phys_addr_t addr,
+                          uint64_t value, unsigned size)
 {
     fsl_I2C          *fsl_i2c   = opaque;
     uint32_t          reg_index = (addr & 0xff) / 4;
@@ -152,20 +155,18 @@ fsl_i2c_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
     }
 #ifdef DEBUG_REGISTER
     printf("Write 0x%08x @ 0x" TARGET_FMT_plx" val:0x%08x->0x%08x : %s (%s)\n",
-           value, addr, before, reg->value, reg->name, reg->desc);
+           (unsigned int)value, addr, before, reg->value, reg->name, reg->desc);
 #endif
 }
 
-static CPUReadMemoryFunc * const fsl_i2c_read[] = {
-    fsl_i2c_readl,
-    fsl_i2c_readl,
-    fsl_i2c_readl,
-};
-
-static CPUWriteMemoryFunc * const fsl_i2c_write[] = {
-    fsl_i2c_writel,
-    fsl_i2c_writel,
-    fsl_i2c_writel,
+static const MemoryRegionOps fsl_i2c_ops = {
+    .read = fsl_i2c_read,
+    .write = fsl_i2c_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
 static void fsl_i2c_reset(DeviceState *d)
@@ -197,16 +198,10 @@ static void fsl_i2c_reset(DeviceState *d)
 static int fsl_i2c_init(SysBusDevice *dev)
 {
     fsl_I2C *fsl_i2c = FROM_SYSBUS(typeof(*fsl_i2c), dev);
-    int   regs;
 
-    regs = cpu_register_io_memory(fsl_i2c_read,
-                                  fsl_i2c_write,
-                                  fsl_i2c, DEVICE_NATIVE_ENDIAN);
-    if (regs < 0) {
-        return -1;
-    }
+    memory_region_init_io(&fsl_i2c->io_area, &fsl_i2c_ops, fsl_i2c, "FSL I2C", 0x18);
 
-    sysbus_init_mmio(dev, 0x18, regs);
+    sysbus_init_mmio_region(dev, &fsl_i2c->io_area);
 
     sysbus_init_irq(dev, &fsl_i2c->irq);
 
@@ -231,8 +226,9 @@ static void fsl_i2c_register(void)
 
 device_init(fsl_i2c_register)
 
-DeviceState *fsl_i2c_create(target_phys_addr_t base,
-                            qemu_irq           irq)
+DeviceState *fsl_i2c_create(target_phys_addr_t  base,
+                            MemoryRegion       *mr,
+                            qemu_irq            irq)
 {
     DeviceState *dev;
 
@@ -243,7 +239,8 @@ DeviceState *fsl_i2c_create(target_phys_addr_t base,
     }
 
     sysbus_connect_irq(sysbus_from_qdev(dev), 0, irq);
-    sysbus_mmio_map(sysbus_from_qdev(dev), 0, base);
+    memory_region_add_subregion(mr, base,
+                                sysbus_from_qdev(dev)->mmio[0].memory);
 
     return dev;
 }
