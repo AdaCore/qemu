@@ -78,7 +78,9 @@ const eSPI_Register_Definition eSPI_registers_def[] = {
 #define REG_NUMBER 12
 
 typedef struct eSPI {
-    SysBusDevice  busdev;
+    SysBusDevice busdev;
+
+    MemoryRegion io_area;
 
     eSPI_Register regs[REG_NUMBER];
 
@@ -89,7 +91,7 @@ typedef struct eSPI {
 
 uint32_t get_nip(void);
 
-static uint32_t espi_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t espi_read(void *opaque, target_phys_addr_t addr, unsigned size)
 {
     eSPI          *espi      = opaque;
     uint32_t       reg_index = addr / 4;
@@ -121,7 +123,7 @@ static uint32_t espi_readl(void *opaque, target_phys_addr_t addr)
 }
 
 static void
-espi_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
+espi_write(void *opaque, target_phys_addr_t addr, uint64_t value, unsigned size)
 {
     eSPI          *espi      = opaque;
     uint32_t       reg_index = addr / 4;
@@ -156,16 +158,18 @@ espi_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
 
 #ifdef DEBUG_REGISTER
     printf("Write 0x%08x @ 0x" TARGET_FMT_plx" val:0x%08x->0x%08x : %s (%s)\n",
-           value, addr, before, reg->value, reg->name, reg->desc);
+           (unsigned int)value, addr, before, reg->value, reg->name, reg->desc);
 #endif
 }
 
-static CPUReadMemoryFunc * const espi_read[] = {
-    NULL, NULL, espi_readl,
-};
-
-static CPUWriteMemoryFunc * const espi_write[] = {
-    NULL, NULL, espi_writel,
+static const MemoryRegionOps espi_ops = {
+    .read = espi_read,
+    .write = espi_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
 static void espi_reset(DeviceState *d)
@@ -197,16 +201,10 @@ static void espi_reset(DeviceState *d)
 static int espi_init(SysBusDevice *dev)
 {
     eSPI *espi = FROM_SYSBUS(typeof(*espi), dev);
-    int   regs;
 
-    regs = cpu_register_io_memory(espi_read,
-                                  espi_write,
-                                  espi, DEVICE_NATIVE_ENDIAN);
-    if (regs < 0) {
-        return -1;
-    }
+    memory_region_init_io(&espi->io_area, &espi_ops, espi, "eSPI", 0x30);
 
-    sysbus_init_mmio(dev, 0x30, regs);
+    sysbus_init_mmio_region(dev, &espi->io_area);
 
     sysbus_init_irq(dev, &espi->irq);
 
@@ -232,6 +230,7 @@ static void espi_register(void)
 device_init(espi_register)
 
 DeviceState *espi_create(target_phys_addr_t base,
+                         MemoryRegion       *mr,
                          qemu_irq           irq)
 {
     DeviceState *dev;
@@ -243,7 +242,8 @@ DeviceState *espi_create(target_phys_addr_t base,
     }
 
     sysbus_connect_irq(sysbus_from_qdev(dev), 0, irq);
-    sysbus_mmio_map(sysbus_from_qdev(dev), 0, base);
+    memory_region_add_subregion(mr, base,
+                                sysbus_from_qdev(dev)->mmio[0].memory);
 
     return dev;
 }

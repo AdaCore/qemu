@@ -34,9 +34,11 @@
 #include "etsec.h"
 #include "espi.h"
 #include "fsl_I2C.h"
+#include "exec-memory.h"
 
 //#define DEBUG_P2010
 
+#define MAX_ETSEC_CONTROLLERS 3
 #define BIOS_SIZE (1 * 1024 * 1024)
 #define BIOS_FILENAME "p2010rdb_rom.bin"
 
@@ -46,32 +48,32 @@
 #define INITRD_LOAD_PAD            0x2000000
 #define INITRD_PAD_MASK            0xFFFFFF
 
-#define P2010RDB_CCSRBAR_BASE       0xf3000000 /* u-boot 0xffe00000 */ /* vxworks bootapp 0xF3000000 */
-#define P2010RDB_LOCAL_CONF         (P2010RDB_CCSRBAR_BASE + 0x00000)
-#define P2010RDB_DDR_CONTROLLER     (P2010RDB_CCSRBAR_BASE + 0x02000)
-#define P2010RDB_SERIAL0_REGS_BASE  (P2010RDB_CCSRBAR_BASE + 0x04500)
-#define P2010RDB_SERIAL1_REGS_BASE  (P2010RDB_CCSRBAR_BASE + 0x04600)
-#define P2010RDB_ELBC               (P2010RDB_CCSRBAR_BASE + 0x05000)
-#define P2010RDB_ESPI_BASE          (P2010RDB_CCSRBAR_BASE + 0x07000)
-#define P2010RDB_PCI_REGS_BASE      (P2010RDB_CCSRBAR_BASE + 0x08000)
-#define P2010RDB_GPIO               (P2010RDB_CCSRBAR_BASE + 0x0F000)
-#define P2010RDB_L2CACHE            (P2010RDB_CCSRBAR_BASE + 0x20000)
-#define P2010RDB_ETSEC1_BASE        (P2010RDB_CCSRBAR_BASE + 0x24000)
-#define P2010RDB_MPIC_REGS_BASE     (P2010RDB_CCSRBAR_BASE + 0x40000)
-#define P2010RDB_GLOBAL_UTILITIES   (P2010RDB_CCSRBAR_BASE + 0xE0000)
-#define P2010RDB_I2C_1_BASE         (P2010RDB_CCSRBAR_BASE + 0x03000)
-#define P2010RDB_I2C_2_BASE         (P2010RDB_CCSRBAR_BASE + 0x03100)
-#define P2010RDB_VSC7385            (0xF1000000)
-#define P2010RDB_VSC7385_SIZE       (0x00020000)
+#define P2010RDB_CCSRBAR_BASE       0xff700000
+#define P2010RDB_LOCAL_CONF         0x00000
+#define P2010RDB_DDR_CONTROLLER     0x02000
+#define P2010RDB_SERIAL0_REGS_BASE  0x04500
+#define P2010RDB_SERIAL1_REGS_BASE  0x04600
+#define P2010RDB_ELBC               0x05000
+#define P2010RDB_ESPI_BASE          0x07000
+#define P2010RDB_PCI_REGS_BASE      0x08000
+#define P2010RDB_GPIO               0x0F000
+#define P2010RDB_L2CACHE            0x20000
+#define P2010RDB_ETSEC1_BASE        0x24000
+#define P2010RDB_MPIC_REGS_BASE     0x40000
+#define P2010RDB_GLOBAL_UTILITIES   0xE0000
+#define P2010RDB_I2C_1_BASE         0x03000
+#define P2010RDB_I2C_2_BASE         0x03100
+#define P2010RDB_VSC7385            0xF1000000
+#define P2010RDB_VSC7385_SIZE       0x00020000
 #define P2010RDB_PCI_REGS_SIZE      0x1000
 #define P2010RDB_PCI_IO             0xE1000000
 #define P2010RDB_PCI_IOLEN          0x10000
 
 #ifdef DEBUG_P2010
 #define PRINT_WRITE_UNSUPPORTED_REGISTER(name, addr, val, nip)          \
-printf("%s\t: Unsupported addr:0x" TARGET_FMT_plx " val:0x%08x nip:"    \
+printf("%s\t: Unsupported addr:0x" TARGET_FMT_plx " val:0x%08lx nip:"   \
        TARGET_FMT_plx " '" name "'\n",                                  \
-       __func__, (addr), (val), (nip));                                 \
+       __func__, (addr), (long unsigned int)(val), (nip));              \
 
 #define PRINT_READ_UNSUPPORTED_REGISTER(name, addr, nip)                \
 printf("%s\t: Unsupported addr:0x" TARGET_FMT_plx "                nip:" \
@@ -90,6 +92,23 @@ typedef struct ResetData {
     CPUState *env;
     uint32_t  entry;            /* save kernel entry in case of reset */
 } ResetData;
+
+typedef struct fsl_e500_config {
+    uint32_t ccsr_init_addr;
+    const char *cpu_model;
+
+    int serial_irq;
+
+    int espi_irq;
+    int i2c_irq;
+
+    int etsec_irq_err[MAX_ETSEC_CONTROLLERS];
+    int etsec_irq_tx[MAX_ETSEC_CONTROLLERS];
+    int etsec_irq_rx[MAX_ETSEC_CONTROLLERS];
+} fsl_e500_config;
+
+MemoryRegion *ccsr_space;
+uint64_t      ccsr_addr = P2010RDB_CCSRBAR_BASE;
 
 static void main_cpu_reset(void *opaque)
 {
@@ -118,10 +137,11 @@ static void main_cpu_reset(void *opaque)
     tlb2->mas7_3 |= MAS3_UR | MAS3_UW | MAS3_UX | MAS3_SR | MAS3_SW | MAS3_SX;
 }
 
-static uint32_t p2010_gbu_io_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t p2010_gbu_read(void *opaque, target_phys_addr_t addr,
+                               unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_GLOBAL_UTILITIES;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_GLOBAL_UTILITIES + ccsr_addr;
 
     switch (addr){
     case 0x0:
@@ -144,11 +164,11 @@ static uint32_t p2010_gbu_io_readl(void *opaque, target_phys_addr_t addr)
     return 0;
 }
 
-static void p2010_gbu_io_writel(void *opaque, target_phys_addr_t addr,
-                            uint32_t val)
+static void p2010_gbu_write(void *opaque, target_phys_addr_t addr,
+                            uint64_t val, unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_GLOBAL_UTILITIES;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_GLOBAL_UTILITIES + ccsr_addr;
 
     switch (addr){
     case 0xb0:
@@ -160,45 +180,48 @@ static void p2010_gbu_io_writel(void *opaque, target_phys_addr_t addr,
     }
 }
 
-static CPUReadMemoryFunc *p2010_gbu_io_read[3] = {
-    NULL,
-    NULL,
-    p2010_gbu_io_readl
+static const MemoryRegionOps p2010_gbu_ops = {
+    .read = p2010_gbu_read,
+    .write = p2010_gbu_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
-static CPUWriteMemoryFunc *p2010_gbu_io_write[3] = {
-    NULL,
-    NULL,
-    p2010_gbu_io_writel,
-};
-
-static uint32_t p2010_lca_io_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t p2010_lca_read(void *opaque, target_phys_addr_t addr,
+                               unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_LOCAL_CONF;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_LOCAL_CONF + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
     case 0x0:
         PRINT_READ_UNSUPPORTED_REGISTER("CCSRBAR", full_addr, env->nip);
+        return ccsr_addr >> 12;
         break;
     case 0xc08 ... 0xd70:
         PRINT_READ_UNSUPPORTED_REGISTER("Local access window",
                                         full_addr, env->nip);
         break;
     default:
-        PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
+        PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", addr, env->nip);
     }
     return 0;
 }
 
-static void p2010_lca_io_writel(void *opaque, target_phys_addr_t addr,
-                            uint32_t val)
+static void p2010_lca_write(void *opaque, target_phys_addr_t addr,
+                            uint64_t val, unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_LOCAL_CONF;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_LOCAL_CONF + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
     case 0x0:
+        ccsr_addr = val << 12;
+        memory_region_del_subregion(get_system_memory(), ccsr_space);
+        memory_region_add_subregion(get_system_memory(), ccsr_addr, ccsr_space);
         PRINT_WRITE_UNSUPPORTED_REGISTER("CCSRBAR", full_addr, val, env->nip);
         break;
 
@@ -211,24 +234,23 @@ static void p2010_lca_io_writel(void *opaque, target_phys_addr_t addr,
     }
 }
 
-static CPUReadMemoryFunc *p2010_lca_io_read[3] = {
-    NULL,
-    NULL,
-    p2010_lca_io_readl
+static const MemoryRegionOps p2010_lca_ops = {
+    .read = p2010_lca_read,
+    .write = p2010_lca_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
-static CPUWriteMemoryFunc *p2010_lca_io_write[3] = {
-    NULL,
-    NULL,
-    p2010_lca_io_writel,
-};
-
-static uint32_t p2010_elbc_io_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t p2010_elbc_read(void *opaque, target_phys_addr_t addr,
+                                unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_ELBC;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_ELBC + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
     case 0x00:    case 0x08:    case 0x10:    case 0x18:
     case 0x20:    case 0x28:    case 0x30:    case 0x38:
         PRINT_READ_UNSUPPORTED_REGISTER("Base registers", full_addr, env->nip);
@@ -249,13 +271,13 @@ static uint32_t p2010_elbc_io_readl(void *opaque, target_phys_addr_t addr)
     return 0;
 }
 
-static void p2010_elbc_io_writel(void *opaque, target_phys_addr_t addr,
-                            uint32_t val)
+static void p2010_elbc_write(void *opaque, target_phys_addr_t addr,
+                             uint64_t val, unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_ELBC;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_ELBC + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
     case 0x00:    case 0x08:    case 0x10:    case 0x18:
     case 0x20:    case 0x28:    case 0x30:    case 0x38:
         PRINT_WRITE_UNSUPPORTED_REGISTER("Base registers", full_addr, val, env->nip);
@@ -276,24 +298,23 @@ static void p2010_elbc_io_writel(void *opaque, target_phys_addr_t addr,
     }
 }
 
-static CPUReadMemoryFunc *p2010_elbc_io_read[3] = {
-    NULL,
-    NULL,
-    p2010_elbc_io_readl
+static const MemoryRegionOps p2010_elbc_ops = {
+    .read = p2010_elbc_read,
+    .write = p2010_elbc_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
-static CPUWriteMemoryFunc *p2010_elbc_io_write[3] = {
-    NULL,
-    NULL,
-    p2010_elbc_io_writel,
-};
-
-static uint32_t p2010_ddr_io_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t p2010_ddr_read(void *opaque, target_phys_addr_t addr,
+                               unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_DDR_CONTROLLER;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_DDR_CONTROLLER + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
 
     case 0x00:        case 0x08:        case 0x10:         case 0x18:
         PRINT_READ_UNSUPPORTED_REGISTER("Chip Select Memory Bounds",
@@ -367,13 +388,13 @@ static uint32_t p2010_ddr_io_readl(void *opaque, target_phys_addr_t addr)
     return 0;
 }
 
-static void p2010_ddr_io_writel(void *opaque, target_phys_addr_t addr,
-                            uint32_t val)
+static void p2010_ddr_write(void *opaque, target_phys_addr_t addr,
+                            uint64_t val, unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_DDR_CONTROLLER;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_DDR_CONTROLLER + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
 
     case 0x00:        case 0x08:        case 0x10:         case 0x18:
         PRINT_WRITE_UNSUPPORTED_REGISTER("Chip Select Memory Bounds",
@@ -447,168 +468,128 @@ static void p2010_ddr_io_writel(void *opaque, target_phys_addr_t addr,
     }
 }
 
-static CPUReadMemoryFunc *p2010_ddr_io_read[3] = {
-    NULL,
-    NULL,
-    p2010_ddr_io_readl
+static const MemoryRegionOps p2010_ddr_ops = {
+    .read = p2010_ddr_read,
+    .write = p2010_ddr_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
-static CPUWriteMemoryFunc *p2010_ddr_io_write[3] = {
-    NULL,
-    NULL,
-    p2010_ddr_io_writel,
-};
-
-static uint32_t p2010_gpio_io_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t p2010_gpio_read(void *opaque, target_phys_addr_t addr,
+                                unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_GPIO;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_GPIO + ccsr_addr;
 
-    switch (addr) {
+    switch (addr & 0xfff) {
     default:
         PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
     }
     return 0;
 }
 
-static void p2010_gpio_io_writel(void *opaque, target_phys_addr_t addr,
-                            uint32_t val)
+static void p2010_gpio_write(void *opaque, target_phys_addr_t addr,
+                             uint64_t val, unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_GPIO;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_GPIO + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
     default:
         PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, val, env->nip);
     }
 }
 
-static CPUReadMemoryFunc *p2010_gpio_io_read[3] = {
-    NULL,
-    NULL,
-    p2010_gpio_io_readl
+static const MemoryRegionOps p2010_gpio_ops = {
+    .read = p2010_gpio_read,
+    .write = p2010_gpio_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
-static CPUWriteMemoryFunc *p2010_gpio_io_write[3] = {
-    NULL,
-    NULL,
-    p2010_gpio_io_writel,
-};
-
-static uint32_t p2010_l2cache_io_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t p2010_l2cache_read(void *opaque, target_phys_addr_t addr,
+                                   unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_L2CACHE;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_L2CACHE + ccsr_addr;
 
-    switch (addr) {
+    switch (addr & 0xfff) {
     default:
         PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
     }
     return 0;
 }
 
-static void p2010_l2cache_io_writel(void *opaque, target_phys_addr_t addr,
-                            uint32_t val)
+static void p2010_l2cache_write(void *opaque, target_phys_addr_t addr,
+                                uint64_t val, unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_L2CACHE;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_L2CACHE + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
     default:
         PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, val, env->nip);
     }
 }
 
-static CPUReadMemoryFunc *p2010_l2cache_io_read[3] = {
-    NULL,
-    NULL,
-    p2010_l2cache_io_readl
+static const MemoryRegionOps p2010_l2cache_ops = {
+    .read = p2010_l2cache_read,
+    .write = p2010_l2cache_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
-static CPUWriteMemoryFunc *p2010_l2cache_io_write[3] = {
-    NULL,
-    NULL,
-    p2010_l2cache_io_writel,
-};
-
-static uint32_t p2010_vsc7385_io_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t p2010_vsc7385_read(void *opaque, target_phys_addr_t addr,
+                                   unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_VSC7385;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_VSC7385 + ccsr_addr;
 
-    switch (addr) {
+    switch (addr & 0xfff) {
     default:
         PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
     }
     return 0;
 }
 
-static void p2010_vsc7385_io_writel(void *opaque, target_phys_addr_t addr,
-                            uint32_t val)
+static void p2010_vsc7385_write(void *opaque, target_phys_addr_t addr,
+                                uint64_t val, unsigned size)
 {
     CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + P2010RDB_VSC7385;
+    target_phys_addr_t  full_addr = (addr & 0xfff) + P2010RDB_VSC7385 + ccsr_addr;
 
-    switch (addr){
+    switch (addr & 0xfff){
     default:
         PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, val, env->nip);
     }
 }
 
-static CPUReadMemoryFunc *p2010_vsc7385_io_read[3] = {
-    NULL,
-    NULL,
-    p2010_vsc7385_io_readl
+static const MemoryRegionOps p2010_vsc7385_ops = {
+    .read = p2010_vsc7385_read,
+    .write = p2010_vsc7385_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
-static CPUWriteMemoryFunc *p2010_vsc7385_io_write[3] = {
-    NULL,
-    NULL,
-    p2010_vsc7385_io_writel,
-};
-
-static uint32_t p2010_ccsbar_io_readl(void *opaque, target_phys_addr_t addr)
-{
-    CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + 0xff700000;
-
-    switch (addr) {
-    default:
-        PRINT_READ_UNSUPPORTED_REGISTER("CCSRBAR", full_addr, env->nip);
-    }
-    return 0;
-}
-
-static void p2010_ccsbar_io_writel(void *opaque, target_phys_addr_t addr,
-                            uint32_t val)
-{
-    CPUState           *env       = opaque;
-    target_phys_addr_t  full_addr = addr + 0xff700000;
-
-    switch (addr){
-    default:
-        PRINT_WRITE_UNSUPPORTED_REGISTER("CCSRBAR", full_addr, val, env->nip);
-    }
-}
-
-static CPUReadMemoryFunc *p2010_ccsbar_io_read[3] = {
-    NULL,
-    NULL,
-    p2010_ccsbar_io_readl
-};
-
-static CPUWriteMemoryFunc *p2010_ccsbar_io_write[3] = {
-    NULL,
-    NULL,
-    p2010_ccsbar_io_writel,
-};
-
-static void p2010rdb_init(ram_addr_t ram_size,
-                         const char *boot_device,
-                         const char *kernel_filename,
-                         const char *kernel_cmdline,
-                         const char *initrd_filename,
-                         const char *cpu_model)
+static void fsl_e500_init(fsl_e500_config *config,
+                          ram_addr_t       ram_size,
+                          const char      *boot_device,
+                          const char      *kernel_filename,
+                          const char      *kernel_cmdline,
+                          const char      *initrd_filename,
+                          const char      *cpu_model)
 {
     CPUState           *env;
     uint64_t            elf_entry;
@@ -619,18 +600,21 @@ static void p2010rdb_init(ram_addr_t ram_size,
     target_ulong        dt_base     = 0;
     ram_addr_t          bios_offset = 0;
     int                 bios_size   = 0;
+    MemoryRegion       *ram, *misc_io;
     qemu_irq           *irqs, *mpic;
     ResetData          *reset_info;
     DriveInfo          *dinfo;
     int                 fl_sectors;
-    int                 io_memory;
     int                 ram_offset;
     int                 i;
 
     /* Setup CPU */
-    env = cpu_ppc_init("p2010");
+    if (cpu_model == NULL) {
+        cpu_model = config->cpu_model;
+    }
+    env = cpu_ppc_init(cpu_model);
     if (!env) {
-        fprintf(stderr, "Unable to initialize CPU!\n");
+        fprintf(stderr, "Unable to initialize CPU! (%s)\n", cpu_model);
         exit(1);
     }
 
@@ -642,7 +626,11 @@ static void p2010rdb_init(ram_addr_t ram_size,
     reset_info->entry = 0xfffffffc;
 
     ppc_booke_timers_init(env, 700000000UL >> 3);
+
     /* Register Memory */
+    ram = g_malloc0(sizeof(*ram));
+    /* memory_region_init_ram(ram, NULL, "p2010.ram", ram_size); */
+    /* memory_region_add_subregion(get_system_memory(), 0x0, ram); */
     ram_offset = qemu_ram_alloc(NULL, "p2010rdb.ram", ram_size);
     cpu_register_physical_memory(0x0, ram_size, ram_offset);
 
@@ -662,84 +650,85 @@ static void p2010rdb_init(ram_addr_t ram_size,
         }
     }
 
-    /* CCSBAR */
-    io_memory = cpu_register_io_memory(p2010_ccsbar_io_read,
-                                       p2010_ccsbar_io_write,
-                                       env, DEVICE_NATIVE_ENDIAN);
-    cpu_register_physical_memory(0xff700000, 0x1, io_memory);
+    ccsr_addr = config->ccsr_init_addr;
+
+    /* Configuration, Control, and Status Registers */
+    ccsr_space = g_malloc0(sizeof(*ccsr_space));
+    memory_region_init(ccsr_space, "CCSR_space", 0x100000);
+    memory_region_add_subregion(get_system_memory(), ccsr_addr, ccsr_space);
 
     /* Global Utilities */
-    io_memory = cpu_register_io_memory(p2010_gbu_io_read,
-                                       p2010_gbu_io_write,
-                                       env, DEVICE_NATIVE_ENDIAN);
-    cpu_register_physical_memory(P2010RDB_GLOBAL_UTILITIES, 0x1000, io_memory);
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, &p2010_gbu_ops, env,
+                          "Global Utilities", 0x1000);
+    memory_region_add_subregion(ccsr_space, P2010RDB_GLOBAL_UTILITIES, misc_io);
 
     /* Local configuration/access */
-    io_memory = cpu_register_io_memory(p2010_lca_io_read,
-                                       p2010_lca_io_write,
-                                       env, DEVICE_NATIVE_ENDIAN);
-    cpu_register_physical_memory(P2010RDB_LOCAL_CONF, 0x1000, io_memory);
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, &p2010_lca_ops, env,
+                          "Local configuration/access", 0x1000);
+    memory_region_add_subregion(ccsr_space, P2010RDB_LOCAL_CONF, misc_io);
 
     /* eLBC */
-    io_memory = cpu_register_io_memory(p2010_elbc_io_read,
-                                       p2010_elbc_io_write,
-                                       env, DEVICE_NATIVE_ENDIAN);
-    cpu_register_physical_memory(P2010RDB_ELBC, 0x1000, io_memory);
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, &p2010_elbc_ops, env, "eLBC", 0x1000);
+    memory_region_add_subregion(ccsr_space, P2010RDB_ELBC, misc_io);
 
     /* DDR Memory Controller */
-    io_memory = cpu_register_io_memory(p2010_ddr_io_read,
-                                       p2010_ddr_io_write,
-                                       env, DEVICE_NATIVE_ENDIAN);
-    cpu_register_physical_memory(P2010RDB_DDR_CONTROLLER, 0x1000, io_memory);
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, &p2010_ddr_ops, env,
+                          "DDR memory controller", 0x1000);
+    memory_region_add_subregion(ccsr_space, P2010RDB_DDR_CONTROLLER, misc_io);
 
     /* GPIO */
-    io_memory = cpu_register_io_memory(p2010_gpio_io_read,
-                                       p2010_gpio_io_write,
-                                       env, DEVICE_NATIVE_ENDIAN);
-    cpu_register_physical_memory(P2010RDB_GPIO, 0x1000, io_memory);
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, &p2010_gpio_ops, env, "GPIO", 0x1000);
+    memory_region_add_subregion(ccsr_space, P2010RDB_GPIO, misc_io);
 
     /* L2CACHE */
-    io_memory = cpu_register_io_memory(p2010_l2cache_io_read,
-                                       p2010_l2cache_io_write,
-                                       env, DEVICE_NATIVE_ENDIAN);
-    cpu_register_physical_memory(P2010RDB_L2CACHE, 0x1000, io_memory);
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, &p2010_l2cache_ops, env, "L2CACHE", 0x1000);
+    memory_region_add_subregion(ccsr_space, P2010RDB_L2CACHE, misc_io);
 
     /* VSC7385 */
-    io_memory = cpu_register_io_memory(p2010_vsc7385_io_read,
-                                       p2010_vsc7385_io_write,
-                                       env, DEVICE_NATIVE_ENDIAN);
-    cpu_register_physical_memory(P2010RDB_VSC7385, P2010RDB_VSC7385_SIZE, io_memory);
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, &p2010_vsc7385_ops, env,
+                          "VSC7385", P2010RDB_VSC7385_SIZE);
+    memory_region_add_subregion(ccsr_space, P2010RDB_VSC7385, misc_io);
 
     /* MPIC */
     irqs = g_malloc0(sizeof(qemu_irq) * OPENPIC_OUTPUT_NB);
     irqs[OPENPIC_OUTPUT_INT] = ((qemu_irq *)env->irq_inputs)[PPCE500_INPUT_INT];
     irqs[OPENPIC_OUTPUT_CINT] = ((qemu_irq *)env->irq_inputs)[PPCE500_INPUT_CINT];
-    mpic = mpic_init(P2010RDB_MPIC_REGS_BASE, 1, &irqs, NULL);
+    mpic = mpic_init(ccsr_space, P2010RDB_MPIC_REGS_BASE, 1, &irqs, NULL);
 
     /* Serial */
     if (serial_hds[0]) {
         serial_mm_init(P2010RDB_SERIAL0_REGS_BASE,
-                       0, mpic[12+26], 399193,
+                       0, mpic[config->serial_irq], 399193,
                        serial_hds[0], 1, 1);
     }
 
     if (serial_hds[1]) {
         serial_mm_init(P2010RDB_SERIAL1_REGS_BASE,
-                       0, mpic[12+26], 399193,
+                       0, mpic[config->serial_irq], 399193,
                        serial_hds[0], 1, 1);
     }
 
-    for (i = 0; i < nb_nics; i++) {
-        etsec_create(P2010RDB_ETSEC1_BASE + 0x1000 * i, &nd_table[i],
-        mpic[12+13], mpic[12+14], mpic[12+18]);
+    for (i = 0; i < nb_nics && i < MAX_ETSEC_CONTROLLERS; i++) {
+        etsec_create(P2010RDB_ETSEC1_BASE + 0x1000 * i, ccsr_space,
+                     &nd_table[i],
+                     mpic[config->etsec_irq_tx[i]],
+                     mpic[config->etsec_irq_rx[i]],
+                     mpic[config->etsec_irq_err[i]]);
     }
 
     /* eSPI */
-    espi_create(P2010RDB_ESPI_BASE, mpic[12+43]);
+    espi_create(P2010RDB_ESPI_BASE, ccsr_space, mpic[config->espi_irq]);
 
     /* I2C */
-    fsl_i2c_create(P2010RDB_I2C_1_BASE, mpic[12+27]);
-    fsl_i2c_create(P2010RDB_I2C_2_BASE, mpic[12+27]);
+    fsl_i2c_create(P2010RDB_I2C_1_BASE, ccsr_space, mpic[config->i2c_irq]);
+    fsl_i2c_create(P2010RDB_I2C_2_BASE, ccsr_space, mpic[config->i2c_irq]);
 
     /* Load kernel. */
     if (kernel_filename) {
@@ -770,6 +759,56 @@ static void p2010rdb_init(ram_addr_t ram_size,
     }
 }
 
+static fsl_e500_config p2010rdb_vxworks_config = {
+    .ccsr_init_addr = 0xf3000000,
+    .cpu_model      = "p2010",
+    .serial_irq     = 12 + 26,
+    .espi_irq       = 12 + 43,
+    .i2c_irq        = 12 + 27,
+    .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
+    .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
+    .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+};
+
+static void p2010rdb_vxworks_init(ram_addr_t ram_size,
+                                  const char *boot_device,
+                                  const char *kernel_filename,
+                                  const char *kernel_cmdline,
+                                  const char *initrd_filename,
+                                  const char *cpu_model)
+{
+    fsl_e500_init(&p2010rdb_vxworks_config, ram_size, boot_device,
+                  kernel_filename, kernel_cmdline, initrd_filename, cpu_model);
+}
+
+static QEMUMachine p2010rdb_vxworks_machine = {
+    .name = "p2010rdb_vxworks",
+    .desc = "p2010rdb initialized for VxWorks",
+    .init = p2010rdb_vxworks_init,
+};
+
+static fsl_e500_config p2010rdb_config = {
+    .ccsr_init_addr = 0xff700000,
+    .cpu_model      = "p2010",
+    .serial_irq     = 12 + 26,
+    .espi_irq       = 12 + 43,
+    .i2c_irq        = 12 + 27,
+    .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
+    .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
+    .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+};
+
+static void p2010rdb_init(ram_addr_t ram_size,
+                          const char *boot_device,
+                          const char *kernel_filename,
+                          const char *kernel_cmdline,
+                          const char *initrd_filename,
+                          const char *cpu_model)
+{
+    fsl_e500_init(&p2010rdb_config , ram_size, boot_device, kernel_filename,
+                  kernel_cmdline, initrd_filename, cpu_model);
+}
+
 static QEMUMachine p2010rdb_machine = {
     .name = "p2010rdb",
     .desc = "p2010rdb",
@@ -779,6 +818,7 @@ static QEMUMachine p2010rdb_machine = {
 static void p2010rdb_machine_init(void)
 {
     qemu_register_machine(&p2010rdb_machine);
+    qemu_register_machine(&p2010rdb_vxworks_machine);
 }
 
 machine_init(p2010rdb_machine_init);

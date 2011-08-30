@@ -32,7 +32,7 @@
 //#define HEX_DUMP
 //#define DEBUG_REGISTER
 
-static uint32_t etsec_readl(void *opaque, target_phys_addr_t addr)
+static uint64_t etsec_read(void *opaque, target_phys_addr_t addr, unsigned size)
 {
     eTSEC          *etsec     = opaque;
     uint32_t        reg_index = addr / 4;
@@ -164,7 +164,8 @@ static void write_dmactrl(eTSEC          *etsec,
 }
 
 static void
-etsec_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
+etsec_write(void *opaque, target_phys_addr_t addr, uint64_t value,
+            unsigned size)
 {
     eTSEC          *etsec     = opaque;
     uint32_t        reg_index = addr / 4;
@@ -223,17 +224,19 @@ etsec_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
 
 #ifdef DEBUG_REGISTER
     printf("Write 0x%08x @ 0x" TARGET_FMT_plx" val:0x%08x->0x%08x : %s (%s)\n",
-           value, addr, before, reg->value, reg->name, reg->desc);
+           (unsigned int)value, addr, before, reg->value, reg->name, reg->desc);
 #endif
 
 }
 
-static CPUReadMemoryFunc * const etsec_read[] = {
-    NULL, NULL, etsec_readl,
-};
-
-static CPUWriteMemoryFunc * const etsec_write[] = {
-    NULL, NULL, etsec_writel,
+static const MemoryRegionOps etsec_ops = {
+    .read = etsec_read,
+    .write = etsec_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
 };
 
 static void etsec_reset(DeviceState *d)
@@ -345,16 +348,10 @@ static NetClientInfo net_etsec_info = {
 static int etsec_init(SysBusDevice *dev)
 {
     eTSEC *etsec = FROM_SYSBUS(typeof(*etsec), dev);
-    int    regs;
 
-    regs = cpu_register_io_memory(etsec_read,
-                                  etsec_write,
-                                  etsec, DEVICE_NATIVE_ENDIAN);
-    if (regs < 0) {
-        return -1;
-    }
+    memory_region_init_io(&etsec->io_area, &etsec_ops, etsec, "eTSEC", 0x1000);
 
-    sysbus_init_mmio(dev, 0x1000, regs);
+    sysbus_init_mmio_region(dev, &etsec->io_area);
 
     sysbus_init_irq(dev, &etsec->tx_irq);
     sysbus_init_irq(dev, &etsec->rx_irq);
@@ -388,6 +385,7 @@ static void etsec_register(void)
 device_init(etsec_register)
 
 DeviceState *etsec_create(target_phys_addr_t  base,
+                          MemoryRegion       *mr,
                           NICInfo            *nd,
                           qemu_irq            tx_irq,
                           qemu_irq            rx_irq,
@@ -406,6 +404,8 @@ DeviceState *etsec_create(target_phys_addr_t  base,
     sysbus_connect_irq(sysbus_from_qdev(dev), 1, rx_irq);
     sysbus_connect_irq(sysbus_from_qdev(dev), 2, err_irq);
 
-    sysbus_mmio_map(sysbus_from_qdev(dev), 0, base);
+    memory_region_add_subregion(mr, base,
+                                sysbus_from_qdev(dev)->mmio[0].memory);
+
     return dev;
 }
