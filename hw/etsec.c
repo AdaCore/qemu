@@ -161,6 +161,13 @@ static void write_dmactrl(eTSEC          *etsec,
             }
         }
     }
+
+    if (!(value & DMACTRL_WOP)) {
+        /* Start polling */
+        ptimer_stop(etsec->ptimer);
+        ptimer_set_count(etsec->ptimer, 1);
+        ptimer_run(etsec->ptimer, 1);
+    }
 }
 
 static void
@@ -239,6 +246,22 @@ static const MemoryRegionOps etsec_ops = {
     },
 };
 
+static void etsec_timer_hit(void *opaque)
+{
+    eTSEC *etsec = opaque;
+
+    ptimer_stop(etsec->ptimer);
+
+    if (!(etsec->regs[DMACTRL].value & DMACTRL_WOP)) {
+
+        if (!(etsec->regs[DMACTRL].value & DMACTRL_GTS)) {
+            walk_tx_ring(etsec, 0);
+        }
+        ptimer_set_count(etsec->ptimer, 1);
+        ptimer_run(etsec->ptimer, 1);
+    }
+}
+
 static void etsec_reset(DeviceState *d)
 {
     eTSEC *etsec = container_of(d, eTSEC, busdev.qdev);
@@ -270,7 +293,7 @@ static void etsec_reset(DeviceState *d)
     etsec->rx_buffer     = NULL;
     etsec->rx_buffer_len = 0;
 
-    etsec->phy_status = 0xfff4; /* Link is up */
+    etsec->phy_status = 0x0004; /* Link is up */
 }
 
 static void
@@ -361,6 +384,11 @@ static int etsec_init(SysBusDevice *dev)
                               etsec->busdev.qdev.info->name,
                               etsec->busdev.qdev.id, etsec);
     qemu_format_nic_info_str(&etsec->nic->nc, etsec->conf.macaddr.a);
+
+
+    etsec->bh     = qemu_bh_new(etsec_timer_hit, etsec);
+    etsec->ptimer = ptimer_init(etsec->bh);
+    ptimer_set_freq(etsec->ptimer, 100);
 
     return 0;
 }
