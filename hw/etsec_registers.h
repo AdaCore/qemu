@@ -20,8 +20,9 @@ typedef struct eTSEC_Register_Definition {
 extern const eTSEC_Register_Definition eTSEC_registers_def[];
 
 #define DMACTRL_LE  (1 << 15)
-#define DMACTRL_GTS (1 <<  3)
 #define DMACTRL_GRS (1 <<  4)
+#define DMACTRL_GTS (1 <<  3)
+#define DMACTRL_WOP (1 <<  0)
 
 #define IEVENT_RXF  (1 <<  7)
 #define IEVENT_GRSC (1 <<  8)

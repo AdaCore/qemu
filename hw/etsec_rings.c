@@ -365,6 +365,11 @@ void walk_tx_ring(eTSEC *etsec, int ring_nbr)
     eTSEC_rxtx_bd      bd;
     uint16_t           bd_flags;
 
+    if ( ! (etsec->regs[MACCFG1].value & MACCFG1_TX_EN)) {
+        RING_DEBUG("%s: MAC Transmit not enabled\n", __func__);
+        return;
+    }
+
     /* ring_base = (etsec->regs[TBASEH].value & 0xF) << 32; */
     ring_base += etsec->regs[TBASE0 + ring_nbr].value & ~0x7;
     bd_addr    = etsec->regs[TBPTR0 + ring_nbr].value & ~0x7;

@@ -4,6 +4,7 @@
 #include "qdev.h"
 #include "sysbus.h"
 #include "net.h"
+#include "qemu-timer.h"
 
 /* Buffer Descriptors */
 
@@ -95,6 +96,10 @@ typedef struct eTSEC {
 
     uint16_t phy_status;
     uint16_t phy_control;
+
+    /* Polling */
+    QEMUBH *bh;
+    struct ptimer_state *ptimer;
 
 } eTSEC;
 

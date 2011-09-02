@@ -25,6 +25,8 @@
 #include "etsec.h"
 #include "etsec_registers.h"
 
+//#define DEBUG_MIIM
+
 #define MIIM_CONTROL    0
 #define MIIM_STATUS     1
 #define MIIM_PHY_ID_1   2
@@ -70,6 +72,10 @@ static void miim_read_cycle(eTSEC *etsec)
         break;
     };
 
+#ifdef DEBUG_MIIM
+    printf("%s phy:%d addr:0x%x value:0x%x\n", __func__, phy, addr, value);
+#endif
+
     etsec->regs[MIIMSTAT].value = value;
 }
 
@@ -83,9 +89,13 @@ static void miim_write_cycle(eTSEC *etsec)
     addr  = etsec->regs[MIIMADD].value & 0x1F;
     value = etsec->regs[MIIMCON].value & 0xffff;
 
+#ifdef DEBUG_MIIM
+    printf("%s phy:%d addr:0x%x value:0x%x\n", __func__, phy, addr, value);
+#endif
+
     switch (addr) {
     case MIIM_CONTROL:
-        etsec->phy_control = value;
+        etsec->phy_control = value & ~(0x8100);
         break;
     default:
         break;
