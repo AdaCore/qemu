@@ -96,6 +96,7 @@ typedef struct ResetData {
 typedef struct fsl_e500_config {
     uint32_t ccsr_init_addr;
     const char *cpu_model;
+    uint32_t freq;
 
     int serial_irq;
 
@@ -137,6 +138,10 @@ static void main_cpu_reset(void *opaque)
     tlb2->mas7_3 |= MAS3_UR | MAS3_UW | MAS3_UX | MAS3_SR | MAS3_SW | MAS3_SX;
 }
 
+uint32_t g_DEVDISR = 0x0;
+uint32_t g_DDRDLLCR= 0x0;
+uint32_t g_LBDLLCR= 0x0;
+
 static uint64_t p2010_gbu_read(void *opaque, target_phys_addr_t addr,
                                unsigned size)
 {
@@ -158,6 +163,17 @@ static uint64_t p2010_gbu_read(void *opaque, target_phys_addr_t addr,
     case 0xa4:                  /* SVR */
         return env->spr[SPR_E500_SVR];
         break;
+    case 0x70:
+        return g_DEVDISR;
+        break;
+    case 0xe10:
+        PRINT_READ_UNSUPPORTED_REGISTER("DDRLLCR", full_addr, env->nip);
+        return g_DDRDLLCR | 0x100;
+        break;
+    case 0xe20:
+        PRINT_READ_UNSUPPORTED_REGISTER("LBDLLCR", full_addr, env->nip);
+        return g_LBDLLCR | 0x100;
+        break;
     default:
         PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
     }
@@ -174,6 +190,17 @@ static void p2010_gbu_write(void *opaque, target_phys_addr_t addr,
     case 0xb0:
         if (val & 2)
             qemu_system_reset_request();
+        break;
+    case 0x70:
+        g_DEVDISR = val;
+        break;
+    case 0xe10:
+        g_DDRDLLCR= val;
+        PRINT_WRITE_UNSUPPORTED_REGISTER("DDRLLCR", full_addr , val, env->nip);
+        break;
+    case 0xe20:
+        g_LBDLLCR=val;
+        PRINT_WRITE_UNSUPPORTED_REGISTER("LBDLLCR", full_addr , val, env->nip);
         break;
     default:
         PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?", full_addr , val, env->nip);
@@ -625,7 +652,7 @@ static void fsl_e500_init(fsl_e500_config *config,
 
     reset_info->entry = 0xfffffffc;
 
-    ppc_booke_timers_init(env, 700000000UL >> 3);
+    ppc_booke_timers_init(env, config->freq);
 
     /* Register Memory */
     ram = g_malloc0(sizeof(*ram));
@@ -762,6 +789,7 @@ static void fsl_e500_init(fsl_e500_config *config,
 static fsl_e500_config p2010rdb_vxworks_config = {
     .ccsr_init_addr = 0xf3000000,
     .cpu_model      = "p2010",
+    .freq           = 700000000UL >> 3,
     .serial_irq     = 12 + 26,
     .espi_irq       = 12 + 43,
     .i2c_irq        = 12 + 27,
@@ -790,6 +818,7 @@ static QEMUMachine p2010rdb_vxworks_machine = {
 static fsl_e500_config p2010rdb_config = {
     .ccsr_init_addr = 0xff700000,
     .cpu_model      = "p2010",
+    .freq           = 700000000UL >> 3,
     .serial_irq     = 12 + 26,
     .espi_irq       = 12 + 43,
     .i2c_irq        = 12 + 27,
@@ -811,7 +840,7 @@ static void p2010rdb_init(ram_addr_t ram_size,
 
 static QEMUMachine p2010rdb_machine = {
     .name = "p2010rdb",
-    .desc = "p2010rdb",
+    .desc = "p2010rdb reset state",
     .init = p2010rdb_init,
 };
 
