@@ -55,7 +55,7 @@
 #define MAX_DBL     4
 #define MAX_MBX     4
 #define MAX_TMR     4
-#define VECTOR_BITS 8
+#define VECTOR_BITS 16
 #define MAX_IPI     0
 
 #define VID (0x00000000)
@@ -67,7 +67,7 @@
 #define MAX_DBL     0
 #define MAX_MBX     0
 #define MAX_TMR     4
-#define VECTOR_BITS 8
+#define VECTOR_BITS 16
 #define MAX_IPI     4
 #define VID         0x03 /* MPIC version ID */
 #define VENI        0x00000000 /* Vendor ID */
@@ -307,8 +307,8 @@ static void IRQ_local_pipe (openpic_t *opp, int n_CPU, int n_IRQ)
     priority = IPVP_PRIORITY(src->ipvp);
     if (priority <= dst->pctp) {
         /* Too low priority */
-        DPRINTF("%s: IRQ %d has too low priority on CPU %d\n",
-                __func__, n_IRQ, n_CPU);
+        DPRINTF("%s: IRQ %d has too low priority on CPU %d priority:%d <= pctp:%d\n",
+                __func__, n_IRQ, n_CPU, priority, dst->pctp);
         return;
     }
     if (IRQ_testbit(&dst->raised, n_IRQ)) {
@@ -425,7 +425,7 @@ static void openpic_reset (void *opaque)
     opp->frep = ((OPENPIC_EXT_IRQ - 1) << 16) | ((MAX_CPU - 1) << 8) | VID;
     opp->veni = VENI;
     opp->pint = 0x00000000;
-    opp->spve = 0x000000FF;
+    opp->spve = 0x0000FFFF;
     opp->tifr = 0x003F7A00;
     /* ? */
     opp->micr = 0x00000000;
@@ -595,6 +595,8 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
     IRQ_dst_t *dst;
     int idx;
 
+    dst = &opp->dst[0];
+
     DPRINTF("%s: addr " TARGET_FMT_plx " <= %08x\n", __func__, addr, val);
     if (addr & 0xF)
         return;
@@ -609,7 +611,9 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
         opp->glbc = val & ~0x80000000;
         DPRINTF("%s: GLBC\n", __func__);
         break;
-    case 0x80: /* VENI */
+    case 0x80: /* CTPR */
+        DPRINTF("%s: CTPR\n", __func__);
+        dst->pctp = val & 0x0000000F;
         break;
     case 0x90: /* PINT */
         for (idx = 0; idx < opp->nb_cpus; idx++) {
@@ -641,7 +645,7 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
         break;
 #endif
     case 0xE0: /* SPVE */
-        opp->spve = val & 0x000000FF;
+        opp->spve = val & 0x0000FFFF;
         DPRINTF("%s: SPVE\n", __func__);
         break;
     case 0xF0: /* TIFR */
@@ -849,6 +853,7 @@ static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t v
 #endif
     case 0x80: /* PCTP */
         dst->pctp = val & 0x0000000F;
+        DPRINTF("%s: PCTP : 0x%x\n", __func__, dst->pctp);
         break;
     case 0x90: /* WHOAMI */
         /* Read-only register */
