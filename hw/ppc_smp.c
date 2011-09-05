@@ -1,7 +1,7 @@
 /*
- * QEMU PPC SMP hardware System Emulator
+ * QEMU PPC SMP Hardware System Emulator
  *
- * Copyright (c) 2003-2007 Jocelyn Mayer
+ * Copyright (c) 2011 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
