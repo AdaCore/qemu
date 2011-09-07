@@ -171,6 +171,9 @@ static CPUReadMemoryFunc * const my_cpu_read_fct_mcm [] = {
     &my_read_mcm,
 };
 
+/* This is one of the PLL frequency multipliers ratio. This one influences the
+ * core's decrementer and will be used to calculate the timebase */
+#define MPX_TO_OSC_RATIO     2
 static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
 {
     // DPRINTF("my_read_gur : reading from Global Utility Register : 0x%08x\n",
@@ -179,11 +182,16 @@ static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
     uint32_t ret;
     switch (addr & 0xfff) {
     case 0: // PORPLL
-        // Set (MPX bus CLK)/SYSCLK ratio to 2, and (core CLK)/(MPX bus CLK) to
-        // 2 as well.
+        // Set (MPX bus CLK)/SYSCLK ratio to MPX_TO_OSC_RATIO, and (core
+        // CLK)/(MPX bus CLK) to 2
         // The PPC decrementer always runs at (MPX bus CLK)/4 so only the first
         // ratio influences the timebase frequency to be used.
-        return 0x00100004;
+        // The timebase emulation frequency is calculated based on the frequency
+        // reported by the PIXIS registers, and the MPX_TO_OSC_RATIO ratio.
+        ret = 0x00100000;
+        ret |= MPX_TO_OSC_RATIO << 1;
+        DPRINTF("%s: reading POR_PLL => 0x%08x\n", __func__, ret);
+        break;
     case 0x0c: /* PORDEVSR[CORE1TE] */
         ret = 0;
         break;
@@ -238,17 +246,62 @@ static void secondary_cpu_reset(void *opaque)
     env->halted = 1;
 }
 
+#define	FREQ_33_MHZ	 33330000
+#define	FREQ_40_MHZ	 40000000
+#define	FREQ_50_MHZ	 50000000
+#define	FREQ_66_MHZ	 66670000
+#define	FREQ_83_MHZ	 83330000
+#define	FREQ_100_MHZ	100000000
+#define	FREQ_133_MHZ	133330000
+#define	FREQ_166_MHZ	166660000
+#define	FREQ_266_MHZ	266660000
+#define	FREQ_200_MHZ	200000000
+#define	FREQ_333_MHZ	333330000
+#define	FREQ_533_MHZ	533330000
+#define	FREQ_400_MHZ	400000000
+/* Taken from the hpcNet8641D BSP */
+uint32_t pixisSpdTable[8] =
+{
+    FREQ_33_MHZ,
+    FREQ_40_MHZ,
+    FREQ_50_MHZ,
+    FREQ_66_MHZ,
+    FREQ_83_MHZ,
+    FREQ_100_MHZ,
+    FREQ_133_MHZ,
+    FREQ_166_MHZ
+};
+/* This defines the oscillator frequency value. Choose an index in the
+ * pixisSpdTable array that corresponds to the wanted value */
+#define OSC_FREQ_INDEX  2
+
 static uint32_t my_read_pixis (void *opaque, target_phys_addr_t addr)
 {
     // DPRINTF("my_read_pixis : reading from PIXIS : "
     //         "0x%08x\n",
     //         addr +
     //         PIXIS_START);
+    uint32_t ret;
     switch (addr & 0xff) {
     case 0x10: /* PIXIS_VCTL */
-        return 0x1;
+        /* returning 1 makes VxWorks read the default oscillator frequency
+         * (50MHz) instead of a configured value */
+        DPRINTF("%s: Reading PIXIS_VCTL\n", __func__);
+        ret = 0;
+        break;
+    case 0x7: /* PIXIS_OSC */
+        /* an index corresponding to the oscillator frequency */
+        DPRINTF("%s: Reading PIXIS_OSC which is set to %.2eHz\n", __func__,
+                (double)pixisSpdTable[OSC_FREQ_INDEX]);
+        ret = OSC_FREQ_INDEX;
+        break;
+    default:
+        DPRINTF("%s: Reading unassigned at 0x%08x\n", __func__, addr +
+                PIXIS_START);
+        return 0;
     }
-    return 0;
+    DPRINTF("%s: Read => 0x%08x\n", __func__, ret);
+    return ret;
 }
 
 static void my_write_pixis (void *opaque, target_phys_addr_t addr, uint32_t val)
@@ -317,14 +370,18 @@ static void ppc_simple_init (ram_addr_t ram_size,
                    "implemented yet. Aborting.\n",__func__);
             exit(-1);
         } else {
-            /* Set time-base frequency to 25 Mhz.
-             * The (MPX bus CLK)/SYSCLK ratio was set to 2, and SYSCLK is 50MHz
-             * in the hpcNet8641 board we're emulating. The decrementer runs at
-             * (MPX bus CLK)/4 -> SYSCLK * 2 / 4 = 25MHz
-             * TODO : investigate if there is a way to specify the SYSCLK
-             * frequency from QEMU and not from the default board's value.
-             */
-            cpu_ppc_tb_init(env[i], 25UL * 1000UL * 1000UL);
+            /* Set time-base frequency
+             * The timebase frequency corresponds directly to the core's
+             * decrementer frequency. The decrementer always runs at (MPX bus
+             * clk)/4 hence the formula used below :
+             * SYSCLK * MPX_TO_OSC_RATIO / 4
+             * SYSCLK is the frequency reported by the PIXIS registers. Its
+             * value is taken from the pixisSpdTable array.
+             * See MPC8641D ref man section 4.4.4.1 and e600 ref man section
+             * 4.6.9 */
+            uint32_t timebase = pixisSpdTable[OSC_FREQ_INDEX] * MPX_TO_OSC_RATIO
+                / 4;
+            cpu_ppc_tb_init(env[i], timebase);
         }
         if (i == 0) {
             qemu_register_reset(main_cpu_reset, env[i]);
