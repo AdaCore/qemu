@@ -317,8 +317,8 @@ etsec_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
     eTSEC *etsec = DO_UPCAST(NICState, nc, nc)->opaque;
 
 #if defined(HEX_DUMP)
-        fprintf(stderr,"%s receive size:%d\n", etsec->nic->nc.name, size);
-        hex_dump(stderr, buf, size);
+    fprintf(stderr,"%s receive size:%d\n", etsec->nic->nc.name, size);
+    hex_dump(stderr, buf, size);
 #endif
     rx_ring_write(etsec, buf, size);
     return size;

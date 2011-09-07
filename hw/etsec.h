@@ -84,6 +84,8 @@ typedef struct eTSEC {
     uint8_t        rx_first_in_frame;
     uint8_t        rx_fcb_size;
     eTSEC_rxtx_bd  rx_first_bd;
+    uint8_t        rx_fcb[10];
+    uint32_t       rx_padding;
 
     /* IRQs */
     qemu_irq     tx_irq;
