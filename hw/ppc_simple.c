@@ -1,5 +1,5 @@
 /*
- * QEMU PPC PREP hardware System Emulator
+ * QEMU PPC SMP hardware System Emulator
  *
  * Copyright (c) 2003-2007 Jocelyn Mayer
  *
@@ -42,11 +42,9 @@
 #include "openpic.h"
 #include "etsec.h"
 
-//#define HARD_DEBUG_PPC_IO
-//#define DEBUG_PPC_IO
-//#define DEBUG_LOG
+//#define DEBUG_PPC_SMP
 
-#ifdef DEBUG_LOG
+#ifdef DEBUG_PPC_SMP
 #define DPRINTF(fmt, ...) do { \
     printf(fmt, ## __VA_ARGS__); \
 } while(0)
@@ -54,34 +52,12 @@
 #define DPRINTF(fmt, ...) do { } while(0)
 #endif
 
-#define MAX_CPUS 2
+#define MAX_CPUS        2
 
-#define MAX_IDE_BUS 2
-
-#define BIOS_SIZE (32 * 1024 * 1024)
-#define BIOS_FILENAME "ppc_rom.bin"
-#define KERNEL_LOAD_ADDR 0x01000000
-#define INITRD_LOAD_ADDR 0x01800000
-
-#if defined (HARD_DEBUG_PPC_IO) && !defined (DEBUG_PPC_IO)
-#define DEBUG_PPC_IO
-#endif
-
-#if defined (HARD_DEBUG_PPC_IO)
-#define PPC_IO_DPRINTF(fmt, ...)                         \
-do {                                                     \
-    if (qemu_loglevel_mask(CPU_LOG_IOPORT)) {            \
-        qemu_log("%s: " fmt, __func__ , ## __VA_ARGS__); \
-    } else {                                             \
-        printf("%s : " fmt, __func__ , ## __VA_ARGS__);  \
-    }                                                    \
-} while (0)
-#elif defined (DEBUG_PPC_IO)
-#define PPC_IO_DPRINTF(fmt, ...) \
-qemu_log_mask(CPU_LOG_IOPORT, fmt, ## __VA_ARGS__)
-#else
-#define PPC_IO_DPRINTF(fmt, ...) do { } while (0)
-#endif
+#define BIOS_SIZE       (32 * 1024 * 1024)
+#define BIOS_FILENAME   "ppc_rom.bin"
+#define KERNEL_LOAD_ADDR        0x01000000
+#define INITRD_LOAD_ADDR        0x01800000
 
 /* Memory Mapping of Configuration Registers */
 #define CCSBAR          0xf8000000
@@ -93,64 +69,100 @@ qemu_log_mask(CPU_LOG_IOPORT, fmt, ## __VA_ARGS__)
 #define GUR_START       (CCSBAR + 0xe0000)
 #define GUR_SIZE        0xa8
 #define PMR_START       (CCSBAR + 0xe1000)
-#define PMR_SIZE        0xA9
+#define PMR_SIZE        0xa9
 
+/* Board specific configuration registers */
 #define PIXIS_START     0xf8100000
 #define PIXIS_SIZE      0x19
 
-CPUState *my_cpus[] = {NULL, NULL};
+#define	FREQ_33_MHZ	 33330000
+#define	FREQ_40_MHZ	 40000000
+#define	FREQ_50_MHZ	 50000000
+#define	FREQ_66_MHZ	 66670000
+#define	FREQ_83_MHZ	 83330000
+#define	FREQ_100_MHZ	100000000
+#define	FREQ_133_MHZ	133330000
+#define	FREQ_166_MHZ	166660000
+#define	FREQ_266_MHZ	266660000
+#define	FREQ_200_MHZ	200000000
+#define	FREQ_333_MHZ	333330000
+#define	FREQ_533_MHZ	533330000
+#define	FREQ_400_MHZ	400000000
 
-static void my_write_bogus(void *opaque, target_phys_addr_t addr, uint32_t
+uint32_t pixisSpdTable[8] =
+{
+    FREQ_33_MHZ,
+    FREQ_40_MHZ,
+    FREQ_50_MHZ,
+    FREQ_66_MHZ,
+    FREQ_83_MHZ,
+    FREQ_100_MHZ,
+    FREQ_133_MHZ,
+    FREQ_166_MHZ
+};
+/* This defines the oscillator frequency value. Choose an index in the
+ * pixisSpdTable array that corresponds to the wanted value */
+#define OSC_FREQ_INDEX  2
+
+/* This is one of the PLL frequency multipliers ratio. This one influences the
+ * core's decrementer and will be used to calculate the timebase */
+#define MPX_TO_OSC_RATIO     2
+
+/* We need to keep track of the CPUs so that we can start/halt/reset them when
+ * needed */
+static CPUState *cpus[] = {NULL, NULL};
+
+static void write_bogus(void *opaque, target_phys_addr_t addr, uint32_t
         value)
 {
-    DPRINTF("my_write_bogus : attempting to write to : 0x%08x <= %08x\n", addr,
+    DPRINTF("%s: attempting to write to : 0x%08x <= %08x\n", addr, __func__,
             value);
 }
 
-static CPUWriteMemoryFunc * const my_cpu_write_bogus[] = {
-    &my_write_bogus,
-    &my_write_bogus,
-    &my_write_bogus,
+static CPUWriteMemoryFunc * const write_bogus_fct[] = {
+    &write_bogus,
+    &write_bogus,
+    &write_bogus,
 };
 
-static uint32_t my_read_bogus(void *opaque, target_phys_addr_t addr)
+static uint32_t read_bogus(void *opaque, target_phys_addr_t addr)
 {
-    DPRINTF("my_read_bogus : attempting to read from 0x%08x\n", addr);
+    DPRINTF("%s: attempting to read from 0x%08x\n", __func__, addr);
     return 0;
 }
 
-static CPUReadMemoryFunc * const my_cpu_read_bogus[] = {
-    &my_read_bogus,
-    &my_read_bogus,
-    &my_read_bogus,
+static CPUReadMemoryFunc * const cpu_read_bogus[] = {
+    &read_bogus,
+    &read_bogus,
+    &read_bogus,
 };
 
-static void my_write_mcm (void *opaque, target_phys_addr_t addr, uint32_t value)
+static void write_mcm(void *opaque, target_phys_addr_t addr, uint32_t value)
 {
     switch (addr & 0xFFF) {
     case 0x010:
         DPRINTF("%s: Writing to MCM PCR <= 0x%08x\n", __func__, value);
         if (value & (1 << 25)) {
             DPRINTF("%s: Enabling Core 1\n", __func__);
-            my_cpus[1]->halted = 0;
+            cpus[1]->halted = 0;
         }
         break;
     default:
-        DPRINTF("%s : Writing to unassigned : 0x%08x <= 0x%x\n", __func__, addr
+        DPRINTF("%s: Writing to unassigned : 0x%08x <= 0x%x\n", __func__, addr
                 + MCM_START, value);
     }
 }
 
-static uint32_t my_read_mcm (void *opaque, target_phys_addr_t addr)
+static uint32_t read_mcm(void *opaque, target_phys_addr_t addr)
 {
     uint32_t ret;
     switch (addr & 0xFFF) {
     case 0x010:
-        ret = (!my_cpus[0]->halted << 24) |
-              (!my_cpus[1]->halted << 25);
+        ret = (!cpus[0]->halted << 24) |
+              (!cpus[1]->halted << 25);
         break;
     default:
-        DPRINTF("%s : Reading from unassigned : 0x%08x\n", __func__, addr +
+        DPRINTF("%s: Reading from unassigned : 0x%08x\n", __func__, addr +
                 MCM_START);
         return 0;
     }
@@ -159,35 +171,34 @@ static uint32_t my_read_mcm (void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-static CPUWriteMemoryFunc * const my_cpu_write_fct_mcm [] = {
-    &my_write_mcm,
-    &my_write_mcm,
-    &my_write_mcm,
+static CPUWriteMemoryFunc * const write_mcm_fct [] = {
+    &write_mcm,
+    &write_mcm,
+    &write_mcm,
 };
 
-static CPUReadMemoryFunc * const my_cpu_read_fct_mcm [] = {
-    &my_read_mcm,
-    &my_read_mcm,
-    &my_read_mcm,
+static CPUReadMemoryFunc * const read_mcm_fct [] = {
+    &read_mcm,
+    &read_mcm,
+    &read_mcm,
 };
 
-/* This is one of the PLL frequency multipliers ratio. This one influences the
- * core's decrementer and will be used to calculate the timebase */
-#define MPX_TO_OSC_RATIO     2
-static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
+static uint32_t read_gur(void *opaque, target_phys_addr_t addr)
 {
-    // DPRINTF("my_read_gur : reading from Global Utility Register : 0x%08x\n",
-    //         addr +
-    //         GUR_START);
+    /* DPRINTF("read_gur : reading from Global Utility Register : 0x%08x\n",
+            addr +
+            GUR_START); */
     uint32_t ret;
+    CPUState *env = cpu_single_env?cpu_single_env:first_cpu;
     switch (addr & 0xfff) {
-    case 0: // PORPLL
-        // Set (MPX bus CLK)/SYSCLK ratio to MPX_TO_OSC_RATIO, and (core
-        // CLK)/(MPX bus CLK) to 2
-        // The PPC decrementer always runs at (MPX bus CLK)/4 so only the first
-        // ratio influences the timebase frequency to be used.
-        // The timebase emulation frequency is calculated based on the frequency
-        // reported by the PIXIS registers, and the MPX_TO_OSC_RATIO ratio.
+    case 0:
+        /* PORPLL
+         * Set (MPX bus CLK)/SYSCLK ratio to MPX_TO_OSC_RATIO, and (core
+         * CLK)/(MPX bus CLK) to 2
+         * The PPC decrementer always runs at (MPX bus CLK)/4 so only the first
+         * ratio influences the timebase frequency to be used.
+         * The timebase emulation frequency is calculated based on the frequency
+         * reported by the PIXIS registers, and the MPX_TO_OSC_RATIO ratio. */
         ret = 0x00100000;
         ret |= MPX_TO_OSC_RATIO << 1;
         DPRINTF("%s: reading POR_PLL => 0x%08x\n", __func__, ret);
@@ -196,38 +207,25 @@ static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
         ret = 0;
         break;
     case 0xa0: /* Processor Version Register - PVR */
-        DPRINTF("%s : Reading PVR register\n", __func__);
-        ret = 0x80040010;
+        DPRINTF("%s: Reading PVR register\n", __func__);
+        ret = env->spr[SPR_PVR];
         break;
     case 0xa4: /* System Version Register - SVR */
-        DPRINTF("%s : Reading SVR register\n", __func__);
-        ret = 0x80900121;
+        DPRINTF("%s: Reading SVR register\n", __func__);
+        ret = env->spr[SPR_SVR];
         break;
     default:
-        DPRINTF("%s : Reading non implemented register 0x%8x\n", __func__,
+        DPRINTF("%s: Reading non implemented register 0x%8x\n", __func__,
                 GUR_START + addr);
         return 0;
     }
     return ret;
 }
 
-static CPUReadMemoryFunc * const my_cpu_read_fct_gur[] = {
-    &my_read_gur,
-    &my_read_gur,
-    &my_read_gur,
-};
-
-static uint32_t my_read_pmr (void *opaque, target_phys_addr_t addr)
-{
-    DPRINTF("my_read_pmr : reading from Performance Management Register : "
-            "0x%08x\n", addr + PMR_START);
-    return 0;
-}
-
-static CPUReadMemoryFunc * const my_cpu_read_fct_pmr[] = {
-    &my_read_pmr,
-    &my_read_pmr,
-    &my_read_pmr,
+static CPUReadMemoryFunc * const read_gur_fct[] = {
+    &read_gur,
+    &read_gur,
+    &read_gur,
 };
 
 static void main_cpu_reset(void *opaque)
@@ -246,41 +244,12 @@ static void secondary_cpu_reset(void *opaque)
     env->halted = 1;
 }
 
-#define	FREQ_33_MHZ	 33330000
-#define	FREQ_40_MHZ	 40000000
-#define	FREQ_50_MHZ	 50000000
-#define	FREQ_66_MHZ	 66670000
-#define	FREQ_83_MHZ	 83330000
-#define	FREQ_100_MHZ	100000000
-#define	FREQ_133_MHZ	133330000
-#define	FREQ_166_MHZ	166660000
-#define	FREQ_266_MHZ	266660000
-#define	FREQ_200_MHZ	200000000
-#define	FREQ_333_MHZ	333330000
-#define	FREQ_533_MHZ	533330000
-#define	FREQ_400_MHZ	400000000
-/* Taken from the hpcNet8641D BSP */
-uint32_t pixisSpdTable[8] =
+static uint32_t read_pixis(void *opaque, target_phys_addr_t addr)
 {
-    FREQ_33_MHZ,
-    FREQ_40_MHZ,
-    FREQ_50_MHZ,
-    FREQ_66_MHZ,
-    FREQ_83_MHZ,
-    FREQ_100_MHZ,
-    FREQ_133_MHZ,
-    FREQ_166_MHZ
-};
-/* This defines the oscillator frequency value. Choose an index in the
- * pixisSpdTable array that corresponds to the wanted value */
-#define OSC_FREQ_INDEX  2
-
-static uint32_t my_read_pixis (void *opaque, target_phys_addr_t addr)
-{
-    // DPRINTF("my_read_pixis : reading from PIXIS : "
-    //         "0x%08x\n",
-    //         addr +
-    //         PIXIS_START);
+    /* DPRINTF("read_pixis : reading from PIXIS : "
+            "0x%08x\n",
+            addr +
+            PIXIS_START); */
     uint32_t ret;
     switch (addr & 0xff) {
     case 0x10: /* PIXIS_VCTL */
@@ -304,12 +273,12 @@ static uint32_t my_read_pixis (void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-static void my_write_pixis (void *opaque, target_phys_addr_t addr, uint32_t val)
+static void write_pixis(void *opaque, target_phys_addr_t addr, uint32_t val)
 {
-    // DPRINTF("my_read_pixis : reading from PIXIS : "
-    //         "0x%08x\n",
-    //         addr +
-    //         PIXIS_START);
+    /* DPRINTF("read_pixis : reading from PIXIS : "
+            "0x%08x\n",
+            addr +
+            PIXIS_START); */
     switch (addr & 0xff) {
     case 0x04: /* PIXIS_RST : Reset the whole system */
         DPRINTF("%s: Write to PIXIS_RST => reset system\n", __func__);
@@ -321,20 +290,19 @@ static void my_write_pixis (void *opaque, target_phys_addr_t addr, uint32_t val)
     }
 }
 
-static CPUReadMemoryFunc * const my_cpu_read_fct_pixis[] = {
-    &my_read_pixis,
-    &my_read_pixis,
-    &my_read_pixis,
+static CPUReadMemoryFunc * const read_pixis_fct[] = {
+    &read_pixis,
+    &read_pixis,
+    &read_pixis,
 };
 
-static CPUWriteMemoryFunc * const my_cpu_write_fct_pixis[] = {
-    &my_write_pixis,
-    &my_write_pixis,
-    &my_write_pixis,
+static CPUWriteMemoryFunc * const write_pixis_fct[] = {
+    &write_pixis,
+    &write_pixis,
+    &write_pixis,
 };
 
-/* PowerPC PREP hardware initialisation */
-static void ppc_simple_init (ram_addr_t ram_size,
+static void ppc_smp_init(ram_addr_t ram_size,
                            const char *boot_device,
                            const char *kernel_filename,
                            const char *kernel_cmdline,
@@ -342,7 +310,7 @@ static void ppc_simple_init (ram_addr_t ram_size,
                            const char *cpu_model)
 {
 
-    CPUState **env = my_cpus;
+    CPUState **env = cpus;
     char *filename;
     int linux_boot, i, bios_size;
     ram_addr_t ram_offset, bios_offset;
@@ -354,7 +322,7 @@ static void ppc_simple_init (ram_addr_t ram_size,
 
     /* init CPUs */
     if (cpu_model == NULL)
-        cpu_model = "602";
+        cpu_model = "MPC8641D";
     for (i = 0; i < smp_cpus; i++) {
         env[i] = cpu_init(cpu_model);
         if (!env[i]) {
@@ -475,9 +443,6 @@ static void ppc_simple_init (ram_addr_t ram_size,
             qemu_mallocz(smp_cpus * sizeof(qemu_irq) * OPENPIC_OUTPUT_NB);
 
     for (i = 0; i < smp_cpus; i++) {
-            /* Mac99 IRQ connection between OpenPIC outputs pins
-             * and PowerPC input pins
-             */
             switch (PPC_INPUT(env[i])) {
             case PPC_FLAGS_INPUT_6xx:
                 openpic_irqs[i] = openpic_irqs[0] + (i * OPENPIC_OUTPUT_NB);
@@ -505,10 +470,9 @@ static void ppc_simple_init (ram_addr_t ram_size,
         target_phys_addr_t start_addr;
         ram_addr_t size;
     } const list[] = {
-        {my_cpu_read_fct_mcm, my_cpu_write_fct_mcm, MCM_START, MCM_SIZE},
-        {my_cpu_read_fct_gur, my_cpu_write_bogus, GUR_START, GUR_SIZE},
-        {my_cpu_read_fct_pmr, my_cpu_write_bogus, PMR_START, PMR_SIZE},
-        {my_cpu_read_fct_pixis, my_cpu_write_fct_pixis, PIXIS_START, PIXIS_SIZE}
+        {read_mcm_fct, write_mcm_fct, MCM_START, MCM_SIZE},
+        {read_gur_fct, write_bogus_fct, GUR_START, GUR_SIZE},
+        {read_pixis_fct, write_pixis_fct, PIXIS_START, PIXIS_SIZE}
     };
 
     int io_mem;
@@ -525,7 +489,7 @@ static void ppc_simple_init (ram_addr_t ram_size,
     for (i = 0; i < 2; i++) {
         if (serial_hds[i]) {
             serial_mm_init(SERIAL_START + i *
-                    0x100, 0, pic[12+serial_irqs[i]], 333000000, serial_hds[i],
+                    0x100, 0, pic[12+serial_irqs[i]], 9600, serial_hds[i],
                     1, 1);
         }
     }
@@ -536,7 +500,7 @@ static void ppc_simple_init (ram_addr_t ram_size,
         {15, 16, 17},
         {21, 22, 23}
     };
-    DPRINTF("%s : registering %d network eTSEC(s)\n", __func__, nb_nics);
+    DPRINTF("%s: registering %d network eTSEC(s)\n", __func__, nb_nics);
     for (i = 0; i < nb_nics; i++) {
         etsec_create(ETSEC_START + 0x1000 * i, &nd_table[i],
         pic[12+etsec_irqs[i][0]], pic[12+etsec_irqs[i][1]],
@@ -544,16 +508,16 @@ static void ppc_simple_init (ram_addr_t ram_size,
     }
 }
 
-static QEMUMachine simple_machine = {
-    .name = "simple",
-    .desc = "PowerPC simple platform",
-    .init = ppc_simple_init,
+static QEMUMachine ppc_smp_machine = {
+    .name = "ppc_smp",
+    .desc = "PowerPC SMP platform",
+    .init = ppc_smp_init,
     .max_cpus = MAX_CPUS,
 };
 
-static void simple_machine_init(void)
+static void ppc_smp_machine_init(void)
 {
-    qemu_register_machine(&simple_machine);
+    qemu_register_machine(&ppc_smp_machine);
 }
 
-machine_init(simple_machine_init);
+machine_init(ppc_smp_machine_init);
