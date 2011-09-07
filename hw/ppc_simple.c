@@ -54,7 +54,6 @@
 #define DPRINTF(fmt, ...) do { } while(0)
 #endif
 
-/* SMP is not enabled, for now */
 #define MAX_CPUS 2
 
 #define MAX_IDE_BUS 2
@@ -84,248 +83,22 @@ qemu_log_mask(CPU_LOG_IOPORT, fmt, ## __VA_ARGS__)
 #define PPC_IO_DPRINTF(fmt, ...) do { } while (0)
 #endif
 
+/* Memory Mapping of Configuration Registers */
+#define CCSBAR          0xf8000000
+#define MCM_START       (CCSBAR + 0x01000)
+#define MCM_SIZE        0x00001000
+#define SERIAL_START    (CCSBAR + 0x04500)
+#define ETSEC_START     (CCSBAR + 0x24000)
+#define PIC_START       (CCSBAR + 0x40000)
+#define GUR_START       (CCSBAR + 0xe0000)
+#define GUR_SIZE        0xa8
+#define PMR_START       (CCSBAR + 0xe1000)
+#define PMR_SIZE        0xA9
+
+#define PIXIS_START     0xf8100000
+#define PIXIS_SIZE      0x19
+
 CPUState *my_cpus[] = {NULL, NULL};
-
-/* PCI intack register */
-/* Read-only register (?) */
-/* PowerPC control and status registers */
-#if 0 // Not used
-static struct {
-    /* IDs */
-    uint32_t veni_devi;
-    uint32_t revi;
-    /* Control and status */
-    uint32_t gcsr;
-    uint32_t xcfr;
-    uint32_t ct32;
-    uint32_t mcsr;
-    /* General purpose registers */
-    uint32_t gprg[6];
-    /* Exceptions */
-    uint32_t feen;
-    uint32_t fest;
-    uint32_t fema;
-    uint32_t fecl;
-    uint32_t eeen;
-    uint32_t eest;
-    uint32_t eecl;
-    uint32_t eeint;
-    uint32_t eemck0;
-    uint32_t eemck1;
-    /* Error diagnostic */
-} XCSR;
-
-static void PPC_XCSR_writeb (void *opaque,
-                             target_phys_addr_t addr, uint32_t value)
-{
-    printf("%s: 0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", __func__, addr,
-           value);
-}
-
-static void PPC_XCSR_writew (void *opaque,
-                             target_phys_addr_t addr, uint32_t value)
-{
-    printf("%s: 0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", __func__, addr,
-           value);
-}
-
-static void PPC_XCSR_writel (void *opaque,
-                             target_phys_addr_t addr, uint32_t value)
-{
-    printf("%s: 0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", __func__, addr,
-           value);
-}
-
-static uint32_t PPC_XCSR_readb (void *opaque, target_phys_addr_t addr)
-{
-    uint32_t retval = 0;
-
-    printf("%s: 0x" TARGET_FMT_plx " <= %08" PRIx32 "\n", __func__, addr,
-           retval);
-
-    return retval;
-}
-
-static uint32_t PPC_XCSR_readw (void *opaque, target_phys_addr_t addr)
-{
-    uint32_t retval = 0;
-
-    printf("%s: 0x" TARGET_FMT_plx " <= %08" PRIx32 "\n", __func__, addr,
-           retval);
-
-    return retval;
-}
-
-static uint32_t PPC_XCSR_readl (void *opaque, target_phys_addr_t addr)
-{
-    uint32_t retval = 0;
-
-    printf("%s: 0x" TARGET_FMT_plx " <= %08" PRIx32 "\n", __func__, addr,
-           retval);
-
-    return retval;
-}
-
-static CPUWriteMemoryFunc * const PPC_XCSR_write[] = {
-    &PPC_XCSR_writeb,
-    &PPC_XCSR_writew,
-    &PPC_XCSR_writel,
-};
-
-static CPUReadMemoryFunc * const PPC_XCSR_read[] = {
-    &PPC_XCSR_readb,
-    &PPC_XCSR_readw,
-    &PPC_XCSR_readl,
-};
-#endif
-
-/* Fake super-io ports for PREP platform (Intel 82378ZB) */
-typedef struct sysctrl_t {
-    qemu_irq reset_irq;
-    M48t59State *nvram;
-    uint8_t state;
-    uint8_t syscontrol;
-    uint8_t fake_io[2];
-    int contiguous_map;
-    int endian;
-    qemu_irq irq14;
-    qemu_irq irq15;
-} sysctrl_t;
-
-enum {
-    STATE_HARDFILE = 0x01,
-};
-
-static sysctrl_t *sysctrl;
-
-static inline target_phys_addr_t prep_IO_address(sysctrl_t *sysctrl,
-                                                 target_phys_addr_t addr)
-{
-    if (sysctrl->contiguous_map == 0) {
-        /* 64 KB contiguous space for IOs */
-        addr &= 0xFFFF;
-    } else {
-        /* 8 MB non-contiguous space for IOs */
-        addr = (addr & 0x1F) | ((addr & 0x007FFF000) >> 7);
-    }
-
-    return addr;
-}
-
-static void PPC_prep_io_writeb (void *opaque, target_phys_addr_t addr,
-                                uint32_t value)
-{
-    sysctrl_t *sysctrl = opaque;
-
-    addr = prep_IO_address(sysctrl, addr);
-    cpu_outb(addr, value);
-}
-
-static uint32_t PPC_prep_io_readb (void *opaque, target_phys_addr_t addr)
-{
-    sysctrl_t *sysctrl = opaque;
-    uint32_t ret;
-
-    addr = prep_IO_address(sysctrl, addr);
-    ret = cpu_inb(addr);
-
-    return ret;
-}
-
-static void PPC_prep_io_writew (void *opaque, target_phys_addr_t addr,
-                                uint32_t value)
-{
-    sysctrl_t *sysctrl = opaque;
-
-    addr = prep_IO_address(sysctrl, addr);
-    //PPC_IO_DPRINTF("0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", addr, value);
-    cpu_outw(addr, value);
-}
-
-static uint32_t PPC_prep_io_readw (void *opaque, target_phys_addr_t addr)
-{
-    sysctrl_t *sysctrl = opaque;
-    uint32_t ret;
-
-    addr = prep_IO_address(sysctrl, addr);
-    ret = cpu_inw(addr);
-    //PPC_IO_DPRINTF("0x" TARGET_FMT_plx " <= 0x%08" PRIx32 "\n", addr, ret);
-
-    return ret;
-}
-
-static void PPC_prep_io_writel (void *opaque, target_phys_addr_t addr,
-                                uint32_t value)
-{
-    sysctrl_t *sysctrl = opaque;
-
-    addr = prep_IO_address(sysctrl, addr);
-    //PPC_IO_DPRINTF("0x" TARGET_FMT_plx " => 0x%08" PRIx32 "\n", addr, value);
-    cpu_outl(addr, value);
-}
-
-static uint32_t PPC_prep_io_readl (void *opaque, target_phys_addr_t addr)
-{
-    sysctrl_t *sysctrl = opaque;
-    uint32_t ret;
-
-    addr = prep_IO_address(sysctrl, addr);
-    ret = cpu_inl(addr);
-    //PPC_IO_DPRINTF("0x" TARGET_FMT_plx " <= 0x%08" PRIx32 "\n", addr, ret);
-
-    return ret;
-}
-
-static CPUWriteMemoryFunc * const PPC_prep_io_write[] = {
-    &PPC_prep_io_writeb,
-    &PPC_prep_io_writew,
-    &PPC_prep_io_writel,
-};
-
-static CPUReadMemoryFunc * const PPC_prep_io_read[] = {
-    &PPC_prep_io_readb,
-    &PPC_prep_io_readw,
-    &PPC_prep_io_readl,
-};
-
-#define MEM_START 0xF8000000
-#define MEM_SIZE  0x00004000
-
-uint32_t * phony_mem;
-
-static void my_write (void *opaque, target_phys_addr_t addr, uint32_t value)
-{
-    DPRINTF("my_write : attempting to write to : 0x%08x <= 0x%x\n", addr +
-            MEM_START, value);
-    DPRINTF("my_write : addr was 0x%08x\n", addr);
-    uint32_t * mem = opaque;
-    mem[addr] = value;
-    switch (addr & 0xFFFF) {
-    case 0x1010:
-        DPRINTF("%s: Writing to MCM PCR <= 0x%08x\n", __func__, value);
-        if (value & (1 << 25)) {
-            DPRINTF("%s: Enabling Core 1\n", __func__);
-            my_cpus[1]->halted = 0;
-        }
-    }
-}
-static uint32_t my_read (void *opaque, target_phys_addr_t addr)
-{
-    DPRINTF("my_read : attempting to read from : 0x%08x\n", addr + MEM_START);
-    uint32_t * mem = opaque;
-    return mem[addr];
-}
-static CPUWriteMemoryFunc * const my_cpu_write_fct[] = {
-    &my_write,
-    &my_write,
-    &my_write,
-};
-
-static CPUReadMemoryFunc * const my_cpu_read_fct[] = {
-    &my_read,
-    &my_read,
-    &my_read,
-};
 
 static void my_write_bogus(void *opaque, target_phys_addr_t addr, uint32_t
         value)
@@ -340,14 +113,71 @@ static CPUWriteMemoryFunc * const my_cpu_write_bogus[] = {
     &my_write_bogus,
 };
 
-#define GUR_START       0xf80e0000
-#define GUR_SIZE        0x30
+static uint32_t my_read_bogus(void *opaque, target_phys_addr_t addr)
+{
+    DPRINTF("my_read_bogus : attempting to read from 0x%08x\n", addr);
+    return 0;
+}
+
+static CPUReadMemoryFunc * const my_cpu_read_bogus[] = {
+    &my_read_bogus,
+    &my_read_bogus,
+    &my_read_bogus,
+};
+
+static void my_write_mcm (void *opaque, target_phys_addr_t addr, uint32_t value)
+{
+    switch (addr & 0xFFF) {
+    case 0x010:
+        DPRINTF("%s: Writing to MCM PCR <= 0x%08x\n", __func__, value);
+        if (value & (1 << 25)) {
+            DPRINTF("%s: Enabling Core 1\n", __func__);
+            my_cpus[1]->halted = 0;
+        }
+        break;
+    default:
+        DPRINTF("%s : Writing to unassigned : 0x%08x <= 0x%x\n", __func__, addr
+                + MCM_START, value);
+    }
+}
+
+static uint32_t my_read_mcm (void *opaque, target_phys_addr_t addr)
+{
+    uint32_t ret;
+    switch (addr & 0xFFF) {
+    case 0x010:
+        ret = (!my_cpus[0]->halted << 24) |
+              (!my_cpus[1]->halted << 25);
+        break;
+    default:
+        DPRINTF("%s : Reading from unassigned : 0x%08x\n", __func__, addr +
+                MCM_START);
+        return 0;
+    }
+    DPRINTF("%s: Reading from 0x%08x => 0x%08x\n", __func__, addr + MCM_START,
+            ret);
+    return ret;
+}
+
+static CPUWriteMemoryFunc * const my_cpu_write_fct_mcm [] = {
+    &my_write_mcm,
+    &my_write_mcm,
+    &my_write_mcm,
+};
+
+static CPUReadMemoryFunc * const my_cpu_read_fct_mcm [] = {
+    &my_read_mcm,
+    &my_read_mcm,
+    &my_read_mcm,
+};
+
 static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
 {
     // DPRINTF("my_read_gur : reading from Global Utility Register : 0x%08x\n",
     //         addr +
     //         GUR_START);
-    switch (addr & 0x3) {
+    uint32_t ret;
+    switch (addr & 0xfff) {
     case 0: // PORPLL
         // Set (MPX bus CLK)/SYSCLK ratio to 2, and (core CLK)/(MPX bus CLK) to
         // 2 as well.
@@ -355,9 +185,22 @@ static uint32_t my_read_gur (void *opaque, target_phys_addr_t addr)
         // ratio influences the timebase frequency to be used.
         return 0x00100004;
     case 0x0c: /* PORDEVSR[CORE1TE] */
+        ret = 0;
+        break;
+    case 0xa0: /* Processor Version Register - PVR */
+        DPRINTF("%s : Reading PVR register\n", __func__);
+        ret = 0x80040010;
+        break;
+    case 0xa4: /* System Version Register - SVR */
+        DPRINTF("%s : Reading SVR register\n", __func__);
+        ret = 0x80900121;
+        break;
+    default:
+        DPRINTF("%s : Reading non implemented register 0x%8x\n", __func__,
+                GUR_START + addr);
         return 0;
     }
-    return 0;
+    return ret;
 }
 
 static CPUReadMemoryFunc * const my_cpu_read_fct_gur[] = {
@@ -366,14 +209,10 @@ static CPUReadMemoryFunc * const my_cpu_read_fct_gur[] = {
     &my_read_gur,
 };
 
-#define PMR_START       0xf80e1000
-#define PMR_SIZE        0xA9
 static uint32_t my_read_pmr (void *opaque, target_phys_addr_t addr)
 {
-    // DPRINTF("my_read_pmr : reading from Performance Management Register : "
-    //         "0x%08x\n",
-    //         addr +
-    //         PMR_START);
+    DPRINTF("my_read_pmr : reading from Performance Management Register : "
+            "0x%08x\n", addr + PMR_START);
     return 0;
 }
 
@@ -399,8 +238,6 @@ static void secondary_cpu_reset(void *opaque)
     env->halted = 1;
 }
 
-#define PIXIS_START     0xf8100000
-#define PIXIS_SIZE      0x19
 static uint32_t my_read_pixis (void *opaque, target_phys_addr_t addr)
 {
     // DPRINTF("my_read_pixis : reading from PIXIS : "
@@ -422,8 +259,12 @@ static void my_write_pixis (void *opaque, target_phys_addr_t addr, uint32_t val)
     //         PIXIS_START);
     switch (addr & 0xff) {
     case 0x04: /* PIXIS_RST : Reset the whole system */
+        DPRINTF("%s: Write to PIXIS_RST => reset system\n", __func__);
         qemu_system_reset_request();
         break;
+    default:
+        DPRINTF("%s: Writing to unassigned PIXIS register at 0x%08x\n",
+                __func__, addr + PIXIS_START);
     }
 }
 
@@ -455,8 +296,6 @@ static void ppc_simple_init (ram_addr_t ram_size,
     uint32_t kernel_base, initrd_base;
     long kernel_size, initrd_size;
     int ppc_boot_device;
-
-    sysctrl = qemu_mallocz(sizeof(sysctrl_t));
 
     linux_boot = (kernel_filename != NULL);
 
@@ -602,39 +441,35 @@ static void ppc_simple_init (ram_addr_t ram_size,
                 exit(1);
         }
     }
-    phony_mem = qemu_mallocz(MEM_SIZE);
-    phony_mem[0] = MEM_START;
-    int io_mem = cpu_register_io_memory(my_cpu_read_fct, my_cpu_write_fct,
-            phony_mem, DEVICE_BIG_ENDIAN);
-    cpu_register_physical_memory(MEM_START, MEM_SIZE, io_mem);
 
-    io_mem = cpu_register_io_memory(my_cpu_read_fct_gur, my_cpu_write_bogus,
-            NULL, DEVICE_BIG_ENDIAN);
-    cpu_register_physical_memory(GUR_START, GUR_SIZE, io_mem);
+    struct {
+        CPUReadMemoryFunc * const *read;
+        CPUWriteMemoryFunc * const *write;
+        target_phys_addr_t start_addr;
+        ram_addr_t size;
+    } const list[] = {
+        {my_cpu_read_fct_mcm, my_cpu_write_fct_mcm, MCM_START, MCM_SIZE},
+        {my_cpu_read_fct_gur, my_cpu_write_bogus, GUR_START, GUR_SIZE},
+        {my_cpu_read_fct_pmr, my_cpu_write_bogus, PMR_START, PMR_SIZE},
+        {my_cpu_read_fct_pixis, my_cpu_write_fct_pixis, PIXIS_START, PIXIS_SIZE}
+    };
 
-    io_mem = cpu_register_io_memory(my_cpu_read_fct_pmr, my_cpu_write_bogus,
-            NULL, DEVICE_BIG_ENDIAN);
-    cpu_register_physical_memory(PMR_START, PMR_SIZE, io_mem);
+    int io_mem;
+    for (i = 0; i < sizeof(list)/sizeof(list[0]); i++) {
+        io_mem = cpu_register_io_memory(list[i].read, list[i].write, NULL,
+                DEVICE_BIG_ENDIAN);
+        cpu_register_physical_memory(list[i].start_addr, list[i].size, io_mem);
+    }
 
-    io_mem = cpu_register_io_memory(my_cpu_read_fct_pixis,
-            my_cpu_write_fct_pixis, NULL, DEVICE_BIG_ENDIAN);
-    cpu_register_physical_memory(PIXIS_START, PIXIS_SIZE, io_mem);
-
-    int pic_mem_mapping = 0xF8040000;
     qemu_irq *pic;
     pic = smp_mpic_init(PIC_START, smp_cpus, openpic_irqs, NULL);
-    //pic = mpic_init(pic_mem_mapping, smp_cpus, openpic_irqs, NULL);
-    //PPC_IO_DPRINTF("OpenPIC init : pic_mem_index = 0x%x\n", pic_mem_index);
-    //cpu_register_physical_memory(0xF8040000, 256 * 1024, pic_mem_index);
 
-    int serial_mem_mapping_start = 0xF8004500;
-    int serial_mem_mapping_size = 0x100;
     int serial_irqs[] = {26,12};
     for (i = 0; i < 2; i++) {
         if (serial_hds[i]) {
-            serial_mm_init(serial_mem_mapping_start + i *
-                    serial_mem_mapping_size, 0, pic[12+serial_irqs[i]],
-                    333000000, serial_hds[i], 1, 1);
+            serial_mm_init(SERIAL_START + i *
+                    0x100, 0, pic[12+serial_irqs[i]], 333000000, serial_hds[i],
+                    1, 1);
         }
     }
 
@@ -646,7 +481,7 @@ static void ppc_simple_init (ram_addr_t ram_size,
     };
     DPRINTF("%s : registering %d network eTSEC(s)\n", __func__, nb_nics);
     for (i = 0; i < nb_nics; i++) {
-        etsec_create(0xF8024000 + 0x1000 * i, &nd_table[i],
+        etsec_create(ETSEC_START + 0x1000 * i, &nd_table[i],
         pic[12+etsec_irqs[i][0]], pic[12+etsec_irqs[i][1]],
         pic[12+etsec_irqs[i][2]]);
     }
