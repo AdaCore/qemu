@@ -622,7 +622,8 @@ static void ppc_simple_init (ram_addr_t ram_size,
 
     int pic_mem_mapping = 0xF8040000;
     qemu_irq *pic;
-    pic = mpic_init(pic_mem_mapping, smp_cpus, openpic_irqs, NULL);
+    pic = smp_mpic_init(PIC_START, smp_cpus, openpic_irqs, NULL);
+    //pic = mpic_init(pic_mem_mapping, smp_cpus, openpic_irqs, NULL);
     //PPC_IO_DPRINTF("OpenPIC init : pic_mem_index = 0x%x\n", pic_mem_index);
     //cpu_register_physical_memory(0xF8040000, 256 * 1024, pic_mem_index);
 
