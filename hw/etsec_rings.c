@@ -481,7 +481,7 @@ static void rx_init_frame(eTSEC *etsec, const uint8_t *buf, size_t size)
         etsec->rx_fcb_size = 0;
     }
 
-    if (etsec->rx_buffer == NULL) {
+    if (etsec->rx_buffer != NULL) {
         g_free(etsec->rx_buffer);
     }
 
