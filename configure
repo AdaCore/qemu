@@ -521,11 +521,12 @@ Darwin)
   else
     QEMU_CFLAGS="-mdynamic-no-pic $QEMU_CFLAGS"
   fi
-  cocoa="yes"
-  audio_drv_list="coreaudio"
-  audio_possible_drivers="coreaudio sdl fmod"
-  LDFLAGS="-framework CoreFoundation -framework IOKit $LDFLAGS"
-  libs_softmmu="-F/System/Library/Frameworks -framework Cocoa -framework IOKit $libs_softmmu"
+# Disable Cocoa
+#  cocoa="yes"
+#  audio_drv_list="coreaudio"
+#  audio_possible_drivers="coreaudio sdl fmod"
+#  LDFLAGS="-framework CoreFoundation -framework IOKit $LDFLAGS"
+#  libs_softmmu="-F/System/Library/Frameworks -framework Cocoa -framework IOKit $libs_softmmu"
   # Disable attempts to use ObjectiveC features in os/object.h since they
   # won't work when we're compiling with gcc as a C compiler.
   QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
