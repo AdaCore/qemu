@@ -827,8 +827,8 @@ Darwin)
   hvf="yes"
   LDFLAGS_SHARED="-bundle -undefined dynamic_lookup"
   if [ "$cpu" = "x86_64" ] ; then
-    QEMU_CFLAGS="-arch x86_64 $QEMU_CFLAGS"
-    LDFLAGS="-arch x86_64 $LDFLAGS"
+    QEMU_CFLAGS="$QEMU_CFLAGS"
+    LDFLAGS="$LDFLAGS"
   fi
   cocoa="yes"
   audio_drv_list="coreaudio try-sdl"
