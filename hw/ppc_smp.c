@@ -393,7 +393,7 @@ static void ppc_smp_init(ram_addr_t ram_size,
         hw_error("qemu: could not load PPC PREP bios '%s'\n", bios_name);
     }
     if (filename) {
-        qemu_free(filename);
+        g_free(filename);
     }
 
     if (linux_boot) {
@@ -438,9 +438,9 @@ static void ppc_smp_init(ram_addr_t ram_size,
     }
 
     qemu_irq ** openpic_irqs;
-    openpic_irqs = qemu_mallocz(smp_cpus * sizeof(qemu_irq *));
+    openpic_irqs = g_malloc0(smp_cpus * sizeof(qemu_irq *));
     openpic_irqs[0] =
-            qemu_mallocz(smp_cpus * sizeof(qemu_irq) * OPENPIC_OUTPUT_NB);
+            g_malloc0(smp_cpus * sizeof(qemu_irq) * OPENPIC_OUTPUT_NB);
 
     for (i = 0; i < smp_cpus; i++) {
             switch (PPC_INPUT(env[i])) {

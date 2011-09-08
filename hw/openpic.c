@@ -1707,7 +1707,7 @@ qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
         {mpic_cpu_read, mpic_cpu_write, MPIC_CPU_REG_START, MPIC_CPU_REG_SIZE},
     };
 
-    mpp = qemu_mallocz(sizeof(openpic_t));
+    mpp = g_malloc0(sizeof(openpic_t));
 
     for (i = 0; i < sizeof(list)/sizeof(list[0]); i++) {
         int mem_index;
@@ -1739,6 +1739,6 @@ qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
     return qemu_allocate_irqs(openpic_set_irq, mpp, mpp->max_irq);
 
 free:
-    qemu_free(mpp);
+    g_free(mpp);
     return NULL;
 }
