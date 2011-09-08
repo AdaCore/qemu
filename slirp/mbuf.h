@@ -82,12 +82,13 @@ struct m_hdr {
 struct mbuf {
 	struct	m_hdr m_hdr;
 	Slirp *slirp;
+	bool     arp_requested;
+	uint64_t expiration_date;
 	union M_dat {
 		char	m_dat_[1]; /* ANSI don't like 0 sized arrays */
 		char	*m_ext_;
-	} M_dat;
-    bool     arp_requested;
-    uint64_t expiration_date;
+	} M_dat; /* This is a "flexible array member". It should always remain
+                    the last member of the structure */
 };
 
 #define m_next		m_hdr.mh_next
