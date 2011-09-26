@@ -334,7 +334,7 @@ static void access_with_adjusted_size(target_phys_addr_t addr,
                                       unsigned size,
                                       unsigned access_size_min,
                                       unsigned access_size_max,
-                                      void (*access)(void *opaque,
+                                      void (*access_p)(void *opaque,
                                                      target_phys_addr_t addr,
                                                      uint64_t *value,
                                                      unsigned size,
@@ -356,7 +356,7 @@ static void access_with_adjusted_size(target_phys_addr_t addr,
     access_mask = -1ULL >> (64 - access_size * 8);
     for (i = 0; i < size; i += access_size) {
         /* FIXME: big-endian support */
-        access(opaque, addr + i, value, access_size, i * 8, access_mask);
+        access_p(opaque, addr + i, value, access_size, i * 8, access_mask);
     }
 }
 
