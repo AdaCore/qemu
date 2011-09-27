@@ -1857,9 +1857,9 @@ static void win_stdio_wait_func(void *opaque)
             int j;
             if (kev->uChar.AsciiChar != 0) {
                 for (j = 0; j < kev->wRepeatCount; j++)
-                    if (qemu_chr_can_read(chr)) {
+                    if (qemu_chr_be_can_write(chr)) {
                         uint8_t c = kev->uChar.AsciiChar;
-                        qemu_chr_read(chr, &c, 1);
+                        qemu_chr_be_write(chr, &c, 1);
                     }
             }
         }
@@ -1910,14 +1910,28 @@ static void win_stdio_thread_wait_func(void *opaque)
 {
     CharDriverState *chr = opaque;
 
-    if (qemu_chr_can_read(chr)) {
-        qemu_chr_read(chr, &win_stdio_buf, 1);
+    if (qemu_chr_be_can_write(chr)) {
+        qemu_chr_be_write(chr, &win_stdio_buf, 1);
     }
 
     SetEvent(hInputDoneEvent);
 }
 
-static CharDriverState *qemu_chr_open_win_stdio(QemuOpts *opts)
+static void qemu_chr_set_echo_win_stdio(CharDriverState *chr, bool echo)
+{
+    DWORD dwMode = 0;
+
+    GetConsoleMode(hStdIn, &dwMode);
+
+    if (echo) {
+        SetConsoleMode(hStdIn, dwMode | ENABLE_ECHO_INPUT);
+    } else {
+        SetConsoleMode(hStdIn, dwMode & ~ENABLE_ECHO_INPUT);
+    }
+}
+
+static int qemu_chr_open_win_stdio(QemuOpts         *opts,
+                                                CharDriverState **_chr)
 {
     CharDriverState *chr;
     DWORD            dwMode;
@@ -1933,12 +1947,12 @@ static CharDriverState *qemu_chr_open_win_stdio(QemuOpts *opts)
 
     if (stdio_nb_clients >= STDIO_MAX_CLIENTS
         || ((display_type != DT_NOGRAPHIC) && (stdio_nb_clients != 0))) {
-        return NULL;
+        return -EIO;
     }
 
-    chr = qemu_mallocz(sizeof(CharDriverState));
+    chr = g_malloc0(sizeof(CharDriverState));
     if (!chr) {
-        return NULL;
+        return -ENOMEM;
     }
 
     chr->chr_write = win_stdio_write;
@@ -1971,13 +1985,23 @@ static CharDriverState *qemu_chr_open_win_stdio(QemuOpts *opts)
         }
     }
 
+    dwMode |= ENABLE_LINE_INPUT;
+
     stdio_clients[stdio_nb_clients++] = chr;
     if (stdio_nb_clients == 1 && is_console) {
         /* set the terminal in raw mode */
         /* ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS */
-        SetConsoleMode(hStdIn, ENABLE_PROCESSED_INPUT);
+        dwMode |= ENABLE_PROCESSED_INPUT;
     }
-    return chr;
+
+    SetConsoleMode(hStdIn, dwMode);
+
+    chr->chr_set_echo = qemu_chr_set_echo_win_stdio;
+    qemu_chr_fe_set_echo(chr, false);
+
+    *_chr = chr;
+
+    return 0;
 }
 #endif /* !_WIN32 */
 
