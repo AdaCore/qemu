@@ -845,6 +845,8 @@ static void openpic_cpu_write (void *opaque, target_phys_addr_t addr, uint32_t v
 #endif
     case 0x80: /* PCTP */
         dst->pctp = val & 0x0000000F;
+        for (idx = 0; idx < MAX_IRQ; idx++)
+            openpic_update_irq(opp, idx);
         break;
     case 0x90: /* WHOAMI */
         /* Read-only register */
