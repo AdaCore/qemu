@@ -2149,12 +2149,12 @@ CPUState *ppc405cr_init (MemoryRegion ram_memories[4],
     ppc405_dma_init(env, dma_irqs);
     /* Serial ports */
     if (serial_hds[0] != NULL) {
-        serial_mm_init(0xef600300, 0, pic[0], PPC_SERIAL_MM_BAUDBASE,
-                       serial_hds[0], 1, 1);
+        serial_mm_init(get_system_memory(), 0xef600300, 0, pic[0],
+                       PPC_SERIAL_MM_BAUDBASE, serial_hds[0], 1, 1);
     }
     if (serial_hds[1] != NULL) {
-        serial_mm_init(0xef600400, 0, pic[1], PPC_SERIAL_MM_BAUDBASE,
-                       serial_hds[1], 1, 1);
+        serial_mm_init(get_system_memory(), 0xef600400, 0, pic[1],
+                       PPC_SERIAL_MM_BAUDBASE, serial_hds[1], 1, 1);
     }
     /* IIC controller */
     ppc405_i2c_init(0xef600500, pic[2]);
@@ -2504,12 +2504,12 @@ CPUState *ppc405ep_init (MemoryRegion ram_memories[2],
     ppc405_gpio_init(0xef600700);
     /* Serial ports */
     if (serial_hds[0] != NULL) {
-        serial_mm_init(0xef600300, 0, pic[0], PPC_SERIAL_MM_BAUDBASE,
-                       serial_hds[0], 1, 1);
+        serial_mm_init(get_system_memory(), 0xef600300, 0, pic[0],
+                       PPC_SERIAL_MM_BAUDBASE, serial_hds[0], 1, 1);
     }
     if (serial_hds[1] != NULL) {
-        serial_mm_init(0xef600400, 0, pic[1], PPC_SERIAL_MM_BAUDBASE,
-                       serial_hds[1], 1, 1);
+        serial_mm_init(get_system_memory(), 0xef600400, 0, pic[1],
+                       PPC_SERIAL_MM_BAUDBASE, serial_hds[1], 1, 1);
     }
     /* OCM */
     ppc405_ocm_init(env);

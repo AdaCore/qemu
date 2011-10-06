@@ -855,7 +855,8 @@ static const MemoryRegionOps serial_mm_ops[3] = {
     },
 };
 
-SerialState *serial_mm_init (target_phys_addr_t base, int it_shift,
+SerialState *serial_mm_init (MemoryRegion *address_space,
+                             target_phys_addr_t base, int it_shift,
                              qemu_irq irq, int baudbase,
                              CharDriverState *chr, int ioregister,
                              int be)
@@ -877,7 +878,7 @@ SerialState *serial_mm_init (target_phys_addr_t base, int it_shift,
     memory_region_init_io(&s->io, &serial_mm_ops[end], s,
                           "serial", 8 << it_shift);
     if (ioregister) {
-        memory_region_add_subregion(get_system_memory(), base, &s->io);
+        memory_region_add_subregion(address_space, base, &s->io);
     }
     serial_update_msl(s);
     return s;
