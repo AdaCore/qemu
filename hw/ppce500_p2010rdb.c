@@ -668,10 +668,10 @@ static void fsl_e500_init(fsl_e500_config *config,
         bios_offset = qemu_ram_alloc(NULL, "p2010.bios", bios_size);
         fl_sectors  = (bios_size + 65535) >> 16;
 
-        if (pflash_cfi02_register((uint32_t)(-bios_size), bios_offset,
-                                  dinfo->bdrv, 65536, fl_sectors, 1,
-                                  2, 0x0001, 0x22DA, 0x0000, 0x0000, 0x555, 0x2AA,
-                                  1) == NULL) {
+        if (pflash_cfi02_register((uint32_t)(-bios_size), NULL, "p2010.bios",
+                                  bios_size, dinfo->bdrv, 65536, fl_sectors,
+                                  1, 2, 0x0001, 0x22DA, 0x0000, 0x0000,
+                                  0x555, 0x2AA, 1) == NULL) {
             fprintf(stderr, "%s: Failed to load flash image\n", __func__);
             abort();
         }
@@ -731,13 +731,13 @@ static void fsl_e500_init(fsl_e500_config *config,
 
     /* Serial */
     if (serial_hds[0]) {
-        serial_mm_init(P2010RDB_SERIAL0_REGS_BASE,
+        serial_mm_init(ccsr_space, P2010RDB_SERIAL0_REGS_BASE,
                        0, mpic[config->serial_irq], 399193,
                        serial_hds[0], 1, 1);
     }
 
     if (serial_hds[1]) {
-        serial_mm_init(P2010RDB_SERIAL1_REGS_BASE,
+        serial_mm_init(ccsr_space, P2010RDB_SERIAL1_REGS_BASE,
                        0, mpic[config->serial_irq], 399193,
                        serial_hds[0], 1, 1);
     }
