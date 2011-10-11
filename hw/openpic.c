@@ -67,7 +67,7 @@
 #define MAX_DBL     0
 #define MAX_MBX     0
 #define MAX_TMR     4
-#define VECTOR_BITS 8
+#define VECTOR_BITS 16
 #define MAX_IPI     4
 #define VID         0x03 /* MPIC version ID */
 #define VENI        0x00000000 /* Vendor ID */
@@ -307,8 +307,8 @@ static void IRQ_local_pipe (openpic_t *opp, int n_CPU, int n_IRQ)
     priority = IPVP_PRIORITY(src->ipvp);
     if (priority <= dst->pctp) {
         /* Too low priority */
-        DPRINTF("%s: IRQ %d has too low priority on CPU %d\n",
-                __func__, n_IRQ, n_CPU);
+        DPRINTF("%s: IRQ %d has too low priority (%d < %d) on CPU %d\n",
+                __func__, n_IRQ, priority, dst->pctp, n_CPU);
         return;
     }
     if (IRQ_testbit(&dst->raised, n_IRQ)) {
@@ -425,7 +425,7 @@ static void openpic_reset (void *opaque)
     opp->frep = ((OPENPIC_EXT_IRQ - 1) << 16) | ((MAX_CPU - 1) << 8) | VID;
     opp->veni = VENI;
     opp->pint = 0x00000000;
-    opp->spve = 0x000000FF;
+    opp->spve = IPVP_VECTOR_MASK;
     opp->tifr = 0x003F7A00;
     /* ? */
     opp->micr = 0x00000000;
@@ -609,8 +609,15 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
         opp->glbc = val & ~0x80000000;
         DPRINTF("%s: GLBC\n", __func__);
         break;
+    case 0x80: /* PCTP */
+        opp->dst[0].pctp = val & 0x0000000F;
+        for (idx = 0; idx < MAX_IRQ; idx++)
+            openpic_update_irq(opp, idx);
+        break;
+#if 0
     case 0x80: /* VENI */
         break;
+#endif
     case 0x90: /* PINT */
         for (idx = 0; idx < opp->nb_cpus; idx++) {
             if ((val & (1 << idx)) && !(opp->pint & (1 << idx))) {
@@ -641,7 +648,7 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
         break;
 #endif
     case 0xE0: /* SPVE */
-        opp->spve = val & 0x000000FF;
+        opp->spve = val & IPVP_VECTOR_MASK;
         DPRINTF("%s: SPVE\n", __func__);
         break;
     case 0xF0: /* TIFR */
