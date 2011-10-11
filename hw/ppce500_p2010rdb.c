@@ -42,8 +42,6 @@
 //#define DEBUG_P2010
 
 #define MAX_ETSEC_CONTROLLERS 3
-#define BIOS_SIZE (1 * 1024 * 1024)
-#define BIOS_FILENAME "p2010rdb_rom.bin"
 
 #define UIMAGE_LOAD_BASE           0
 #define DTC_LOAD_PAD               0x500000
@@ -52,6 +50,9 @@
 #define INITRD_PAD_MASK            0xFFFFFF
 
 #define P2010RDB_CCSRBAR_BASE       0xff700000
+#if 0
+#define P2010RDB_CCSRBAR_BASE       0xf3000000 /* u-boot 0xffe00000 */ /* vxworks bootapp 0xF3000000 */ /* vxworks653: 0xe0000000 */
+#endif
 #define P2010RDB_LOCAL_CONF         0x00000
 #define P2010RDB_DDR_CONTROLLER     0x02000
 #define P2010RDB_SERIAL0_REGS_BASE  0x04500
