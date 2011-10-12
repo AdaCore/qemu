@@ -31,10 +31,6 @@
 #include "qapi/qobject-output-visitor.h"
 #include "qemu/cutils.h"
 
-#ifndef AI_ADDRCONFIG
-# define AI_ADDRCONFIG 0
-#endif
-
 #ifndef AI_V4MAPPED
 # define AI_V4MAPPED 0
 #endif
@@ -42,7 +38,6 @@
 #ifndef AI_NUMERICSERV
 # define AI_NUMERICSERV 0
 #endif
-
 
 static int inet_getport(struct addrinfo *e)
 {
@@ -385,7 +380,7 @@ static struct addrinfo *inet_parse_connect_saddr(InetSocketAddress *saddr,
 
     memset(&ai, 0, sizeof(ai));
 
-    ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
+    ai.ai_flags = AI_CANONNAME;
     if (atomic_read(&useV4Mapped)) {
         ai.ai_flags |= AI_V4MAPPED;
     }
@@ -472,7 +467,7 @@ static int inet_dgram_saddr(InetSocketAddress *sraddr,
 
     /* lookup peer addr */
     memset(&ai,0, sizeof(ai));
-    ai.ai_flags = AI_CANONNAME | AI_V4MAPPED | AI_ADDRCONFIG;
+    ai.ai_flags = AI_CANONNAME | AI_V4MAPPED;
     ai.ai_family = inet_ai_family_from_address(sraddr, &err);
     ai.ai_socktype = SOCK_DGRAM;
 
