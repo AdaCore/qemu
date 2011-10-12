@@ -22,10 +22,6 @@
 #include "qemu_socket.h"
 #include "qemu-common.h" /* for qemu_isdigit */
 
-#ifndef AI_ADDRCONFIG
-# define AI_ADDRCONFIG 0
-#endif
-
 static const int on=1, off=0;
 
 /* used temporarely until all users are converted to QemuOpts */
@@ -113,7 +109,7 @@ int inet_listen_opts(QemuOpts *opts, int port_offset, Error **errp)
     int slisten, rc, to, port_min, port_max, p;
 
     memset(&ai,0, sizeof(ai));
-    ai.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
+    ai.ai_flags = AI_PASSIVE;
     ai.ai_family = PF_INET;     /* IPv4 is the default address family */
     ai.ai_socktype = SOCK_STREAM;
 
@@ -217,7 +213,7 @@ int inet_connect_opts(QemuOpts *opts, Error **errp)
     bool block;
 
     memset(&ai,0, sizeof(ai));
-    ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
+    ai.ai_flags = AI_CANONNAME;
     ai.ai_family = PF_INET;     /* IPv4 is the default address family */
     ai.ai_socktype = SOCK_STREAM;
 
@@ -303,7 +299,7 @@ int inet_dgram_opts(QemuOpts *opts)
 
     /* lookup peer addr */
     memset(&ai,0, sizeof(ai));
-    ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
+    ai.ai_flags = AI_CANONNAME;
     ai.ai_family = PF_INET;     /* IPv4 is the default address family */
     ai.ai_socktype = SOCK_DGRAM;
 
