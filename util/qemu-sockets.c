@@ -26,9 +26,6 @@
 #include "qemu/sockets.h"
 #include "qemu/main-loop.h"
 
-#ifndef AI_ADDRCONFIG
-# define AI_ADDRCONFIG 0
-#endif
 #ifndef AI_V4MAPPED
 # define AI_V4MAPPED 0
 #endif
@@ -338,7 +335,7 @@ static struct addrinfo *inet_parse_connect_opts(QemuOpts *opts, Error **errp)
 
     memset(&ai, 0, sizeof(ai));
 
-    ai.ai_flags = AI_CANONNAME | AI_V4MAPPED | AI_ADDRCONFIG;
+    ai.ai_flags = AI_CANONNAME | AI_V4MAPPED;
     ai.ai_family = PF_INET;
     ai.ai_socktype = SOCK_STREAM;
 
@@ -438,7 +435,7 @@ int inet_dgram_opts(QemuOpts *opts, Error **errp)
 
     /* lookup peer addr */
     memset(&ai,0, sizeof(ai));
-    ai.ai_flags = AI_CANONNAME | AI_V4MAPPED | AI_ADDRCONFIG;
+    ai.ai_flags = AI_CANONNAME | AI_V4MAPPED;
     ai.ai_family = PF_INET;
     ai.ai_socktype = SOCK_DGRAM;
 
