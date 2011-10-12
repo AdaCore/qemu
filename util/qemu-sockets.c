@@ -26,9 +26,7 @@
 #include "qemu/sockets.h"
 #include "qemu/main-loop.h"
 
-#ifndef AI_ADDRCONFIG
-# define AI_ADDRCONFIG 0
-#endif
+static const int on=1, off=0;
 
 /* used temporarily until all users are converted to QemuOpts */
 QemuOptsList socket_optslist = {
@@ -112,7 +110,7 @@ int inet_listen_opts(QemuOpts *opts, int port_offset, Error **errp)
     int slisten, rc, to, port_min, port_max, p;
 
     memset(&ai,0, sizeof(ai));
-    ai.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
+    ai.ai_flags = AI_PASSIVE;
     ai.ai_family = PF_INET;
     ai.ai_socktype = SOCK_STREAM;
 
@@ -318,7 +316,7 @@ static struct addrinfo *inet_parse_connect_opts(QemuOpts *opts, Error **errp)
 
     memset(&ai, 0, sizeof(ai));
 
-    ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
+    ai.ai_flags = AI_CANONNAME;
     ai.ai_family = PF_INET;
     ai.ai_socktype = SOCK_STREAM;
 
@@ -418,7 +416,7 @@ int inet_dgram_opts(QemuOpts *opts, Error **errp)
 
     /* lookup peer addr */
     memset(&ai,0, sizeof(ai));
-    ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
+    ai.ai_flags = AI_CANONNAME;
     ai.ai_family = PF_INET;
     ai.ai_socktype = SOCK_DGRAM;
 
