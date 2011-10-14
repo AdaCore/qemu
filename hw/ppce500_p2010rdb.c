@@ -626,7 +626,6 @@ static void fsl_e500_init(fsl_e500_config *config,
     target_phys_addr_t  loadaddr    = UIMAGE_LOAD_BASE;
     target_long         kernel_size = 0;
     target_ulong        dt_base     = 0;
-    ram_addr_t          bios_offset = 0;
     int                 bios_size   = 0;
     MemoryRegion       *ram, *misc_io;
     qemu_irq           *irqs, *mpic;
@@ -666,7 +665,6 @@ static void fsl_e500_init(fsl_e500_config *config,
     dinfo           = drive_get(IF_PFLASH, 0, 0);
     if (dinfo) {
         bios_size   = bdrv_getlength(dinfo->bdrv);
-        bios_offset = qemu_ram_alloc(NULL, "p2010.bios", bios_size);
         fl_sectors  = (bios_size + 65535) >> 16;
 
         if (pflash_cfi02_register((uint32_t)(-bios_size), NULL, "p2010.bios",
