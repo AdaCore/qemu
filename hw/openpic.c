@@ -63,12 +63,12 @@
 
 #elif defined(USE_MPCxxx)
 
-#define MAX_CPU    15
+#define MAX_CPU    32
 #define MAX_IRQ   128
 #define MAX_DBL     0
 #define MAX_MBX     0
 #define MAX_TMR     4
-#define VECTOR_BITS 16
+#define VECTOR_BITS 8
 #define MAX_IPI     4
 #define VID         0x03 /* MPIC version ID */
 #define VENI        0x00000000 /* Vendor ID */
@@ -221,6 +221,7 @@ typedef struct openpic_t {
     /* Sub-regions */
     MemoryRegion sub_io_mem[7];
 
+
     /* Global registers */
     uint32_t frep; /* Feature reporting register */
     uint32_t glbc; /* Global configuration register  */
@@ -318,8 +319,8 @@ static void IRQ_local_pipe (openpic_t *opp, int n_CPU, int n_IRQ)
     priority = IPVP_PRIORITY(src->ipvp);
     if (priority <= dst->pctp) {
         /* Too low priority */
-        DPRINTF("%s: IRQ %d has too low priority (%d < %d) on CPU %d\n",
-                __func__, n_IRQ, priority, dst->pctp, n_CPU);
+        DPRINTF("%s: IRQ %d has too low priority on CPU %d\n",
+                __func__, n_IRQ, n_CPU);
         return;
     }
     if (IRQ_testbit(&dst->raised, n_IRQ)) {
@@ -436,7 +437,7 @@ static void openpic_reset (void *opaque)
     opp->frep = ((OPENPIC_EXT_IRQ - 1) << 16) | ((MAX_CPU - 1) << 8) | VID;
     opp->veni = VENI;
     opp->pint = 0x00000000;
-    opp->spve = IPVP_VECTOR_MASK;
+    opp->spve = 0x000000FF;
     opp->tifr = 0x003F7A00;
     /* ? */
     opp->micr = 0x00000000;
@@ -627,6 +628,9 @@ static void openpic_gbl_write (void *opaque, target_phys_addr_t addr, uint32_t v
     case 0x1080: /* VENI */
         break;
 #endif
+    case 0xE0: /* SPVE */
+        opp->spve = val & IPVP_VECTOR_MASK;
+        break;
     case 0x1090: /* PINT */
         for (idx = 0; idx < opp->nb_cpus; idx++) {
             if ((val & (1 << idx)) && !(opp->pint & (1 << idx))) {
@@ -693,16 +697,13 @@ static uint32_t openpic_gbl_read (void *opaque, target_phys_addr_t addr)
     case 0x1090: /* PINT */
         retval = 0x00000000;
         break;
-    case 0xA0:
-        DPRINTF("%s: IACK\n", __func__);
-        retval = openpic_cpu_read(opaque, addr);
-        break;
     case 0x40:
     case 0x50:
     case 0x60:
     case 0x70:
     case 0x80:
     case 0x90:
+    case 0xA0:
     case 0xB0:
         retval = openpic_cpu_read_internal(opp, addr, get_current_cpu());
         break;
@@ -981,7 +982,6 @@ static uint32_t openpic_cpu_read_internal(void *opaque, target_phys_addr_t addr,
 #if MAX_IPI > 0
     case 0x40: /* IDE */
     case 0x50:
-        DPRINTF("%s: IDE\n", __func__);
         idx = (addr - 0x40) >> 4;
         retval = read_IRQreg_ide(opp, opp->irq_ipi0 + idx);
         break;
@@ -1277,14 +1277,7 @@ qemu_irq *openpic_init (MemoryRegion **pmem, int nb_cpus,
 
 static void mpic_irq_raise(openpic_t *mpp, int n_CPU, IRQ_src_t *src)
 {
-    int n_ci = IDR_CI0 - n_CPU;
-
-    if(test_bit(&src->ide, n_ci)) {
-        qemu_irq_raise(mpp->dst[n_CPU].irqs[OPENPIC_OUTPUT_CINT]);
-    }
-    else {
-        qemu_irq_raise(mpp->dst[n_CPU].irqs[OPENPIC_OUTPUT_INT]);
-    }
+    qemu_irq_raise(mpp->dst[n_CPU].irqs[OPENPIC_OUTPUT_INT]);
 }
 
 static void mpic_reset (void *opaque)
@@ -1299,7 +1292,15 @@ static void mpic_reset (void *opaque)
     mpp->pint = 0x00000000;
     mpp->spve = 0x0000FFFF;
     /* Initialise IRQ sources */
-    for (i = 0; i < mpp->max_irq; i++) {
+    for (i = 0; i < mpp->irq_ipi0; i++) {
+        mpp->src[i].ipvp = 0x80800000;
+        mpp->src[i].ide  = 0x00000001;
+    }
+    for (i = mpp->irq_ipi0; i < mpp->irq_ipi0 + MAX_IPI; i++) {
+        mpp->src[i].ipvp = 0x80800000;
+        mpp->src[i].ide  = 0x00000000;
+    }
+    for (i = mpp->irq_ipi0 + MAX_IPI; i < mpp->max_irq; i++) {
         mpp->src[i].ipvp = 0x80800000;
         mpp->src[i].ide  = 0x00000001;
     }
@@ -1371,6 +1372,8 @@ static uint32_t mpic_timer_read (void *opaque, target_phys_addr_t addr)
     addr &= 0xFFFF;
     cpu = addr >> 12;
     idx = (addr >> 6) & 0x3;
+    DPRINTF("%s: cpu:%d idx:%d addr " TARGET_FMT_plx "\n", __func__,
+            cpu, idx, addr & 0x30);
     switch (addr & 0x30) {
     case 0x00: /* gtccr */
         retval = mpp->timers[idx].ticc;

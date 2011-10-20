@@ -241,6 +241,7 @@ obj-i386-$(CONFIG_SPICE) += qxl.o qxl-logger.o qxl-render.o
 
 # shared objects
 obj-ppc-y = ppc.o ppc_booke.o
+obj-ppc-$(CONFIG_OPENPIC) += openpic.o
 # PREP target
 obj-ppc-y += mc146818rtc.o
 obj-ppc-y += ppc_prep.o
@@ -261,8 +262,6 @@ obj-ppc-y += ppce500_mpc8544ds.o mpc8544_guts.o ppce500_spin.o ppce500_p2010rdb.
 obj-ppc-y += virtex_ml507.o
 obj-ppc-$(CONFIG_KVM) += kvm_ppc.o
 obj-ppc-$(CONFIG_FDT) += device_tree.o
-# PowerPC OpenPIC
-obj-ppc-y += openpic.o
 
 # Xilinx PPC peripherals
 obj-ppc-y += xilinx_intc.o
