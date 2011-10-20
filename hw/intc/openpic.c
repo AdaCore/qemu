@@ -580,6 +580,9 @@ static void openpic_gbl_write(void *opaque, hwaddr addr, uint64_t val,
     case 0xB0:
         openpic_cpu_write_internal(opp, addr, val, get_current_cpu());
         break;
+    case 0xE0: /* SPVE */
+        opp->spve = val & opp->vector_mask;
+        break;
     case 0x1000: /* FRR */
         break;
     case 0x1020: /* GCR */
