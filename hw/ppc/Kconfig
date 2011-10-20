@@ -204,3 +204,7 @@ config T2080RDB
     default y
     select FMAN_V3
     select MEMAC
+
+config MPC8641D
+    bool
+    default y
