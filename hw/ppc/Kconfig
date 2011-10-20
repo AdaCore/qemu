@@ -155,3 +155,6 @@ config VOF
 config T2080RDB
     bool
     select DP83667
+
+config MPC8641D
+    bool
