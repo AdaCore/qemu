@@ -548,6 +548,7 @@ static void openpic_reset(DeviceState *d)
     opp->spve = -1 & opp->vector_mask;
     opp->tfrr = opp->tfrr_reset;
     /* Initialise IRQ sources */
+
     for (i = 0; i < opp->max_irq; i++) {
         opp->src[i].ivpr = opp->ivpr_reset;
         opp->src[i].idr  = opp->idr_reset;
@@ -741,6 +742,9 @@ static void openpic_gbl_write(void *opaque, hwaddr addr, uint64_t val,
     case 0xB0:
         openpic_cpu_write_internal(opp, addr, val, get_current_cpu());
         break;
+    case 0xE0: /* SPVE */
+        opp->spve = val & opp->vector_mask;
+        break;
     case 0x1000: /* FRR */
         break;
     case 0x1020: /* GCR */
@@ -820,9 +824,6 @@ static uint64_t openpic_gbl_read(void *opaque, hwaddr addr, unsigned len)
     case 0x80:
     case 0x90:
     case 0xA0:
-        DPRINTF("%s: IACK\n", __func__);
-        retval = openpic_cpu_read_internal(opp, addr, get_current_cpu());
-        break;
     case 0xB0:
         retval = openpic_cpu_read_internal(opp, addr, get_current_cpu());
         break;
