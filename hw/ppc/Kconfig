@@ -176,3 +176,6 @@ config T2080RDB
     bool
     select FMAN_V3
     select MEMAC
+
+config MPC8641D
+    bool
