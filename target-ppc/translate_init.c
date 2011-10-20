@@ -109,10 +109,6 @@ static void spr_write_clear (void *opaque, int sprn, int gprn)
     tcg_temp_free(t1);
 }
 
-static void spr_access_nop(void *opaque, int sprn, int gprn)
-{
-}
-
 #endif
 
 /* SPR common to all PowerPC */
@@ -504,6 +500,19 @@ static void spr_write_pir (void *opaque, int sprn, int gprn)
     tcg_temp_free(t0);
 }
 #endif
+
+static void spr_write_l2cr (void *opaque, int sprn, int gprn)
+{
+    TCGv t0 = tcg_temp_new();
+
+    /* Just clear the L2I and L2HWF flags that should automatically cleared
+     * after cache operation.
+     */
+
+    tcg_gen_andi_tl(t0, cpu_gpr[gprn], ~0x00200800);
+    gen_store_spr(sprn, t0);
+    tcg_temp_free(t0);
+}
 
 /* SPE specific registers */
 static void spr_read_spefscr (void *opaque, int gprn, int sprn)
@@ -1390,7 +1399,7 @@ static void gen_spr_74xx (CPUPPCState *env)
     /* XXX : not implemented */
     spr_register(env, SPR_L2CR, "L2CR",
                  SPR_NOACCESS, SPR_NOACCESS,
-                 &spr_read_generic, spr_access_nop,
+                 &spr_read_generic, &spr_write_l2cr,
                  0x00000000);
     /* Not strictly an SPR */
     vscr_init(env, 0x00010000);
@@ -5254,7 +5263,7 @@ static void init_proc_750 (CPUPPCState *env)
     /* XXX : not implemented */
     spr_register(env, SPR_L2CR, "L2CR",
                  SPR_NOACCESS, SPR_NOACCESS,
-                 &spr_read_generic, spr_access_nop,
+                 &spr_read_generic, &spr_write_l2cr,
                  0x00000000);
     /* Time base */
     gen_tbl(env);
@@ -5317,7 +5326,7 @@ static void init_proc_750cl (CPUPPCState *env)
     /* XXX : not implemented */
     spr_register(env, SPR_L2CR, "L2CR",
                  SPR_NOACCESS, SPR_NOACCESS,
-                 &spr_read_generic, spr_access_nop,
+                 &spr_read_generic, &spr_write_l2cr,
                  0x00000000);
     /* Time base */
     gen_tbl(env);
@@ -5503,7 +5512,7 @@ static void init_proc_750cx (CPUPPCState *env)
     /* XXX : not implemented */
     spr_register(env, SPR_L2CR, "L2CR",
                  SPR_NOACCESS, SPR_NOACCESS,
-                 &spr_read_generic, spr_access_nop,
+                 &spr_read_generic, &spr_write_l2cr,
                  0x00000000);
     /* Time base */
     gen_tbl(env);
@@ -5570,7 +5579,7 @@ static void init_proc_750fx (CPUPPCState *env)
     /* XXX : not implemented */
     spr_register(env, SPR_L2CR, "L2CR",
                  SPR_NOACCESS, SPR_NOACCESS,
-                 &spr_read_generic, spr_access_nop,
+                 &spr_read_generic, &spr_write_l2cr,
                  0x00000000);
     /* Time base */
     gen_tbl(env);
@@ -5647,7 +5656,7 @@ static void init_proc_750gx (CPUPPCState *env)
     /* XXX : not implemented (XXX: different from 750fx) */
     spr_register(env, SPR_L2CR, "L2CR",
                  SPR_NOACCESS, SPR_NOACCESS,
-                 &spr_read_generic, spr_access_nop,
+                 &spr_read_generic, &spr_write_l2cr,
                  0x00000000);
     /* Time base */
     gen_tbl(env);
@@ -5783,7 +5792,7 @@ static void init_proc_755 (CPUPPCState *env)
     /* XXX : not implemented */
     spr_register(env, SPR_L2CR, "L2CR",
                  SPR_NOACCESS, SPR_NOACCESS,
-                 &spr_read_generic, spr_access_nop,
+                 &spr_read_generic, &spr_write_l2cr,
                  0x00000000);
     /* XXX : not implemented */
     spr_register(env, SPR_L2PMCR, "L2PMCR",
