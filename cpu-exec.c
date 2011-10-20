@@ -771,7 +771,7 @@ static void trace_after_exec(unsigned long next_tb)
         trace_current->op = TRACE_OP_BLOCK;
         trace_current_tb->tflags |= TRACE_OP_BLOCK;
     }
-    trace_push_entry();
+    exec_trace_push_entry();
 }
 
 static void trace_at_fault(CPUArchState *e)
@@ -808,5 +808,5 @@ static void trace_at_fault(CPUArchState *e)
         trace_current->op = TRACE_OP_FAULT;
     }
 
-    trace_push_entry();
+    exec_trace_push_entry();
 }

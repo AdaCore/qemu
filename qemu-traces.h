@@ -31,7 +31,7 @@
 #ifndef QEMU_TRACE_H
 #define QEMU_TRACE_H
 
-
+#include <stdint.h>
 
 /* File header definition.  */
 struct trace_header {
@@ -96,6 +96,10 @@ struct trace_entry64 {
 #define TRACE_OP_BR0   0x01     /* Branch 0 taken at pc.  */
 #define TRACE_OP_BR1   0x02
 
+#define TRACE_OP_SPECIAL 0x80	/* Special info in trace file.  */
+/* Special operations (in size).  */
+#define TRACE_SPECIAL_LOADADDR 0x1	/* Module loaded at PC.  */
+
 /* Only used internally in cpu-exec.c.  */
 #define TRACE_OP_HIST_SET   0x100 /* Set in the map file.  */
 #define TRACE_OP_HIST_CACHE 0x200 /* Has already been searched.  */
@@ -110,8 +114,8 @@ struct trace_entry64 {
 extern struct trace_entry *trace_current;
 extern int                 tracefile_enabled;
 
-void trace_init(const char *optarg);
-void trace_cleanup(void);
-void trace_push_entry(void);
-
+void exec_trace_init(const char *optarg);
+void exec_trace_cleanup(void);
+void exec_trace_push_entry(void);
+void exec_trace_special(uint16_t subop, uint32_t data);
 #endif /* QEMU_TRACE_H */

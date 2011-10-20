@@ -93,7 +93,7 @@ void tracefile_history_for_tb_search(TranslationBlock *tb)
     }
 }
 
-static void trace_flush(void)
+static void exec_trace_flush(void)
 {
     size_t len = (trace_current - trace_entries) * sizeof(trace_entries[0]);
 
@@ -104,15 +104,15 @@ static void trace_flush(void)
     }
 }
 
-void trace_cleanup(void)
+void exec_trace_cleanup(void)
 {
     if (tracefile_enabled) {
-        trace_flush();
+        exec_trace_flush();
         fclose(tracefile);
     }
 }
 
-static void read_map_file(char **poptarg)
+static void exec_read_map_file(char **poptarg)
 {
     char *filename = *poptarg;
     char *efilename = strchr(filename, ',');
@@ -228,7 +228,7 @@ static void read_map_file(char **poptarg)
     *efilename = ',';
 }
 
-void trace_init(const char *optarg)
+void exec_trace_init(const char *optarg)
 {
     static struct trace_header hdr  = { QEMU_TRACE_MAGIC };
     static int opt_trace_seen;
@@ -250,7 +250,7 @@ void trace_init(const char *optarg)
         } else if (strstart(optarg, "noappend,", &optarg)) {
             noappend = 1;
         } else if (strstart(optarg, "histmap=", &optarg)) {
-            read_map_file((char **)&optarg);
+            exec_read_map_file((char **)&optarg);
             kind = QEMU_TRACE_KIND_HISTORY;
         } else {
             break;
@@ -279,11 +279,11 @@ void trace_init(const char *optarg)
         exit(1);
     }
 
-    atexit(trace_cleanup);
+    atexit(exec_trace_cleanup);
     tracefile_enabled = 1;
 }
 
-void trace_push_entry(void)
+void exec_trace_push_entry(void)
 {
 #ifdef DEBUG_TRACE
     printf("trace: %08x-%08x op=%04x\n",
@@ -293,6 +293,21 @@ void trace_push_entry(void)
 
     if (++trace_current == trace_entries + MAX_TRACE_ENTRIES
         || tracefile_nobuf) {
-        trace_flush();
+        exec_trace_flush();
+    }
+}
+
+void exec_trace_special(uint16_t subop, uint32_t data)
+{
+    if (!tracefile_enabled) {
+        return;
+    }
+
+    trace_current->pc = data;
+    trace_current->size = subop;
+    trace_current->op = TRACE_OP_SPECIAL;
+    if (++trace_current == trace_entries + MAX_TRACE_ENTRIES
+        || tracefile_nobuf) {
+        exec_trace_flush();
     }
 }
