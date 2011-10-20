@@ -6657,6 +6657,8 @@ static void init_proc_e600 (CPUPPCState *env)
     init_excp_7450(env);
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
+    /* Thermal management */
+    gen_spr_thrm(env);
     /* Allocate hardware IRQ controller */
     ppc6xx_irq_init(env);
 }
