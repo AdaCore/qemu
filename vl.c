@@ -4055,7 +4055,7 @@ int main(int argc, char **argv, char **envp)
                 gnatbus_save_optargs(optarg);
                 break;
             case QEMU_OPTION_exec_trace:
-                trace_init(optarg);
+                exec_trace_init(optarg);
                 break;
             default:
                 os_parse_cmd_args(popt->index, optarg);
