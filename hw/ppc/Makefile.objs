@@ -22,3 +22,5 @@ obj-$(CONFIG_E500) += mpc8544_guts.o ppce500_spin.o
 obj-$(CONFIG_E500) += p2010rdb.o
 # PowerPC 440 Xilinx ML507 reference board.
 obj-$(CONFIG_XILINX) += virtex_ml507.o
+# SMP target
+obj-y += wrSbc8641d.o
