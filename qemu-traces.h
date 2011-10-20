@@ -31,7 +31,7 @@
 #ifndef QEMU_TRACE_H
 #define QEMU_TRACE_H
 
-
+#include <stdint.h>
 
 /* File header definition.  */
 struct trace_header {
