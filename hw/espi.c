@@ -73,6 +73,7 @@ const eSPI_Register_Definition eSPI_registers_def[] = {
 {0x024, "SPMODE1", "eSPI CS1 mode register",             ACC_RW, 0x00100000},
 {0x028, "SPMODE2", "eSPI CS2 mode register",             ACC_RW, 0x00100000},
 {0x02C, "SPMODE3", "eSPI CS3 mode register",             ACC_RW, 0x00100000},
+{0x0, NULL, NULL, 0x0, 0x0},
 };
 
 #define REG_NUMBER 12
