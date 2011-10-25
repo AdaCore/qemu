@@ -293,7 +293,11 @@ static void etsec_reset(DeviceState *d)
     etsec->rx_buffer     = NULL;
     etsec->rx_buffer_len = 0;
 
-    etsec->phy_status = 0x0004; /* Link is up */
+    etsec->phy_status =
+        MII_SR_EXTENDED_CAPS    | MII_SR_LINK_STATUS   | MII_SR_AUTONEG_CAPS  |
+        MII_SR_AUTONEG_COMPLETE | MII_SR_100T2_HD_CAPS | MII_SR_100T2_FD_CAPS |
+        MII_SR_10T_HD_CAPS      | MII_SR_10T_FD_CAPS   | MII_SR_100X_HD_CAPS  |
+        MII_SR_100X_FD_CAPS     | MII_SR_100T4_CAPS;
 }
 
 static void
