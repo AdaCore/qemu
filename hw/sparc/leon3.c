@@ -47,6 +47,7 @@
 typedef struct ResetData {
     SPARCCPU *cpu;
     uint32_t  entry;            /* save kernel entry in case of reset */
+    uint32_t  stack_pointer;
 } ResetData;
 
 static void main_cpu_reset(void *opaque)
@@ -60,6 +61,7 @@ static void main_cpu_reset(void *opaque)
     cpu->halted = 0;
     env->pc     = s->entry;
     env->npc    = s->entry + 4;
+    env->regbase[6] = s->stack_pointer;
 }
 
 void leon3_irq_ack(void *irq_manager, int intno)
@@ -153,6 +155,8 @@ static void leon3_generic_hw_init(QEMUMachineInitArgs *args)
     memory_region_init_ram(ram, NULL, "leon3.ram", ram_size);
     vmstate_register_ram_global(ram);
     memory_region_add_subregion(address_space_mem, 0x40000000, ram);
+
+    reset_info->stack_pointer = 0x40000000 + ram_size;
 
     /* Allocate BIOS */
     prom_size = 8 * 1024 * 1024; /* 8Mb */
