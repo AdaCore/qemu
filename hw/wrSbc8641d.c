@@ -526,7 +526,7 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
 }
 
 static QEMUMachine wrsbc8641d_machine = {
-    .name = "wrsbc8641d",
+    .name = "wrsbc8641d_vxworks",
     .desc = "PowerPC wrsbc8641d SMP platform",
     .init = wrsbc8641d_init,
     .max_cpus = MAX_CPUS,
