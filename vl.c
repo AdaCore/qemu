@@ -3914,9 +3914,12 @@ int main(int argc, char **argv, char **envp)
                 plugin_save_optargs(optarg);
                 break;
 
-
             case QEMU_OPTION_gnatbus:
                 gnatbus_save_optargs(optarg);
+                break;
+
+            case QEMU_OPTION_host_cpu_affinity:
+                set_cpu_affinity(optarg);
                 break;
 
             default:
