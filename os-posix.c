@@ -355,3 +355,18 @@ int qemu_create_pidfile(const char *filename)
     /* keep pidfile open & locked forever */
     return 0;
 }
+
+void set_cpu_affinity(const char *optarg)
+{
+    char *endptr = NULL;
+    int   mask = strtol(optarg, &endptr, 16);
+
+    if (endptr != optarg) {
+        (void)mask;
+        fprintf(stderr, "CPU affinity not supported\n");
+        abort();
+    } else {
+        fprintf(stderr, "Invalid CPU mask '%s'\n", optarg);
+        abort();
+    }
+}

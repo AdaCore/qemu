@@ -129,6 +129,7 @@ int qemu_madvise(void *addr, size_t len, int advice);
 
 int qemu_create_pidfile(const char *filename);
 int qemu_get_thread_id(void);
+void set_cpu_affinity(const char *optarg);
 
 #ifdef _WIN32
 static inline void qemu_timersub(const struct timeval *val1,
