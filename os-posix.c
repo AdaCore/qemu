@@ -397,6 +397,7 @@ void set_cpu_affinity(const char *optarg)
     int   mask = strtol(optarg, &endptr, 16);
 
     if (endptr != optarg) {
+        (void)mask;
         fprintf(stderr, "CPU affinity not supported\n");
         abort();
     } else {
