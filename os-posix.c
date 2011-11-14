@@ -390,3 +390,17 @@ int qemu_get_thread_id(void)
     return getpid();
 #endif
 }
+
+void set_cpu_affinity(const char *optarg)
+{
+    char *endptr = NULL;
+    int   mask = strtol(optarg, &endptr, 16);
+
+    if (endptr != optarg) {
+        fprintf(stderr, "CPU affinity not supported\n");
+        abort();
+    } else {
+        fprintf(stderr, "Invalid CPU mask '%s'\n", optarg);
+        abort();
+    }
+}
