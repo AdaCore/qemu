@@ -2495,8 +2495,8 @@ DEF("host-cpu-affinity", HAS_ARG, QEMU_OPTION_host_cpu_affinity, \
     "                Set CPU affinity mask for Qemu process.\n",
     QEMU_ARCH_ALL)
 STEXI
-@item -gnatbus socket:device_host:device_port
-Connect a GnatBus Device
+@item -host-cpu-affinity mask(hexadecimal)
+Set CPU affinity mask for Qemu process.
 ETEXI
 
 HXCOMM This is the last statement. Insert new options before this line!
