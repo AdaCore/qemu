@@ -68,7 +68,7 @@
 #define MAX_DBL     0
 #define MAX_MBX     0
 #define MAX_TMR     4
-#define VECTOR_BITS 8
+#define VECTOR_BITS 16
 #define MAX_IPI     4
 #define VID         0x03 /* MPIC version ID */
 #define VENI        0x00000000 /* Vendor ID */
