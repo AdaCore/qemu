@@ -1443,7 +1443,7 @@ void qemu_system_vmstop_request(RunState state)
 int main_loop_wait(int nonblocking)
 {
     fd_set rfds, wfds, xfds;
-    int ret, nfds;
+    int ret, nfds = -1;
     struct timeval tv;
     int timeout;
 
@@ -1473,7 +1473,10 @@ int main_loop_wait(int nonblocking)
         qemu_mutex_unlock_iothread();
     }
 
-    ret = select(nfds + 1, &rfds, &wfds, &xfds, &tv);
+    if (nfds >= 0) {
+        /* Call select only if there's a least one file descritptor in fd sets */
+        ret = select(nfds + 1, &rfds, &wfds, &xfds, &tv);
+    }
 #ifdef _WIN32
     if (ret == SOCKET_ERROR) {
         fprintf(stderr, "Select error:%d\n", WSAGetLastError());
