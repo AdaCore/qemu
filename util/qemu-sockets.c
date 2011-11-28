@@ -39,6 +39,14 @@
 # define AI_NUMERICSERV 0
 #endif
 
+#ifdef _WIN32
+# define OS_SOCKET_ERROR_FMT "Winsock error: %d"
+# define OS_SOCKET_ERROR_CALL WSAGetLastError()
+#else
+# define OS_SOCKET_ERROR_FMT "%s"
+# define OS_SOCKET_ERROR_CALL strerror(errno)
+#endif
+
 static int inet_getport(struct addrinfo *e)
 {
     struct sockaddr_in *i4;
@@ -349,6 +357,9 @@ static int inet_connect_addr(struct addrinfo *addr, Error **errp)
     sock = qemu_socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
     if (sock < 0) {
         error_setg_errno(errp, errno, "Failed to create socket");
+        fprintf(stderr, "%s: socket(%d): "OS_SOCKET_ERROR_FMT"\n",
+                __func__, inet_netfamily(addr->ai_family),
+                OS_SOCKET_ERROR_CALL);
         return -1;
     }
     socket_set_fast_reuse(sock);
@@ -522,6 +533,8 @@ static int inet_dgram_saddr(InetSocketAddress *sraddr,
     sock = qemu_socket(peer->ai_family, peer->ai_socktype, peer->ai_protocol);
     if (sock < 0) {
         error_setg_errno(errp, errno, "Failed to create socket");
+        fprintf(stderr, "%s: socket(%d): "OS_SOCKET_ERROR_FMT"\n", __func__,
+                inet_netfamily(peer->ai_family), OS_SOCKET_ERROR_CALL);
         goto err;
     }
     socket_set_fast_reuse(sock);
@@ -535,6 +548,9 @@ static int inet_dgram_saddr(InetSocketAddress *sraddr,
     /* connect to peer */
     if (connect(sock,peer->ai_addr,peer->ai_addrlen) < 0) {
         error_setg_errno(errp, errno, "Failed to connect socket");
+        fprintf(stderr, "%s: connect(%d,%s,%s,%s): "OS_SOCKET_ERROR_FMT"\n",
+                __func__, inet_netfamily(peer->ai_family),
+                peer->ai_canonname, addr, port, OS_SOCKET_ERROR_CALL);
         goto err;
     }
 
@@ -833,7 +849,16 @@ static int unix_listen_saddr(UnixSocketAddress *saddr,
     }
 
     if (saddr->path && saddr->path[0]) {
-        path = saddr->path;
+        if (saddr->path[0] == '@') {
+            /* No idea whats going on here.. Initially we had:
+             * snprintf(path + 1, sizeof(un.sun_path) - 1, "%s",
+             *          saddr->path + 1);
+             * But it doesn't seem right to me.
+             */
+            path = saddr->path + 1;
+        } else {
+            path = saddr->path;
+        }
     } else {
         const char *tmpdir = getenv("TMPDIR");
         tmpdir = tmpdir ? tmpdir : "/tmp";
@@ -876,10 +901,14 @@ static int unix_listen_saddr(UnixSocketAddress *saddr,
 
     if (bind(sock, (struct sockaddr*) &un, sizeof(un)) < 0) {
         error_setg_errno(errp, errno, "Failed to bind socket to %s", path);
+        fprintf(stderr, "bind(unix:%s): "OS_SOCKET_ERROR_FMT"\n", path,
+                OS_SOCKET_ERROR_CALL);
         goto err;
     }
     if (listen(sock, 1) < 0) {
         error_setg_errno(errp, errno, "Failed to listen on socket");
+        fprintf(stderr, "listen(unix:%s): "OS_SOCKET_ERROR_FMT"\n", un.sun_path,
+                OS_SOCKET_ERROR_CALL);
         goto err;
     }
 
