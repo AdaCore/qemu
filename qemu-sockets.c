@@ -22,6 +22,13 @@
 #include "qemu_socket.h"
 #include "qemu-common.h" /* for qemu_isdigit */
 
+#ifdef _WIN32
+# define OS_SOCKET_ERROR_FMT "Winsock error: %d"
+# define OS_SOCKET_ERROR_CALL WSAGetLastError()
+#else
+# define OS_SOCKET_ERROR_FMT "%s"
+# define OS_SOCKET_ERROR_CALL strerror(errno)
+#endif
 static const int on=1, off=0;
 
 /* used temporarely until all users are converted to QemuOpts */
@@ -146,8 +153,9 @@ int inet_listen_opts(QemuOpts *opts, int port_offset, Error **errp)
 		        NI_NUMERICHOST | NI_NUMERICSERV);
         slisten = qemu_socket(e->ai_family, e->ai_socktype, e->ai_protocol);
         if (slisten < 0) {
-            fprintf(stderr,"%s: socket(%s): %s\n", __FUNCTION__,
-                    inet_strfamily(e->ai_family), strerror(errno));
+            fprintf(stderr,"%s: socket(%s): "OS_SOCKET_ERROR_FMT"\n",
+                    __FUNCTION__, inet_strfamily(e->ai_family),
+                    OS_SOCKET_ERROR_CALL);
             if (!e->ai_next) {
                 error_set(errp, QERR_SOCKET_CREATE_FAILED);
             }
@@ -171,9 +179,9 @@ int inet_listen_opts(QemuOpts *opts, int port_offset, Error **errp)
                 goto listen;
             }
             if (p == port_max) {
-                fprintf(stderr,"%s: bind(%s,%s,%d): %s\n", __FUNCTION__,
-                        inet_strfamily(e->ai_family), uaddr, inet_getport(e),
-                        strerror(errno));
+                fprintf(stderr,"%s: bind(%s,%s,%d): "OS_SOCKET_ERROR_FMT"\n",
+                        __FUNCTION__, inet_strfamily(e->ai_family), uaddr,
+                        inet_getport(e), OS_SOCKET_ERROR_CALL);
                 if (!e->ai_next) {
                     error_set(errp, QERR_SOCKET_BIND_FAILED);
                 }
@@ -181,7 +189,7 @@ int inet_listen_opts(QemuOpts *opts, int port_offset, Error **errp)
         }
         closesocket(slisten);
     }
-    fprintf(stderr, "%s: FAILED\n", __FUNCTION__);
+    fprintf(stderr, "%s: FAILED\n", __func__);
     freeaddrinfo(res);
     return -1;
 
@@ -243,13 +251,14 @@ int inet_connect_opts(QemuOpts *opts, Error **errp)
         if (getnameinfo((struct sockaddr*)e->ai_addr,e->ai_addrlen,
                             uaddr,INET6_ADDRSTRLEN,uport,32,
                             NI_NUMERICHOST | NI_NUMERICSERV) != 0) {
-            fprintf(stderr,"%s: getnameinfo: oops\n", __FUNCTION__);
+            fprintf(stderr, "%s: getnameinfo: oops\n", __func__);
             continue;
         }
         sock = qemu_socket(e->ai_family, e->ai_socktype, e->ai_protocol);
         if (sock < 0) {
-            fprintf(stderr,"%s: socket(%s): %s\n", __FUNCTION__,
-            inet_strfamily(e->ai_family), strerror(errno));
+            fprintf(stderr, "%s: socket(%s): "OS_SOCKET_ERROR_FMT"\n",
+                    __func__, inet_strfamily(e->ai_family),
+                    OS_SOCKET_ERROR_CALL);
             continue;
         }
         setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(void*)&on,sizeof(on));
@@ -273,9 +282,9 @@ int inet_connect_opts(QemuOpts *opts, Error **errp)
             error_set(errp, QERR_SOCKET_CONNECT_IN_PROGRESS);
         } else if (rc < 0) {
             if (NULL == e->ai_next)
-                fprintf(stderr, "%s: connect(%s,%s,%s,%s): %s\n", __FUNCTION__,
-                        inet_strfamily(e->ai_family),
-                        e->ai_canonname, uaddr, uport, strerror(errno));
+                fprintf(stderr, "%s: connect(%s,%s,%s,%s): "OS_SOCKET_ERROR_FMT
+                        "\n", __FUNCTION__, inet_strfamily(e->ai_family),
+                        e->ai_canonname, uaddr, uport, OS_SOCKET_ERROR_CALL);
             closesocket(sock);
             sock = -1;
             continue;
@@ -347,8 +356,8 @@ int inet_dgram_opts(QemuOpts *opts)
     /* create socket */
     sock = qemu_socket(peer->ai_family, peer->ai_socktype, peer->ai_protocol);
     if (sock < 0) {
-        fprintf(stderr,"%s: socket(%s): %s\n", __FUNCTION__,
-                inet_strfamily(peer->ai_family), strerror(errno));
+        fprintf(stderr, "%s: socket(%s): "OS_SOCKET_ERROR_FMT"\n", __func__,
+                inet_strfamily(peer->ai_family), OS_SOCKET_ERROR_CALL);
         goto err;
     }
     setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(void*)&on,sizeof(on));
@@ -357,11 +366,11 @@ int inet_dgram_opts(QemuOpts *opts)
     if (getnameinfo((struct sockaddr*)local->ai_addr,local->ai_addrlen,
                     uaddr,INET6_ADDRSTRLEN,uport,32,
                     NI_NUMERICHOST | NI_NUMERICSERV) != 0) {
-        fprintf(stderr, "%s: getnameinfo: oops\n", __FUNCTION__);
+        fprintf(stderr, "%s: getnameinfo: oops\n", __func__);
         goto err;
     }
     if (bind(sock, local->ai_addr, local->ai_addrlen) < 0) {
-        fprintf(stderr,"%s: bind(%s,%s,%d): OK\n", __FUNCTION__,
+        fprintf(stderr, "%s: bind(%s,%s,%d): OK\n", __func__,
                 inet_strfamily(local->ai_family), uaddr, inet_getport(local));
         goto err;
     }
@@ -370,13 +379,13 @@ int inet_dgram_opts(QemuOpts *opts)
     if (getnameinfo((struct sockaddr*)peer->ai_addr, peer->ai_addrlen,
                     uaddr, INET6_ADDRSTRLEN, uport, 32,
                     NI_NUMERICHOST | NI_NUMERICSERV) != 0) {
-        fprintf(stderr, "%s: getnameinfo: oops\n", __FUNCTION__);
+        fprintf(stderr, "%s: getnameinfo: oops\n", __func__);
         goto err;
     }
     if (connect(sock,peer->ai_addr,peer->ai_addrlen) < 0) {
-        fprintf(stderr, "%s: connect(%s,%s,%s,%s): %s\n", __FUNCTION__,
-                inet_strfamily(peer->ai_family),
-                peer->ai_canonname, uaddr, uport, strerror(errno));
+        fprintf(stderr, "%s: connect(%s,%s,%s,%s): "OS_SOCKET_ERROR_FMT"\n",
+                __func__, inet_strfamily(peer->ai_family),
+                peer->ai_canonname, uaddr, uport, OS_SOCKET_ERROR_CALL);
         goto err;
     }
 
@@ -408,14 +417,14 @@ static int inet_parse(QemuOpts *opts, const char *str)
         addr[0] = '\0';
         if (1 != sscanf(str,":%32[^,]%n",port,&pos)) {
             fprintf(stderr, "%s: portonly parse error (%s)\n",
-                    __FUNCTION__, str);
+                    __func__, str);
             return -1;
         }
     } else if (str[0] == '[') {
         /* IPv6 addr */
         if (2 != sscanf(str,"[%64[^]]]:%32[^,]%n",addr,port,&pos)) {
             fprintf(stderr, "%s: ipv6 parse error (%s)\n",
-                    __FUNCTION__, str);
+                    __func__, str);
             return -1;
         }
         qemu_opt_set(opts, "ipv6", "on");
@@ -423,7 +432,7 @@ static int inet_parse(QemuOpts *opts, const char *str)
         /* IPv4 addr */
         if (2 != sscanf(str,"%64[0-9.]:%32[^,]%n",addr,port,&pos)) {
             fprintf(stderr, "%s: ipv4 parse error (%s)\n",
-                    __FUNCTION__, str);
+                    __func__, str);
             return -1;
         }
         qemu_opt_set(opts, "ipv4", "on");
@@ -431,7 +440,7 @@ static int inet_parse(QemuOpts *opts, const char *str)
         /* hostname */
         if (2 != sscanf(str,"%64[^:]:%32[^,]%n",addr,port,&pos)) {
             fprintf(stderr, "%s: hostname parse error (%s)\n",
-                    __FUNCTION__, str);
+                    __func__, str);
             return -1;
         }
     }
@@ -534,11 +543,13 @@ int unix_listen_opts(QemuOpts *opts)
 
     unlink(un.sun_path);
     if (bind(sock, (struct sockaddr*) &un, sizeof(un)) < 0) {
-        fprintf(stderr, "bind(unix:%s): %s\n", un.sun_path, strerror(errno));
+        fprintf(stderr, "bind(unix:%s): "OS_SOCKET_ERROR_FMT"\n", un.sun_path,
+                OS_SOCKET_ERROR_CALL);
         goto err;
     }
     if (listen(sock, 1) < 0) {
-        fprintf(stderr, "listen(unix:%s): %s\n", un.sun_path, strerror(errno));
+        fprintf(stderr, "listen(unix:%s): "OS_SOCKET_ERROR_FMT"\n", un.sun_path,
+                OS_SOCKET_ERROR_CALL);
         goto err;
     }
 
@@ -570,7 +581,8 @@ int unix_connect_opts(QemuOpts *opts)
     un.sun_family = AF_UNIX;
     snprintf(un.sun_path, sizeof(un.sun_path), "%s", path);
     if (connect(sock, (struct sockaddr*) &un, sizeof(un)) < 0) {
-        fprintf(stderr, "connect(unix:%s): %s\n", path, strerror(errno));
+        fprintf(stderr, "connect(unix:%s): "OS_SOCKET_ERROR_FMT"\n", path,
+                OS_SOCKET_ERROR_CALL);
         close(sock);
 	return -1;
     }
