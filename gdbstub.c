@@ -2857,7 +2857,7 @@ static void gdbserver_exit(void)
 
 #ifndef CONFIG_USER_ONLY
   if (gdbserver_state->chr) {
-    qemu_chr_fe_close(gdbserver_state->chr);
+    qemu_chr_delete(gdbserver_state->chr);
   }
 #endif
 }
