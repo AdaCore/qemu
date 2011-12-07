@@ -437,8 +437,8 @@ int gnatbus_add_event(GnatBus_Device *qbdev,
 
 static inline void gnatbus_write_generic(void               *opaque,
                                          target_phys_addr_t  addr,
-                                         uint32_t            size,
-                                         uint32_t            val)
+                                         uint64_t            val,
+                                         unsigned            size)
 {
     GnatBus_IOMEM_BaseAddr *io_base = opaque;
     GnatBusPacket_Write    *write;
@@ -477,32 +477,14 @@ static inline void gnatbus_write_generic(void               *opaque,
     gnatbus_unfreeze_cpu();
 }
 
-static void
-gnatbus_writeb(void *opaque, target_phys_addr_t addr, uint32_t value)
-{
-    gnatbus_write_generic(opaque, addr, 1, value);
-}
-
-static void
-gnatbus_writew(void *opaque, target_phys_addr_t addr, uint32_t value)
-{
-    gnatbus_write_generic(opaque, addr, 2, value);
-}
-
-static void
-gnatbus_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
-{
-    gnatbus_write_generic(opaque, addr, 4, value);
-}
-
-static inline uint32_t gnatbus_read_generic(void               *opaque,
+static inline uint64_t gnatbus_read_generic(void               *opaque,
                                             target_phys_addr_t  addr,
-                                            uint32_t            size)
+                                            unsigned            size)
 {
     GnatBus_IOMEM_BaseAddr *io_base = opaque;
     GnatBusPacket_Read      read;
     GnatBusPacket_Data     *resp;
-    uint32_t                ret     = 0;
+    uint64_t                ret     = 0;
 
     if (io_base->qbdev->status != CHR_EVENT_OPENED) {
         return 0;
@@ -541,27 +523,14 @@ static inline uint32_t gnatbus_read_generic(void               *opaque,
     return ret;
 }
 
-static uint32_t gnatbus_readb(void *opaque, target_phys_addr_t addr)
-{
-    return gnatbus_read_generic(opaque, addr, 1);
-}
-
-static uint32_t gnatbus_readw(void *opaque, target_phys_addr_t addr)
-{
-    return gnatbus_read_generic(opaque, addr, 2);
-}
-
-static uint32_t gnatbus_readl(void *opaque, target_phys_addr_t addr)
-{
-    return gnatbus_read_generic(opaque, addr, 4);
-}
-
-CPUReadMemoryFunc * const gnatbus_read_fn[] = {
-    gnatbus_readb, gnatbus_readw, gnatbus_readl,
-};
-
-CPUWriteMemoryFunc * const gnatbus_write_fn[] = {
-    gnatbus_writeb, gnatbus_writew, gnatbus_writel,
+const MemoryRegionOps gnatbus_ops = {
+    .read = gnatbus_read_generic,
+    .write = gnatbus_write_generic,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 4,
+    },
 };
 
 /* Initialization */

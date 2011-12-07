@@ -33,6 +33,7 @@ typedef struct GnatBus_Device GnatBus_Device;
 typedef struct GnatBus_IOMEM_BaseAddr {
     GnatBus_Device *qbdev;
     uint64_t        base;
+    MemoryRegion    mr;
 } GnatBus_IOMEM_BaseAddr;
 
 struct GnatBus_Device {
@@ -76,5 +77,7 @@ int gnatbus_add_event(GnatBus_Device *qbdev,
                       uint64_t        event);
 
 int gnatbus_send(GnatBus_Device *qbdev, const uint8_t *buf, int len);
+
+extern const MemoryRegionOps gnatbus_ops;
 
 #endif /* ! _QEMU_BUS_H_ */

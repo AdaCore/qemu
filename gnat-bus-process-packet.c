@@ -1,4 +1,5 @@
 #include "qemu-timer.h"
+#include "exec-memory.h"
 
 #include "gnat-bus.h"
 #include "trace.h"
@@ -115,14 +116,10 @@ static inline int gnatbus_process_write(GnatBus_Device      *qbdev,
     return 0;
 }
 
-extern CPUReadMemoryFunc * const  gnatbus_read_fn[];
-extern CPUWriteMemoryFunc * const gnatbus_write_fn[];
-
 static int gnatbus_init_device(SysBusDevice *dev)
 {
     GnatBus_SysBusDevice *pdev  = FROM_SYSBUS(typeof(*pdev), dev);
     GnatBus_Device       *qbdev = pdev->qbdev;
-    int                   ioindex;
     int                   i;
 
 
@@ -131,17 +128,13 @@ static int gnatbus_init_device(SysBusDevice *dev)
         qbdev->io_base[i].qbdev = qbdev;
         qbdev->io_base[i].base  = qbdev->info.iomem[i].base & TARGET_PAGE_MASK;
 
-        ioindex = cpu_register_io_memory(gnatbus_read_fn,
-                                         gnatbus_write_fn,
-                                         &qbdev->io_base[i],
-                                         DEVICE_NATIVE_ENDIAN);
+        memory_region_init_io(&qbdev->io_base[i].mr, &gnatbus_ops,
+                              &qbdev->io_base[i], qbdev->info.name,
+                              qbdev->info.iomem[i].size);
 
-        if (ioindex <= 0) {
-            return -1;
-        }
-
-        sysbus_init_mmio(dev, qbdev->info.iomem[i].size, ioindex);
-        sysbus_mmio_map(dev, i, qbdev->info.iomem[i].base);
+        memory_region_add_subregion(get_system_memory(),
+                                    qbdev->info.iomem[i].base,
+                                    &qbdev->io_base[i].mr);
     }
 
     return 0;
