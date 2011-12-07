@@ -36,6 +36,9 @@
 #include "fsl_I2C.h"
 #include "exec-memory.h"
 
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
+
 //#define DEBUG_P2010
 
 #define MAX_ETSEC_CONTROLLERS 3
@@ -783,6 +786,14 @@ static void fsl_e500_init(fsl_e500_config *config,
         env->nip = elf_entry;    /* FIXME: entry? */
         reset_info->entry = elf_entry;
     }
+
+    /* Initialize plug-ins */
+    plugin_init(mpic, 16);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(mpic, 16);
+    gnatbus_device_init();
 }
 
 static fsl_e500_config p2010rdb_vxworks_config = {
