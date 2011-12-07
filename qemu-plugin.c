@@ -9,6 +9,7 @@
 #include "sysemu.h"
 #include "hw/sysbus.h"
 #include "qemu-plugin.h"
+#include "exec-memory.h"
 
 #include "qemu_plugin_interface.h"
 
@@ -21,6 +22,7 @@ typedef struct QemuPlugin_SysBusDevice QemuPlugin_SysBusDevice;
 typedef struct QemuPlugin_IOMEM_BaseAddr {
     QemuPlugin_SysBusDevice *pdev;
     uint64_t                 base;
+    MemoryRegion             mr;
 } QemuPlugin_IOMEM_BaseAddr;
 
 struct QemuPlugin_SysBusDevice {
@@ -211,8 +213,8 @@ static uint32_t plugin_remove_event(QemuPlugin_ClockType clock,
 
 static inline void plugin_write_generic(void               *opaque,
                                         target_phys_addr_t  addr,
-                                        uint32_t            size,
-                                        uint32_t            value)
+                                        uint64_t            value,
+                                        unsigned            size)
 {
     QemuPlugin_IOMEM_BaseAddr *io_base = opaque;
     QemuPlugin_SysBusDevice   *pdev    = io_base->pdev;
@@ -225,27 +227,9 @@ static inline void plugin_write_generic(void               *opaque,
     }
 }
 
-static void
-plugin_writeb(void *opaque, target_phys_addr_t addr, uint32_t value)
-{
-    plugin_write_generic(opaque, addr, 1, value);
-}
-
-static void
-plugin_writew(void *opaque, target_phys_addr_t addr, uint32_t value)
-{
-    plugin_write_generic(opaque, addr, 2, value);
-}
-
-static void
-plugin_writel(void *opaque, target_phys_addr_t addr, uint32_t value)
-{
-    plugin_write_generic(opaque, addr, 4, value);
-}
-
-static inline uint32_t plugin_read_generic(void *opaque,
-                                           target_phys_addr_t addr,
-                                           uint32_t size)
+static inline uint64_t plugin_read_generic(void               *opaque,
+                                           target_phys_addr_t  addr,
+                                           unsigned            size)
 {
     QemuPlugin_IOMEM_BaseAddr *io_base = opaque;
     QemuPlugin_SysBusDevice   *pdev    = io_base->pdev;
@@ -259,33 +243,19 @@ static inline uint32_t plugin_read_generic(void *opaque,
     }
 }
 
-static uint32_t plugin_readb(void *opaque, target_phys_addr_t addr)
-{
-    return plugin_read_generic(opaque, addr, 1);
-}
-
-static uint32_t plugin_readw(void *opaque, target_phys_addr_t addr)
-{
-    return plugin_read_generic(opaque, addr, 2);
-}
-
-static uint32_t plugin_readl(void *opaque, target_phys_addr_t addr)
-{
-    return plugin_read_generic(opaque, addr, 4);
-}
-
-static CPUReadMemoryFunc * const plugin_read[] = {
-    plugin_readb, plugin_readw, plugin_readl,
-};
-
-static CPUWriteMemoryFunc * const plugin_write[] = {
-    plugin_writeb, plugin_writew, plugin_writel,
+const MemoryRegionOps plugin_ops = {
+    .read = plugin_read_generic,
+    .write = plugin_write_generic,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 4,
+    },
 };
 
 static int plugin_init_device(SysBusDevice *dev)
 {
     QemuPlugin_SysBusDevice *pdev = FROM_SYSBUS(typeof(*pdev), dev);
-    int ioindex;
     int i;
 
 
@@ -294,17 +264,13 @@ static int plugin_init_device(SysBusDevice *dev)
         pdev->io_base[i].pdev = pdev;
         pdev->io_base[i].base = pdev->info->iomem[i].base & TARGET_PAGE_MASK;
 
-        ioindex = cpu_register_io_memory(plugin_read,
-                                         plugin_write,
-                                         &pdev->io_base[i],
-                                         DEVICE_NATIVE_ENDIAN);
+        memory_region_init_io(&pdev->io_base[i].mr, &plugin_ops,
+                              &pdev->io_base[i], pdev->info->name,
+                              pdev->info->iomem[i].size);
 
-        if (ioindex <= 0) {
-            return -1;
-        }
-
-        sysbus_init_mmio(dev, pdev->info->iomem[i].size, ioindex);
-        sysbus_mmio_map(dev, i, pdev->info->iomem[i].base);
+        memory_region_add_subregion(get_system_memory(),
+                                    pdev->info->iomem[i].base,
+                                    &pdev->io_base[i].mr);
     }
 
     return 0;
