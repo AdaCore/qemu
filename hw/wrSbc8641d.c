@@ -43,6 +43,9 @@
 #include "etsec.h"
 #include "exec-memory.h"
 
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
+
 //#define DEBUG_WRSBC8641D
 
 #ifdef DEBUG_WRSBC8641D
@@ -68,7 +71,7 @@
 #define ETSEC_START     (CCSBAR + 0x24000)
 #define PIC_START       (CCSBAR + 0x40000)
 #define GUR_START       (CCSBAR + 0xe0000)
-#define GUR_SIZE        0xa8
+#define GUR_SIZE        0x1000
 #define PMR_START       (CCSBAR + 0xe1000)
 #define PMR_SIZE        0xa9
 
@@ -189,6 +192,25 @@ static CPUReadMemoryFunc * const read_mcm_fct [] = {
     &read_mcm,
 };
 
+static void write_gur(void *opaque, target_phys_addr_t addr, uint32_t value)
+{
+    DPRINTF("write_gur : write to Global Utility Register : 0x%08x\n",
+            addr +
+            GUR_START);
+
+    switch (addr & 0xfff) {
+    case 0xb0: /* Reset Control Register - RSTCR */
+        DPRINTF("%s: Writing RSTCR\n", __func__);
+        if (value & 2) {
+            qemu_system_reset_request();
+        }
+        break;
+    default:
+        DPRINTF("%s: writing non implemented register 0x%8x\n", __func__,
+                GUR_START + addr);
+    }
+}
+
 static uint32_t read_gur(void *opaque, target_phys_addr_t addr)
 {
     /* DPRINTF("read_gur : reading from Global Utility Register : 0x%08x\n",
@@ -227,6 +249,12 @@ static uint32_t read_gur(void *opaque, target_phys_addr_t addr)
     }
     return ret;
 }
+
+static CPUWriteMemoryFunc * const write_gur_fct[] = {
+    &write_gur,
+    &write_gur,
+    &write_gur,
+};
 
 static CPUReadMemoryFunc * const read_gur_fct[] = {
     &read_gur,
@@ -488,7 +516,7 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
         ram_addr_t size;
     } const list[] = {
         {read_mcm_fct, write_mcm_fct, MCM_START, MCM_SIZE},
-        {read_gur_fct, write_bogus_fct, GUR_START, GUR_SIZE},
+        {read_gur_fct, write_gur_fct, GUR_START, GUR_SIZE},
         {read_pixis_fct, write_pixis_fct, PIXIS_START, PIXIS_SIZE}
     };
 
@@ -523,6 +551,14 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
                      &nd_table[i], pic[12+etsec_irqs[i][0]],
                      pic[12+etsec_irqs[i][1]], pic[12+etsec_irqs[i][2]]);
     }
+
+    /* Initialize plug-ins */
+    plugin_init(pic, 16);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(pic, 16);
+    gnatbus_device_init();
 }
 
 static QEMUMachine wrsbc8641d_machine = {
