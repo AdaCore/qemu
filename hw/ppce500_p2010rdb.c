@@ -664,21 +664,6 @@ static void fsl_e500_init(fsl_e500_config *config,
     ram_offset = qemu_ram_alloc(NULL, "p2010rdb.ram", ram_size);
     cpu_register_physical_memory(0x0, ram_size, ram_offset);
 
-    /* allocate and load BIOS */
-    dinfo           = drive_get(IF_PFLASH, 0, 0);
-    if (dinfo) {
-        bios_size   = bdrv_getlength(dinfo->bdrv);
-        fl_sectors  = (bios_size + 65535) >> 16;
-
-        if (pflash_cfi02_register((uint32_t)(-bios_size), NULL, "p2010.bios",
-                                  bios_size, dinfo->bdrv, 65536, fl_sectors,
-                                  1, 2, 0x0001, 0x22DA, 0x0000, 0x0000,
-                                  0x555, 0x2AA, 1) == NULL) {
-            fprintf(stderr, "%s: Failed to load flash image\n", __func__);
-            abort();
-        }
-    }
-
     ccsr_addr = config->ccsr_init_addr;
 
     /* Configuration, Control, and Status Registers */
@@ -758,6 +743,27 @@ static void fsl_e500_init(fsl_e500_config *config,
     /* I2C */
     fsl_i2c_create(P2010RDB_I2C_1_BASE, ccsr_space, mpic[config->i2c_irq]);
     fsl_i2c_create(P2010RDB_I2C_2_BASE, ccsr_space, mpic[config->i2c_irq]);
+
+    /* Load pflash after serial initialization because pflash_cfi02_register
+     * causes a race condition in monitor initialization which makes the monitor
+     * to print in stdout. This is because the monitor is not in mux mode until
+     * the serial port is started.
+     */
+
+    /* allocate and load BIOS */
+    dinfo           = drive_get(IF_PFLASH, 0, 0);
+    if (dinfo) {
+        bios_size   = bdrv_getlength(dinfo->bdrv);
+        fl_sectors  = (bios_size + 65535) >> 16;
+
+        if (pflash_cfi02_register((uint32_t)(-bios_size), NULL, "p2010.bios",
+                                  bios_size, dinfo->bdrv, 65536, fl_sectors,
+                                  1, 2, 0x0001, 0x22DA, 0x0000, 0x0000,
+                                  0x555, 0x2AA, 1) == NULL) {
+            fprintf(stderr, "%s: Failed to load flash image\n", __func__);
+            abort();
+        }
+    }
 
     /* Load kernel. */
     if (kernel_filename) {
