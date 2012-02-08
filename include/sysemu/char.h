@@ -86,6 +86,40 @@ struct CharDriverState {
     guint fd_in_tag;
     QemuOpts *opts;
     QTAILQ_ENTRY(CharDriverState) next;
+
+    /* Middle-end buffer */
+
+    uint8_t  *me_buf;
+    int      me_buf_head;
+    int      me_buf_tail;
+    QEMUBH   *me_bh;
+    /*
+     * me_buf is pointer to the buffer, me_buf_head and me_buf_tail are indexes
+     * in this buffer.
+     *
+     * The buffer is allocated from me_buf to me_buf + me_buf_tail. However,
+     * valid data are between me_buf_head and me_buf_tail.
+     *
+     *   me_buf            me_buf_head                            me_buf_tail
+     *     |--------------------|=================================|
+     *
+     * A call to qemu_chr_me_write will append data to the buffer (if no
+     * shortcut possible). The buffer is expended via g_realloc.
+     *
+     *   me_buf            me_buf_head                            me_buf_tail
+     *     |--------------------|=================================>>>>>>>|
+     *
+     * A call to qemu_chr_me_try_flush will send as much data as possible from
+     * me_buf_head to the front-end (no de-allocation).
+     *
+     *   me_buf            me_buf_head                            me_buf_tail
+     *     |--------------------->>>>>>>>|===============================|
+     *
+     * If the buffer can't be entirely send, a bottom-half function will re-try
+     * at the next loop until the buffer is empty (i.e. me_buf_head ==
+     * me_buf_tail).
+     *
+     */
 };
 
 /**
@@ -320,7 +354,6 @@ int qemu_chr_be_can_write(CharDriverState *s);
  */
 void qemu_chr_be_write(CharDriverState *s, uint8_t *buf, int len);
 
-
 /**
  * @qemu_chr_be_event:
  *
@@ -329,6 +362,39 @@ void qemu_chr_be_write(CharDriverState *s, uint8_t *buf, int len);
  * @event the event to send
  */
 void qemu_chr_be_event(CharDriverState *s, int event);
+
+/**
+ * @qemu_chr_me_write:
+ *
+ * Write data to the middle-end. This function handles a fifo buffer between
+ * back and front-end, so that the back-end doesn't have to check if the
+ * front-end is ready to receive data.
+ *
+ * @buf a buffer to receive data from the front end
+ * @len the number of bytes to receive from the front end
+ */
+void qemu_chr_me_write(CharDriverState *s, uint8_t *buf, int len);
+
+/**
+ * @qemu_chr_me_try_flush:
+ *
+ * Internal function.
+ *
+ * This function tries to send the middle-end buffer to the front-end.
+ */
+void qemu_chr_me_try_flush(CharDriverState *chr);
+
+/**
+ * @qemu_chr_me_bh_func:
+ *
+ * Internal function.
+ *
+ * This bottom-half function will call qemu_chr_me_try_flush until the buffer is
+ * empty.
+ *
+ * @opaque a CharDriverState
+ */
+void qemu_chr_me_bh_func(void *opaque);
 
 void qemu_chr_add_handlers(CharDriverState *s,
                            IOCanReadHandler *fd_can_read,
