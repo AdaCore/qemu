@@ -62,10 +62,8 @@ static void win_stdio_wait_func(void *opaque)
             int j;
             if (kev->uChar.AsciiChar != 0) {
                 for (j = 0; j < kev->wRepeatCount; j++) {
-                    if (qemu_chr_be_can_write(chr)) {
-                        uint8_t c = kev->uChar.AsciiChar;
-                        qemu_chr_be_write(chr, &c, 1);
-                    }
+                    qemu_chr_me_write(chr, (uint8_t *)&kev->uChar.AsciiChar,
+                                      1);
                 }
             }
         }
@@ -115,9 +113,7 @@ static void win_stdio_thread_wait_func(void *opaque)
     Chardev *chr = CHARDEV(opaque);
     WinStdioChardev *stdio = WIN_STDIO_CHARDEV(opaque);
 
-    if (qemu_chr_be_can_write(chr)) {
-        qemu_chr_be_write(chr, &stdio->win_stdio_buf, 1);
-    }
+    qemu_chr_me_write(chr, &stdio->win_stdio_buf, 1);
 
     SetEvent(stdio->hInputDoneEvent);
 }
@@ -204,6 +200,71 @@ err2:
     CloseHandle(stdio->hInputDoneEvent);
 err1:
     qemu_del_wait_object(stdio->hStdIn, NULL, NULL);
+}
+
+void qemu_chr_me_try_flush(Chardev *chr)
+{
+    int can_write = MIN(qemu_chr_be_can_write(chr),
+                        chr->me_buf_tail - chr->me_buf_head);
+
+    if (can_write > 0) {
+
+        qemu_chr_be_write(chr, chr->me_buf + chr->me_buf_head, can_write);
+        chr->me_buf_head += can_write;
+
+        if (chr->me_buf_head == chr->me_buf_tail) {
+            /* The buffer is empty, we can delete it */
+            g_free(chr->me_buf);
+            chr->me_buf = NULL;
+            chr->me_buf_head = 0;
+            chr->me_buf_tail = 0;
+        }
+
+    }
+
+    if (chr->me_buf_head < chr->me_buf_tail) {
+        /* Re-schedule the bottom-half to send the remaining data */
+
+        if (chr->me_bh == NULL) {
+            /* If there's no bh, create one */
+            chr->me_bh = qemu_bh_new(qemu_chr_me_bh_func, chr);
+        }
+
+        qemu_bh_schedule(chr->me_bh);
+    }
+}
+
+void qemu_chr_me_write(Chardev *chr, uint8_t *buf, int len)
+{
+    int can_write = qemu_chr_be_can_write(chr);
+
+    if (len > 0 && chr->me_buf == NULL && len <= can_write) {
+        /* Shortcut: we can send all the data to the device, no buffer
+         * needed
+         */
+        qemu_chr_be_write(chr, buf, len);
+        return;
+    }
+
+    if (len > 0) {
+        if (chr->me_buf == NULL) {
+            chr->me_buf = g_malloc0(len);
+            chr->me_buf_head = 0;
+            chr->me_buf_tail = 0;
+        } else {
+            chr->me_buf = g_realloc(chr->me_buf, chr->me_buf_tail + len);
+        }
+
+        memmove(chr->me_buf + chr->me_buf_tail, buf, len);
+        chr->me_buf_tail += len;
+    }
+
+    qemu_chr_me_try_flush(chr);
+}
+
+void qemu_chr_me_bh_func(void *opaque)
+{
+    qemu_chr_me_try_flush(opaque);
 }
 
 static void char_win_stdio_finalize(Object *obj)
