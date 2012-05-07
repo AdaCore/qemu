@@ -4227,6 +4227,8 @@ void helper_booke206_tlbwe(void)
     uint32_t tlbncfg, tlbn;
     ppcmas_tlb_t *tlb;
     uint32_t size_tlb, size_ps;
+    target_ulong mask;
+
 
     switch (env->spr[SPR_BOOKE_MAS0] & MAS0_WQ_MASK) {
     case MAS0_WQ_ALWAYS:
@@ -4289,8 +4291,12 @@ void helper_booke206_tlbwe(void)
         tlb->mas1 |= (tlbncfg & TLBnCFG_MINSIZE) >> 12;
     }
 
-    /* XXX needs to change when supporting 64-bit e500 */
-    tlb->mas2 = env->spr[SPR_BOOKE_MAS2] & 0xffffffff;
+    /* Make a mask from TLB size to discard invalid bits in EPN field */
+    mask = ~(booke206_tlb_to_page_size(env, tlb) - 1);
+    /* Add a mask for page attributes */
+    mask |= MAS2_ACM | MAS2_VLE | MAS2_W | MAS2_I | MAS2_M | MAS2_G | MAS2_E;
+
+    tlb->mas2 = env->spr[SPR_BOOKE_MAS2] & mask;
 
     if (!(tlbncfg & TLBnCFG_IPROT)) {
         /* no IPROT supported by TLB */
