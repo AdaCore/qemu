@@ -211,6 +211,7 @@ static void PREP_io_800_writeb (void *opaque, uint32_t addr, uint32_t val)
         /* Check soft reset asked */
         if (val & 0x01) {
             qemu_irq_raise(sysctrl->reset_irq);
+            qemu_system_reset_request();
         } else {
             qemu_irq_lower(sysctrl->reset_irq);
         }
