@@ -943,13 +943,6 @@ int rom_check_and_register_reset(void)
         if (rom->fw_file) {
             continue;
         }
-        if (addr > rom->addr) {
-            fprintf(stderr, "rom: requested regions overlap "
-                    "(rom %s. free=0x" TARGET_FMT_plx
-                    ", addr=0x" TARGET_FMT_plx ")\n",
-                    rom->name, addr, rom->addr);
-            return -1;
-        }
         addr  = rom->addr;
         addr += rom->romsize;
         section = memory_region_find(get_system_memory(), rom->addr, 1);
