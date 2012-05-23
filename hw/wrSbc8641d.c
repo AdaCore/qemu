@@ -43,6 +43,7 @@
 
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
+#include "qemu-traces.h"
 
 //#define DEBUG_WRSBC8641D
 
@@ -60,6 +61,11 @@
 #define BIOS_FILENAME   "ppc_rom.bin"
 #define KERNEL_LOAD_ADDR        0x01000000
 #define INITRD_LOAD_ADDR        0x01800000
+#define PARAMS_ADDR		0xf0004000
+#define PARAMS_SIZE		0x00001000
+
+#define QTRACE_START		0xf0008000
+#define QTRACE_SIZE		0x00001000
 
 /* Memory Mapping of Configuration Registers */
 #define CCSBAR          0xf8000000
@@ -233,6 +239,28 @@ static const MemoryRegionOps gur_ops = {
     },
 };
 
+static void write_qtrace(void *opaque, target_phys_addr_t addr, uint64_t value,
+                         unsigned size)
+{
+    switch (addr & 0xfff) {
+    case 0x00:
+        trace_special (TRACE_SPECIAL_LOADADDR, value);
+        break;
+    default:
+        DPRINTF("%s: writing non implemented register 0x%8x\n", __func__,
+                QTRACE_START + addr);
+    }
+}
+
+static const MemoryRegionOps qtrace_ops = {
+    .write = write_qtrace,
+    .endianness = DEVICE_BIG_ENDIAN,
+    .valid = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
+};
+
 static void main_cpu_reset(void *opaque)
 {
     ResetData    *s   = (ResetData *)opaque;
@@ -316,9 +344,10 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
                            const char *cpu_model)
 {
 
-    CPUArchState **env  = cpus;
-    MemoryRegion  *ram  = g_new(MemoryRegion, 1);
-    MemoryRegion  *bios = g_new(MemoryRegion, 1);
+    CPUArchState **env    = cpus;
+    MemoryRegion  *ram    = g_new(MemoryRegion, 1);
+    MemoryRegion  *bios   = g_new(MemoryRegion, 1);
+    MemoryRegion  *params = g_new(MemoryRegion, 1);
     char          *filename;
     int            linux_boot, i, bios_size;
     uint32_t       kernel_base, initrd_base;
@@ -437,6 +466,20 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
             initrd_base = 0;
             initrd_size = 0;
         }
+
+        /* Set params.  */
+        memory_region_init_ram(params, "wrSbc8641d.params", PARAMS_SIZE);
+        memory_region_set_readonly(params, true);
+        memory_region_add_subregion(get_system_memory(), PARAMS_ADDR, params);
+        vmstate_register_ram_global(params);
+
+        if (kernel_cmdline) {
+            cpu_physical_memory_write(PARAMS_ADDR, kernel_cmdline,
+                                      strlen (kernel_cmdline) + 1);
+        } else {
+            stb_phys(PARAMS_ADDR, 0);
+        }
+
     } else {
         kernel_base = 0;
         kernel_size = 0;
@@ -471,7 +514,7 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
         }
     }
 
-    struct {
+    static struct {
         const MemoryRegionOps *ops;
         target_phys_addr_t start_addr;
         ram_addr_t size;
@@ -479,7 +522,8 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
     } const list[] = {
         {&mcm_ops, MCM_START, MCM_SIZE, "MCM"},
         {&gur_ops, GUR_START, GUR_SIZE, "GUR"},
-        {&pixis_ops, PIXIS_START, PIXIS_SIZE, "PIXIS"}
+        {&pixis_ops, PIXIS_START, PIXIS_SIZE, "PIXIS"},
+        {&qtrace_ops, QTRACE_START, QTRACE_SIZE, "QTRACES"}
     };
 
     for (i = 0; i < sizeof(list)/sizeof(list[0]); i++) {
@@ -501,7 +545,7 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
         }
     }
 
-    int etsec_irqs[4][3] = {
+    static const int etsec_irqs[4][3] = {
         {13, 14, 18},
         {19, 20, 24},
         {15, 16, 17},
