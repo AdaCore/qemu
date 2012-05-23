@@ -277,3 +277,18 @@ void trace_push_entry(void)
         trace_flush();
     }
 }
+
+void trace_special(uint16_t subop, uint32_t data)
+{
+    if (!tracefile_enabled) {
+        return;
+    }
+
+    trace_current->pc = data;
+    trace_current->size = subop;
+    trace_current->op = TRACE_OP_SPECIAL;
+    if (++trace_current == trace_entries + MAX_TRACE_ENTRIES
+        || tracefile_nobuf) {
+        trace_flush();
+    }
+}
