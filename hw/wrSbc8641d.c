@@ -45,6 +45,7 @@
 
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
+#include "qemu-traces.h"
 
 //#define DEBUG_WRSBC8641D
 
@@ -62,6 +63,11 @@
 #define BIOS_FILENAME   "ppc_rom.bin"
 #define KERNEL_LOAD_ADDR        0x01000000
 #define INITRD_LOAD_ADDR        0x01800000
+#define PARAMS_ADDR		0xf0004000
+#define PARAMS_SIZE		0x00001000
+
+#define QTRACE_START		0xf0008000
+#define QTRACE_SIZE		0x00001000
 
 /* Memory Mapping of Configuration Registers */
 #define CCSBAR          0xf8000000
@@ -262,6 +268,30 @@ static CPUReadMemoryFunc * const read_gur_fct[] = {
     &read_gur,
 };
 
+static void write_qtrace(void *opaque, target_phys_addr_t addr, uint32_t value)
+{
+    switch (addr & 0xfff) {
+    case 0x00:
+        trace_special (TRACE_SPECIAL_LOADADDR, value);
+        break;
+    default:
+        DPRINTF("%s: writing non implemented register 0x%8x\n", __func__,
+                QTRACE_START + addr);
+    }
+}
+
+static CPUWriteMemoryFunc * const write_qtrace_fct[] = {
+    &write_bogus,
+    &write_bogus,
+    &write_qtrace,
+};
+
+static CPUReadMemoryFunc * const read_qtrace_fct[] = {
+    &read_bogus,
+    &read_bogus,
+    &read_bogus,
+};
+
 static void main_cpu_reset(void *opaque)
 {
     ResetData *s   = (ResetData *)opaque;
@@ -350,7 +380,7 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
     MemoryRegion  *ram;
     char          *filename;
     int            linux_boot, i, bios_size;
-    ram_addr_t     bios_offset;
+    ram_addr_t     bios_offset, params_offset;
     uint32_t       kernel_base, initrd_base;
     long           kernel_size, initrd_size;
     int            ppc_boot_device;
@@ -408,7 +438,7 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
     memory_region_add_subregion(get_system_memory(), 0x0, ram);
 
     /* allocate and load BIOS */
-    bios_offset = qemu_ram_alloc(NULL, "ppc_simple.bios", BIOS_SIZE);
+    bios_offset = qemu_ram_alloc(NULL, "mpc8641d.bios", BIOS_SIZE);
     if (bios_name != NULL && strcmp(bios_name, "-") == 0) {
         /* No bios.  */
         bios_size = BIOS_SIZE;
@@ -466,6 +496,16 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
             initrd_base = 0;
             initrd_size = 0;
         }
+        /* Set params.  */
+        params_offset = qemu_ram_alloc(NULL, "mpc8641d.params", PARAMS_SIZE);
+        cpu_register_physical_memory(PARAMS_ADDR, PARAMS_SIZE, params_offset);
+        if (kernel_cmdline) {
+            cpu_physical_memory_write(PARAMS_ADDR, kernel_cmdline,
+                                      strlen (kernel_cmdline) + 1);
+        } else {
+            stb_phys(PARAMS_ADDR, 0);
+        }
+
         ppc_boot_device = 'm';
     } else {
         kernel_base = 0;
@@ -509,7 +549,7 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
         }
     }
 
-    struct {
+    static struct {
         CPUReadMemoryFunc * const *read;
         CPUWriteMemoryFunc * const *write;
         target_phys_addr_t start_addr;
@@ -517,7 +557,8 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
     } const list[] = {
         {read_mcm_fct, write_mcm_fct, MCM_START, MCM_SIZE},
         {read_gur_fct, write_gur_fct, GUR_START, GUR_SIZE},
-        {read_pixis_fct, write_pixis_fct, PIXIS_START, PIXIS_SIZE}
+        {read_pixis_fct, write_pixis_fct, PIXIS_START, PIXIS_SIZE},
+        {read_qtrace_fct, write_qtrace_fct, QTRACE_START, QTRACE_SIZE}
     };
 
     int io_mem;
@@ -539,7 +580,7 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
         }
     }
 
-    int etsec_irqs[4][3] = {
+    static const int etsec_irqs[4][3] = {
         {13, 14, 18},
         {19, 20, 24},
         {15, 16, 17},
