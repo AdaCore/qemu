@@ -4461,16 +4461,23 @@ static void gen_mtspr(DisasContext *ctx)
 
 /***                         Cache management                              ***/
 
+/* XXX: specification says this should be treated as a store by the MMU */
+/* "The dcbi instruction is treated as a store to the addressed cache block
+ * with respect to protection." _with respect to protection_ this means that
+ * there is no actual store but the MMU fault (if any) should be triggered.
+ *
+ * Doing load and store operation to simulate cache control instructions can be
+ * bogus for IO areas where it's not harmless to read and write in a register
+ * (e.g. "write one to clear" registers).
+ *
+ * AFAICS it's not possible to simulate the store operation in Qemu. So we are
+ * better off interpreting cache management instructions as no-op.
+ */
+
 /* dcbf */
 static void gen_dcbf(DisasContext *ctx)
 {
-    /* XXX: specification says this is treated as a load by the MMU */
-    TCGv t0;
-    gen_set_access_type(ctx, ACCESS_CACHE);
-    t0 = tcg_temp_new();
-    gen_addr_reg_index(ctx, t0);
-    gen_qemu_ld8u(ctx, t0, t0);
-    tcg_temp_free(t0);
+    /* interpreted as no-op. See comment above. */
 }
 
 /* dcbi (Supervisor only) */
@@ -4479,63 +4486,32 @@ static void gen_dcbi(DisasContext *ctx)
 #if defined(CONFIG_USER_ONLY)
     gen_inval_exception(ctx, POWERPC_EXCP_PRIV_OPC);
 #else
-    TCGv EA, val;
-    if (unlikely(ctx->pr)) {
-        gen_inval_exception(ctx, POWERPC_EXCP_PRIV_OPC);
-        return;
-    }
-    EA = tcg_temp_new();
-    gen_set_access_type(ctx, ACCESS_CACHE);
-    gen_addr_reg_index(ctx, EA);
-    val = tcg_temp_new();
-    /* XXX: specification says this should be treated as a store by the MMU */
-    gen_qemu_ld8u(ctx, val, EA);
-    gen_qemu_st8(ctx, val, EA);
-    tcg_temp_free(val);
-    tcg_temp_free(EA);
+    /* interpreted as no-op. See comment above. */
 #endif
 }
 
 /* dcdst */
 static void gen_dcbst(DisasContext *ctx)
 {
-    /* XXX: specification say this is treated as a load by the MMU */
-    TCGv t0;
-    gen_set_access_type(ctx, ACCESS_CACHE);
-    t0 = tcg_temp_new();
-    gen_addr_reg_index(ctx, t0);
-    gen_qemu_ld8u(ctx, t0, t0);
-    tcg_temp_free(t0);
+    /* interpreted as no-op. See comment above. */
 }
 
 /* dcbt */
 static void gen_dcbt(DisasContext *ctx)
 {
-    /* interpreted as no-op */
-    /* XXX: specification say this is treated as a load by the MMU
-     *      but does not generate any exception
-     */
+    /* interpreted as no-op. See comment above. */
 }
-
 
 /* dcbtst */
 static void gen_dcbtst(DisasContext *ctx)
 {
-    /* interpreted as no-op */
-    /* XXX: specification say this is treated as a load by the MMU
-     *      but does not generate any exception
-     */
+    /* interpreted as no-op. See comment above. */
 }
 
 /* dcbtls */
 static void gen_dcbtls(DisasContext *ctx)
 {
-    /* Always fails locking the cache */
-    TCGv t0 = tcg_temp_new();
-    gen_load_spr(t0, SPR_Exxx_L1CSR0);
-    tcg_gen_ori_tl(t0, t0, L1CSR0_CUL);
-    gen_store_spr(SPR_Exxx_L1CSR0, t0);
-    tcg_temp_free(t0);
+    /* interpreted as no-op. See comment above. */
 }
 
 /* dcbz */
