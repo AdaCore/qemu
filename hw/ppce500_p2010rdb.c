@@ -158,7 +158,7 @@ static void main_cpu_reset(void *opaque)
     tlb2->mas7_3 |= MAS3_UR | MAS3_UW | MAS3_UX | MAS3_SR | MAS3_SW | MAS3_SX;
 
     /*
-     * I'm still sure to understand why, but the bootApp set PID to 1 before
+     * I'm still not sure to understand why, but the bootApp set PID to 1 before
      * starting the kernel.
      */
     env->spr[SPR_BOOKE_PID] = 0x1;
