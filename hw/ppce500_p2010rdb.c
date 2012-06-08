@@ -156,6 +156,12 @@ static void main_cpu_reset(void *opaque)
     tlb2->mas2 = 0x0 & TARGET_PAGE_MASK;
     tlb2->mas7_3 = 0x0 & TARGET_PAGE_MASK;
     tlb2->mas7_3 |= MAS3_UR | MAS3_UW | MAS3_UX | MAS3_SR | MAS3_SW | MAS3_SX;
+
+    /*
+     * I'm still sure to understand why, but the bootApp set PID to 1 before
+     * starting the kernel.
+     */
+    env->spr[SPR_BOOKE_PID] = 0x1;
 }
 
 uint32_t g_DEVDISR = 0x0;
@@ -720,7 +726,6 @@ static void fsl_e500_init(fsl_e500_config *config,
     uint64_t            elf_lowaddr;
     target_long         kernel_size = 0;
     target_ulong        dt_base     = 0;
-    ram_addr_t          bios_offset = 0;
     int                 bios_size   = 0;
     MemoryRegion       *ram, *misc_io;
     qemu_irq           *irqs, *mpic;
@@ -753,12 +758,17 @@ static void fsl_e500_init(fsl_e500_config *config,
     memory_region_init_ram(ram, "p2010.ram", ram_size);
     memory_region_add_subregion(get_system_memory(), 0x0, ram);
 
+    ram = g_malloc0(sizeof(*ram));
+    memory_region_init_ram(ram, "p2010.ram_L2", 0x1000000 /* 512 * 1024 */);
+    memory_region_add_subregion(get_system_memory(), 0xf8000000 /* 0xf8b00000 */, ram);
+
     ccsr_addr = config->ccsr_init_addr;
 
     /* Configuration, Control, and Status Registers */
     ccsr_space = g_malloc0(sizeof(*ccsr_space));
     memory_region_init(ccsr_space, "CCSR_space", 0x100000);
-    memory_region_add_subregion(get_system_memory(), ccsr_addr, ccsr_space);
+    memory_region_add_subregion_overlap(get_system_memory(), ccsr_addr,
+                                        ccsr_space, 2);
 
     /* Global Utilities */
     misc_io = g_malloc0(sizeof(*misc_io));
@@ -951,10 +961,70 @@ static QEMUMachine p2010rdb_machine = {
     .init = p2010rdb_init,
 };
 
+static fsl_e500_config wrsbc8548_vxworks_config = {
+    .ccsr_init_addr = 0xE0000000,
+    .cpu_model      = "p2010",
+    .freq           = 700000000UL >> 3,
+    .serial_irq     = 12 + 26,
+    .espi_irq       = 12 + 43,
+    .i2c_irq        = 12 + 27,
+    .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
+    .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
+    .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+};
+
+static void wrsbc8548_vxworks_init(ram_addr_t ram_size,
+                                  const char *boot_device,
+                                  const char *kernel_filename,
+                                  const char *kernel_cmdline,
+                                  const char *initrd_filename,
+                                  const char *cpu_model)
+{
+    fsl_e500_init(&wrsbc8548_vxworks_config, ram_size, boot_device,
+                  kernel_filename, kernel_cmdline, initrd_filename, cpu_model);
+}
+
+static QEMUMachine wrsbc8548_vxworks_machine = {
+    .name = "wrsbc8548_vxworks",
+    .desc = "wrsbc8548 initialized for VxWorks653",
+    .init = wrsbc8548_vxworks_init,
+};
+
+static fsl_e500_config wrsbc8548_config = {
+    .ccsr_init_addr = 0xff700000,
+    .cpu_model      = "p2010",
+    .freq           = 700000000UL >> 3,
+    .serial_irq     = 12 + 26,
+    .espi_irq       = 12 + 43,
+    .i2c_irq        = 12 + 27,
+    .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
+    .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
+    .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+};
+
+static void wrsbc8548_init(ram_addr_t ram_size,
+                           const char *boot_device,
+                           const char *kernel_filename,
+                           const char *kernel_cmdline,
+                           const char *initrd_filename,
+                           const char *cpu_model)
+{
+    fsl_e500_init(&wrsbc8548_config, ram_size, boot_device,
+                  kernel_filename, kernel_cmdline, initrd_filename, cpu_model);
+}
+
+static QEMUMachine wrsbc8548_machine = {
+    .name = "wrsbc8548",
+    .desc = "wrsbc8548",
+    .init = wrsbc8548_init,
+};
+
 static void p2010rdb_machine_init(void)
 {
     qemu_register_machine(&p2010rdb_machine);
     qemu_register_machine(&p2010rdb_vxworks_machine);
+    qemu_register_machine(&wrsbc8548_vxworks_machine);
+    qemu_register_machine(&wrsbc8548_machine);
 }
 
 machine_init(p2010rdb_machine_init);
