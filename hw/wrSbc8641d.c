@@ -112,7 +112,7 @@ uint32_t pixisSpdTable[8] =
 };
 /* This defines the oscillator frequency value. Choose an index in the
  * pixisSpdTable array that corresponds to the wanted value */
-#define OSC_FREQ_INDEX  2
+#define OSC_FREQ_INDEX  5
 
 /* This is one of the PLL frequency multipliers ratio. This one influences the
  * core's decrementer and will be used to calculate the timebase */
