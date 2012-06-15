@@ -44,6 +44,7 @@ static int          tracefile_history;
 
 static int           nbr_histmap_entries;
 static target_ulong *histmap_entries;
+static target_ulong histmap_loadaddr;
 
 void tracefile_history_for_tb_search(TranslationBlock *tb)
 {
@@ -59,7 +60,7 @@ void tracefile_history_for_tb_search(TranslationBlock *tb)
 
         while (low <= high) {
             int          mid = low + (high - low) / 2;
-            target_ulong pc  = histmap_entries[mid];
+            target_ulong pc  = histmap_loadaddr + histmap_entries[mid];
 
             if (pc >= tb->pc && pc < tb->pc + tb->size) {
                 tb->tflags |= TRACE_OP_HIST_SET;
@@ -287,6 +288,11 @@ void trace_special(uint16_t subop, uint32_t data)
     trace_current->pc = data;
     trace_current->size = subop;
     trace_current->op = TRACE_OP_SPECIAL;
+
+    /* Save the load address to rebase the history map.  */
+    if (subop == TRACE_SPECIAL_LOADADDR)
+      histmap_loadaddr = data;
+
     if (++trace_current == trace_entries + MAX_TRACE_ENTRIES
         || tracefile_nobuf) {
         trace_flush();
