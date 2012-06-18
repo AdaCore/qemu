@@ -40,6 +40,7 @@
 #include "openpic.h"
 #include "etsec.h"
 #include "exec-memory.h"
+#include "hostfs.h"
 
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
@@ -66,6 +67,8 @@
 
 #define QTRACE_START		0xf0008000
 #define QTRACE_SIZE		0x00001000
+
+#define HOSTFS_START            0xf0009000
 
 /* Memory Mapping of Configuration Registers */
 #define CCSBAR          0xf8000000
@@ -557,6 +560,9 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
                      &nd_table[i], pic[12+etsec_irqs[i][0]],
                      pic[12+etsec_irqs[i][1]], pic[12+etsec_irqs[i][2]]);
     }
+
+    /* HostFS */
+    hostfs_create(HOSTFS_START, get_system_memory());
 
     /* Initialize plug-ins */
     plugin_init(pic, 16);
