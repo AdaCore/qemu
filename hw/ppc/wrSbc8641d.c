@@ -43,6 +43,7 @@
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
 #include "qemu-traces.h"
+#include "hw/hostfs.h"
 
 //#define DEBUG_WRSBC8641D
 
@@ -65,6 +66,8 @@
 
 #define QTRACE_START		0xf0008000
 #define QTRACE_SIZE		0x00001000
+
+#define HOSTFS_START            0xf0009000
 
 /* Memory Mapping of Configuration Registers */
 #define CCSBAR          0xf8000000
@@ -598,6 +601,9 @@ static void wrsbc8641d_init(QEMUMachineInitArgs *args)
                      &nd_table[i], pic[12+etsec_irqs[i][0]],
                      pic[12+etsec_irqs[i][1]], pic[12+etsec_irqs[i][2]]);
     }
+
+    /* HostFS */
+    hostfs_create(HOSTFS_START, get_system_memory());
 
     /* Initialize plug-ins */
     plugin_init(pic, 16);
