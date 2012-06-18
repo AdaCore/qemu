@@ -261,6 +261,7 @@ hw-obj-$(CONFIG_NE2000_ISA) += ne2000-isa.o
 hw-obj-$(CONFIG_ETSEC) += etsec.o etsec_registers.o etsec_rings.o etsec_miim.o
 hw-obj-y += espi.o
 hw-obj-y += fsl_I2C.o
+hw-obj-y += hostfs.o
 
 # IDE
 hw-obj-$(CONFIG_IDE_CORE) += ide/core.o ide/atapi.o
