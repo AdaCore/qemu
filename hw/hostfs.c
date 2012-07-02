@@ -57,7 +57,9 @@ const hostfs_Register_Definition hostfs_registers_def[] = {
 {0x00c, "ARG3",       "3rd argument", ACC_RW, 0x00000000},
 {0x010, "ARG4",       "4th argument", ACC_RW, 0x00000000},
 {0x014, "ARG5",       "5th argument", ACC_RW, 0x00000000},
-    };
+/* End Of Table */
+{0x0, 0x0, 0x0, 0x0, 0x0}
+};
 
 /* Index of each register */
 
@@ -90,12 +92,13 @@ typedef struct hostfs {
 #define SYSCALL_CLOSE 4
 
 /* HostFS open flags */
-#define HOSTFS_O_RDONLY (1 < 0)
-#define HOSTFS_O_WRONLY (1 < 1)
-#define HOSTFS_O_CREAT  (1 < 2)
-#define HOSTFS_O_RDWR   (1 < 3)
-#define HOSTFS_O_APPEND (1 < 4)
-#define HOSTFS_O_TRUNC  (1 < 5)
+#define HOSTFS_O_RDONLY (1 << 0)
+#define HOSTFS_O_WRONLY (1 << 1)
+#define HOSTFS_O_CREAT  (1 << 2)
+#define HOSTFS_O_RDWR   (1 << 3)
+#define HOSTFS_O_APPEND (1 << 4)
+#define HOSTFS_O_TRUNC  (1 << 5)
+#define HOSTFS_O_BINARY (1 << 6)
 
 static uint32_t open_flags(uint32_t hostfs_flags)
 {
@@ -119,6 +122,11 @@ static uint32_t open_flags(uint32_t hostfs_flags)
     if (hostfs_flags & HOSTFS_O_TRUNC) {
         ret |= O_TRUNC;
     }
+#ifdef _WIN32
+    if (hostfs_flags & HOSTFS_O_BINARY) {
+        ret |= O_BINARY;
+    }
+#endif
     trace_hostfs_open_flags(hostfs_flags, ret);
     return ret;
 }
