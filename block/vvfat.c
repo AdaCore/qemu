@@ -2959,7 +2959,9 @@ static int write_target_commit(BlockDriverState *bs, int64_t sector_num,
 static void write_target_close(BlockDriverState *bs) {
     BDRVVVFATState* s = *((BDRVVVFATState**) bs->opaque);
     bdrv_unref(s->qcow);
+    unlink(s->qcow_filename);
     g_free(s->qcow_filename);
+    s->qcow_filename = NULL;
 }
 
 static BlockDriver vvfat_write_target = {
@@ -3015,7 +3017,7 @@ static int enable_write_target(BDRVVVFATState *s, Error **errp)
     unlink(s->qcow_filename);
 #endif
 
-    bdrv_set_backing_hd(s->bs, bdrv_new("", &error_abort));
+    bdrv_set_backing_hd(s->bs, bdrv_new("vvfat", &error_abort));
     s->bs->backing_hd->drv = &vvfat_write_target;
     s->bs->backing_hd->opaque = g_malloc(sizeof(void*));
     *(void**)s->bs->backing_hd->opaque = s;
