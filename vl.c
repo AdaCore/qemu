@@ -1926,6 +1926,12 @@ void qemu_system_killed(int signal, pid_t pid)
     qemu_system_shutdown_request();
 }
 
+void qemu_system_force_shutdown(void)
+{
+    no_shutdown = 0;
+    qemu_system_shutdown_request();
+}
+
 void qemu_system_shutdown_request(void)
 {
     shutdown_requested = 1;
