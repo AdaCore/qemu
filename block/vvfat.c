@@ -2957,7 +2957,9 @@ static int write_target_commit(BlockDriverState *bs, int64_t sector_num,
 static void write_target_close(BlockDriverState *bs) {
     BDRVVVFATState* s = *((BDRVVVFATState**) bs->opaque);
     bdrv_unref(s->qcow);
+    unlink(s->qcow_filename);
     g_free(s->qcow_filename);
+    s->qcow_filename = NULL;
 }
 
 static BlockDriver vvfat_write_target = {
@@ -2996,7 +2998,7 @@ static int enable_write_target(BDRVVVFATState *s)
         goto err;
     }
 
-    s->qcow = bdrv_new("");
+    s->qcow = bdrv_new("vvfat");
 
     ret = bdrv_open(s->qcow, s->qcow_filename, NULL,
             BDRV_O_RDWR | BDRV_O_CACHE_WB | BDRV_O_NO_FLUSH, bdrv_qcow,
