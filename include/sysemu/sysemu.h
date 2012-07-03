@@ -126,4 +126,6 @@ extern QemuOptsList qemu_net_opts;
 extern QemuOptsList qemu_global_opts;
 extern QemuOptsList qemu_semihosting_config_opts;
 
+void qemu_system_force_shutdown(void);
+
 #endif
