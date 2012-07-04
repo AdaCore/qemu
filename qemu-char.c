@@ -352,7 +352,7 @@ static int mux_proc_byte(CharDriverState *chr, MuxDriver *d, int ch)
             {
                  const char *term =  "QEMU: Terminated\n\r";
                  chr->chr_write(chr,(uint8_t *)term,strlen(term));
-                 qemu_system_shutdown_request();
+                 qemu_system_force_shutdown();
                  break;
             }
         case 's':
