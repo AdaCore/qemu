@@ -472,7 +472,6 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
 
         /* Set params.  */
         memory_region_init_ram(params, "wrSbc8641d.params", PARAMS_SIZE);
-        memory_region_set_readonly(params, true);
         memory_region_add_subregion(get_system_memory(), PARAMS_ADDR, params);
         vmstate_register_ram_global(params);
 
@@ -482,6 +481,9 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
         } else {
             stb_phys(PARAMS_ADDR, 0);
         }
+
+        /* Set read-only after writing command line */
+        memory_region_set_readonly(params, true);
 
     } else {
         kernel_base = 0;
