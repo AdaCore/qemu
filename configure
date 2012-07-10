@@ -263,6 +263,7 @@ gtkabi="2.0"
 tpm="no"
 libssh2=""
 vhdx=""
+bridge_helper="yes"
 
 # parse CC options first
 for opt do
@@ -1010,6 +1011,8 @@ for opt do
   ;;
   --disable-vhdx) vhdx="no"
   ;;
+  --disable-bridge-helper) bridge_helper="no"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -1267,6 +1270,7 @@ Advanced options (experts only):
   --enable-libssh2         enable ssh block device support
   --disable-vhdx           disables support for the Microsoft VHDX image format
   --enable-vhdx            enable support for the Microsoft VHDX image format
+  --disable-bridge-helper  disable building of the qemu-bridge-helper
 
 NOTE: The object files are built at the place where configure is launched
 EOF
@@ -4717,6 +4721,10 @@ done
 if test "$tcg_interpreter" = "yes" ; then
   echo "CONFIG_TCI_DIS=y"  >> $config_target_mak
   echo "CONFIG_TCI_DIS=y"  >> config-all-disas.mak
+fi
+
+if test "$bridge_helper" = "yes" && test "$linux" = "yes" ; then
+    echo "CONFIG_HELPERS=y" >> $config_host_mak
 fi
 
 case "$ARCH" in
