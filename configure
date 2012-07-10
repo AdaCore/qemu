@@ -195,6 +195,7 @@ zlib="yes"
 guest_agent="yes"
 libiscsi=""
 coroutine=""
+bridge_helper="yes"
 
 # parse CC options first
 for opt do
@@ -834,6 +835,8 @@ for opt do
   ;;
   --disable-guest-agent) guest_agent="no"
   ;;
+  --disable-bridge-helper) bridge_helper="no"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -1123,6 +1126,7 @@ echo "  --disable-guest-agent    disable building of the QEMU Guest Agent"
 echo "  --enable-guest-agent     enable building of the QEMU Guest Agent"
 echo "  --with-coroutine=BACKEND coroutine backend. Supported options:"
 echo "                           gthread, ucontext, sigaltstack, windows"
+echo "  --disable-bridge-helper  disable building of the qemu-bridge-helper"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -3892,6 +3896,10 @@ done
 if test "$tcg_interpreter" = "yes" ; then
   echo "CONFIG_TCI_DIS=y"  >> $config_target_mak
   echo "CONFIG_TCI_DIS=y"  >> $libdis_config_mak
+fi
+
+if test "$bridge_helper" = "yes" && test "$linux" = "yes" ; then
+    echo "CONFIG_HELPERS=y" >> $config_host_mak
 fi
 
 case "$ARCH" in
