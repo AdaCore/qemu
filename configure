@@ -339,6 +339,7 @@ libssh2=""
 vhdx=""
 numa=""
 tcmalloc="no"
+bridge_helper="yes"
 
 # parse CC options first
 for opt do
@@ -1160,6 +1161,8 @@ for opt do
   ;;
   --enable-tcmalloc) tcmalloc="yes"
   ;;
+  --disable-bridge-helper) bridge_helper="no"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1321,6 +1324,7 @@ Advanced options (experts only):
   --disable-blobs          disable installing provided firmware blobs
   --with-vss-sdk=SDK-path  enable Windows VSS support in QEMU Guest Agent
   --with-win-sdk=SDK-path  path to Windows Platform SDK (to build VSS .tlb)
+  --disable-bridge-helper  disable building of the qemu-bridge-helper
 
 Optional features, enabled with --enable-FEATURE and
 disabled with --disable-FEATURE, default is enabled if available:
@@ -5584,6 +5588,10 @@ done
 if test "$tcg_interpreter" = "yes" ; then
   echo "CONFIG_TCI_DIS=y"  >> $config_target_mak
   echo "CONFIG_TCI_DIS=y"  >> config-all-disas.mak
+fi
+
+if test "$bridge_helper" = "yes" && test "$linux" = "yes" ; then
+    echo "CONFIG_HELPERS=y" >> $config_host_mak
 fi
 
 case "$ARCH" in
