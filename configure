@@ -509,6 +509,7 @@ supported_cpu="no"
 supported_os="no"
 bogus_os="no"
 malloc_trim=""
+bridge_helper="yes"
 
 # parse CC options first
 for opt do
@@ -1520,6 +1521,8 @@ for opt do
   ;;
   --disable-libpmem) libpmem=no
   ;;
+  --disable-bridge-helper) bridge_helper="no"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1718,6 +1721,7 @@ Advanced options (experts only):
   --enable-profiler        profiler support
   --enable-debug-stack-usage
                            track the maximum stack usage of stacks created by qemu_alloc_stack
+  --disable-bridge-helper  disable building of the qemu-bridge-helper
 
 Optional features, enabled with --enable-FEATURE and
 disabled with --disable-FEATURE, default is enabled if available:
@@ -7789,6 +7793,10 @@ for i in $ARCH $TARGET_BASE_ARCH ; do
 done
 if test "$tcg_interpreter" = "yes" ; then
   disas_config "TCI"
+fi
+
+if test "$bridge_helper" = "yes" && test "$linux" = "yes" ; then
+    echo "CONFIG_HELPERS=y" >> $config_host_mak
 fi
 
 case "$ARCH" in
