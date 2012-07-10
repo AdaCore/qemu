@@ -325,6 +325,7 @@ tpm="no"
 libssh2=""
 vhdx=""
 quorum="no"
+bridge_helper="yes"
 
 # parse CC options first
 for opt do
@@ -1098,6 +1099,8 @@ for opt do
   ;;
   --enable-quorum) quorum="yes"
   ;;
+  --disable-bridge-helper) bridge_helper="no"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -1364,6 +1367,7 @@ Advanced options (experts only):
   --enable-vhdx            enable support for the Microsoft VHDX image format
   --disable-quorum         disable quorum block filter support
   --enable-quorum          enable quorum block filter support
+  --disable-bridge-helper  disable building of the qemu-bridge-helper
 
 NOTE: The object files are built at the place where configure is launched
 EOF
@@ -5124,6 +5128,10 @@ done
 if test "$tcg_interpreter" = "yes" ; then
   echo "CONFIG_TCI_DIS=y"  >> $config_target_mak
   echo "CONFIG_TCI_DIS=y"  >> config-all-disas.mak
+fi
+
+if test "$bridge_helper" = "yes" && test "$linux" = "yes" ; then
+    echo "CONFIG_HELPERS=y" >> $config_host_mak
 fi
 
 case "$ARCH" in
