@@ -332,7 +332,8 @@ static int hostfs_init(SysBusDevice *dev)
 {
     hostfs *hfs = FROM_SYSBUS(typeof(*hfs), dev);
 
-    memory_region_init_io(&hfs->io_area, &hostfs_ops, hfs, "hostfs", 0x100);
+    memory_region_init_io(&hfs->io_area, &hostfs_ops, hfs, "hostfs",
+                          REG_NUMBER * 4);
 
     sysbus_init_mmio(dev, &hfs->io_area);
 
@@ -366,6 +367,7 @@ DeviceState *hostfs_create(target_phys_addr_t  base,
                            MemoryRegion       *mr)
 {
     DeviceState *dev;
+    SysBusDevice *sbdev;
 
     dev = qdev_create(NULL, "hostfs");
 
@@ -373,7 +375,9 @@ DeviceState *hostfs_create(target_phys_addr_t  base,
         return NULL;
     }
 
-    sysbus_mmio_map(sysbus_from_qdev(dev), 0, base);
+    sbdev = sysbus_from_qdev(dev);
+    sbdev->mmio[0].addr = base;
+    memory_region_add_subregion(mr, base, sbdev->mmio[0].memory);
 
     return dev;
 }
