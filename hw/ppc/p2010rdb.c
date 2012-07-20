@@ -36,6 +36,8 @@
 
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
+#include "qemu-traces.h"
+#include "hw/hostfs.h"
 
 /* #define DEBUG_P2010 */
 
@@ -46,6 +48,13 @@
 #define DTC_PAD_MASK               0xFFFFF
 #define INITRD_LOAD_PAD            0x2000000
 #define INITRD_PAD_MASK            0xFFFFFF
+
+/* Offsets in CCSRBAR */
+#define PARAMS_ADDR                 0x80000
+#define PARAMS_SIZE                 0x01000
+#define QTRACE_START                0x81000
+#define QTRACE_SIZE                 0x01000
+#define HOSTFS_START                0x82000
 
 #define P2010RDB_CCSRBAR_BASE       0xff700000
 #if 0
@@ -758,6 +767,31 @@ static const MemoryRegionOps p2010_vsc7385_ops = {
     },
 };
 
+static void write_qtrace(void *opaque, hwaddr addr, uint64_t value,
+                         unsigned size)
+{
+    switch (addr & 0xfff) {
+    case 0x00:
+        trace_special(TRACE_SPECIAL_LOADADDR, value);
+        break;
+    default:
+#ifdef DEBUG_P2010
+        printf("%s: writing non implemented register 0x" TARGET_FMT_plx "\n",
+               __func__, QTRACE_START + addr);
+#endif
+        break;
+    }
+}
+
+static const MemoryRegionOps qtrace_ops = {
+    .write = write_qtrace,
+    .endianness = DEVICE_BIG_ENDIAN,
+    .valid = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
+};
+
 static qemu_irq *init_mpic(MemoryRegion *ccsr, qemu_irq **irqs)
 {
     qemu_irq     *mpic;
@@ -802,6 +836,7 @@ static void fsl_e500_init(fsl_e500_config *config, QEMUMachineInitArgs *args)
     target_ulong  dt_base         = 0;
     int           bios_size       = 0;
     MemoryRegion *ram, *misc_io;
+    MemoryRegion  *params = g_new(MemoryRegion, 1);
     qemu_irq     *mpic, **irqs;
     ResetData    *reset_info;
     DriveInfo    *dinfo;
@@ -1002,6 +1037,30 @@ static void fsl_e500_init(fsl_e500_config *config, QEMUMachineInitArgs *args)
         env->nip = elf_entry;    /* FIXME: entry? */
         reset_info->entry = elf_entry;
     }
+
+    /* Set params.  */
+    memory_region_init_ram(params, NULL, "p2010rdb.params", PARAMS_SIZE);
+    memory_region_add_subregion(ccsr_space, PARAMS_ADDR, params);
+    vmstate_register_ram_global(params);
+
+    if (args->kernel_cmdline) {
+        cpu_physical_memory_write(ccsr_addr + PARAMS_ADDR, args->kernel_cmdline,
+                                  strlen(args->kernel_cmdline) + 1);
+    } else {
+        stb_phys(ccsr_addr + PARAMS_ADDR, 0);
+    }
+
+    /* Set read-only after writing command line */
+    memory_region_set_readonly(params, true);
+
+    /* Qtrace*/
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, NULL, &qtrace_ops, env,
+                          "Exec-traces", QTRACE_SIZE);
+    memory_region_add_subregion(ccsr_space, QTRACE_START, misc_io);
+
+    /* HostFS */
+    hostfs_create(HOSTFS_START, ccsr_space);
 
     /* Initialize plug-ins */
     plugin_init(mpic, 16);
