@@ -61,13 +61,6 @@
 #define BIOS_FILENAME   "ppc_rom.bin"
 #define KERNEL_LOAD_ADDR        0x01000000
 #define INITRD_LOAD_ADDR        0x01800000
-#define PARAMS_ADDR		0xf0004000
-#define PARAMS_SIZE		0x00001000
-
-#define QTRACE_START		0xf0008000
-#define QTRACE_SIZE		0x00001000
-
-#define HOSTFS_START            0xf0009000
 
 /* Memory Mapping of Configuration Registers */
 #define CCSBAR          0xf8000000
@@ -80,6 +73,12 @@
 #define GUR_SIZE        0x1000
 #define PMR_START       (CCSBAR + 0xe1000)
 #define PMR_SIZE        0xa9
+
+#define PARAMS_ADDR     (CCSBAR + 0x80000)
+#define PARAMS_SIZE     (0x01000)
+#define QTRACE_START    (CCSBAR + 0x81000)
+#define QTRACE_SIZE     (0x01000)
+#define HOSTFS_START    (CCSBAR + 0x82000)
 
 /* Board specific configuration registers */
 #define PIXIS_START     0xf8100000
