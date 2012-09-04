@@ -28,6 +28,7 @@
 #include "disas.h"
 #include "helper.h"
 #include "tcg-op.h"
+#include "qemu-traces.h"
 
 #define GEN_HELPER 1
 #include "helper.h"
@@ -5368,6 +5369,9 @@ static inline void gen_intermediate_code_internal(TranslationBlock * tb,
         if (dc->singlestep) {
             break;
         }
+	if (tracefile_enabled
+	    && (dc->npc == JUMP_PC || dc->npc == DYNAMIC_PC))
+	  break;
     } while ((gen_opc_ptr < gen_opc_end) &&
              (dc->pc - pc_start) < (TARGET_PAGE_SIZE - 32) &&
              num_insns < max_insns);
