@@ -28,6 +28,7 @@
 #include "disas/disas.h"
 #include "helper.h"
 #include "tcg-op.h"
+#include "qemu-traces.h"
 
 #define GEN_HELPER 1
 #include "helper.h"
@@ -5342,6 +5343,11 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
         /* if single step mode, we generate only one instruction and
            generate an exception */
         if (dc->singlestep) {
+            break;
+        }
+        if (tracefile_enabled
+            && (dc->npc == JUMP_PC || dc->npc == DYNAMIC_PC)) {
+
             break;
         }
     } while ((tcg_ctx.gen_opc_ptr < gen_opc_end) &&
