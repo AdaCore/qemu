@@ -213,6 +213,12 @@ int cpu_exec(CPUState *env)
 
     cpu_single_env = env;
 
+    /* This memory barrier ensure good instruction ordering. Without it, read to
+     * exit_request and write to cpu_single_env can be inverted, leaving a race
+     * condition if SIG_IPI is triggered at the wrong time (see cpu_signal()).
+     */
+    barrier();
+
     if (unlikely(exit_request)) {
         env->exit_request = 1;
     }
