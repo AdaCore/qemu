@@ -2301,6 +2301,15 @@ void helper_stqf(CPUSPARCState *env, target_ulong addr, int mem_idx)
 #endif
 }
 
+void helper_power_down(CPUSPARCState *env)
+{
+    env->halted = 1;
+    env->exception_index = EXCP_HLT;
+    env->pc = env->npc;
+    env->npc = env->pc + 4;
+    cpu_loop_exit(env);
+}
+
 #if !defined(CONFIG_USER_ONLY)
 #ifndef TARGET_SPARC64
 void cpu_unassigned_access(CPUSPARCState *env, target_phys_addr_t addr,
