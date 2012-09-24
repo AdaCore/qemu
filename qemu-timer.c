@@ -137,15 +137,17 @@ static void win32_rearm_timer(struct qemu_alarm_timer *t, int64_t delta);
 
 #else
 
-static int unix_start_timer(struct qemu_alarm_timer *t);
-static void unix_stop_timer(struct qemu_alarm_timer *t);
-static void unix_rearm_timer(struct qemu_alarm_timer *t, int64_t delta);
-
 #ifdef __linux__
 
 static int dynticks_start_timer(struct qemu_alarm_timer *t);
 static void dynticks_stop_timer(struct qemu_alarm_timer *t);
 static void dynticks_rearm_timer(struct qemu_alarm_timer *t, int64_t delta);
+
+#else
+
+static int unix_start_timer(struct qemu_alarm_timer *t);
+static void unix_stop_timer(struct qemu_alarm_timer *t);
+static void unix_rearm_timer(struct qemu_alarm_timer *t, int64_t delta);
 
 #endif /* __linux__ */
 
@@ -156,8 +158,9 @@ static struct qemu_alarm_timer alarm_timers[] = {
 #ifdef __linux__
     {"dynticks", dynticks_start_timer,
      dynticks_stop_timer, dynticks_rearm_timer},
-#endif
+#else
     {"unix", unix_start_timer, unix_stop_timer, unix_rearm_timer},
+#endif
 #else
     {"mmtimer", mm_start_timer, mm_stop_timer, mm_rearm_timer},
     {"dynticks", win32_start_timer, win32_stop_timer, win32_rearm_timer},
@@ -508,8 +511,9 @@ static int dynticks_start_timer(struct qemu_alarm_timer *t)
     ev.sigev_signo = SIGALRM;
 
     if (timer_create(CLOCK_REALTIME, &ev, &host_timer)) {
+        fprintf(stderr, "Dynamic Ticks disabled\n");
         perror("timer_create");
-        return -1;
+        abort();
     }
 
     t->timer = host_timer;
@@ -557,7 +561,7 @@ static void dynticks_rearm_timer(struct qemu_alarm_timer *t,
 
 #endif /* defined(__linux__) */
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__linux__)
 
 static int unix_start_timer(struct qemu_alarm_timer *t)
 {
@@ -601,7 +605,7 @@ static void unix_stop_timer(struct qemu_alarm_timer *t)
     setitimer(ITIMER_REAL, &itv, NULL);
 }
 
-#endif /* !defined(_WIN32) */
+#endif /* !defined(_WIN32) && !defined(__linux__) */
 
 
 #ifdef _WIN32
