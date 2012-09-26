@@ -128,8 +128,8 @@ typedef struct fsl_e500_config {
     int etsec_irq_rx[MAX_ETSEC_CONTROLLERS];
 } fsl_e500_config;
 
-MemoryRegion *ccsr_space;
-uint64_t      ccsr_addr = P2010RDB_CCSRBAR_BASE;
+static MemoryRegion *ccsr_space;
+static uint64_t      ccsr_addr = P2010RDB_CCSRBAR_BASE;
 
 static void main_cpu_reset(void *opaque)
 {
