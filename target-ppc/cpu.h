@@ -1140,6 +1140,10 @@ struct CPUPPCState {
     uint32_t tm_vscr;
     uint64_t tm_dscr;
     uint64_t tm_tar;
+
+    /* e300 */
+    uint32_t spcr;
+    uint32_t rcer;
 };
 
 #define SET_FIT_PERIOD(a_, b_, c_, d_)          \
