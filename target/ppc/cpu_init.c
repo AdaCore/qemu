@@ -1828,6 +1828,15 @@ static void init_excp_603(CPUPPCState *env)
 #endif
 }
 
+static void init_excp_e300(CPUPPCState *env)
+{
+    init_excp_603(env);
+#if !defined(CONFIG_USER_ONLY)
+    env->excp_vectors[POWERPC_EXCP_CRITICAL] = 0x00000A00;
+    env->excp_vectors[POWERPC_EXCP_PERFM]    = 0x00000F00;
+#endif
+}
+
 static void init_excp_604(CPUPPCState *env)
 {
 #if !defined(CONFIG_USER_ONLY)
