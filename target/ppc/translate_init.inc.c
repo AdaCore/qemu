@@ -3089,6 +3089,15 @@ static void init_excp_603(CPUPPCState *env)
 #endif
 }
 
+static void init_excp_e300(CPUPPCState *env)
+{
+    init_excp_603(env);
+#if !defined(CONFIG_USER_ONLY)
+    env->excp_vectors[POWERPC_EXCP_CRITICAL] = 0x00000A00;
+    env->excp_vectors[POWERPC_EXCP_PERFM]    = 0x00000F00;
+#endif
+}
+
 static void init_excp_604(CPUPPCState *env)
 {
 #if !defined(CONFIG_USER_ONLY)
@@ -4707,7 +4716,7 @@ static void init_proc_e300(CPUPPCState *env)
     gen_low_BATs(env);
     gen_high_BATs(env);
     gen_6xx_7xx_soft_tlb(env, 64, 2);
-    init_excp_603(env);
+    init_excp_e300(env);
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
@@ -9914,7 +9923,7 @@ static void ppc_cpu_realize(DeviceState *dev, Error **errp)
             excp_model = "PowerPC 603";
             break;
         case POWERPC_EXCP_603E:
-            excp_model = "PowerPC 603e";
+            excp_model = "PowerPC 603E";
             break;
         case POWERPC_EXCP_604:
             excp_model = "PowerPC 604";

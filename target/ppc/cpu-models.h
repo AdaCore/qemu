@@ -141,13 +141,14 @@ enum {
     CPU_POWERPC_e200z6             = 0x81120000,
     /* e300 family */
     /* e300 cores */
-    CPU_POWERPC_e300c1             = 0x00830010,
-    CPU_POWERPC_e300c2             = 0x00840010,
-    CPU_POWERPC_e300c3             = 0x00850010,
-    CPU_POWERPC_e300c4             = 0x00860010,
+    CPU_POWERPC_e300c1             = 0x80830010,
+    CPU_POWERPC_e300c2             = 0x80840010,
+    CPU_POWERPC_e300c3             = 0x80850010,
+    CPU_POWERPC_e300c4_MPC5121e    = 0x80860010,
+    CPU_POWERPC_e300c4_MPC83xx     = 0x80861010,
     /* MPC83xx microcontrollers */
 #define CPU_POWERPC_MPC834x          CPU_POWERPC_e300c1
-#define CPU_POWERPC_MPC837x          CPU_POWERPC_e300c4
+#define CPU_POWERPC_MPC837x          CPU_POWERPC_e300c4_MPC83xx
     /* e500 family */
     /* e500 cores  */
 #define CPU_POWERPC_e500             CPU_POWERPC_e500v2_v22
