@@ -1081,11 +1081,6 @@ struct CPUPPCState {
      */
     uint8_t fit_period[4];
     uint8_t wdt_period[4];
-
-
-    /* e300 */
-    uint32_t spcr;
-    uint32_t rcer;
 };
 
 #define SET_FIT_PERIOD(a_, b_, c_, d_)          \
