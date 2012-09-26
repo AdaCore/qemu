@@ -577,7 +577,7 @@
                 "PowerPC e300c2 core")
     POWERPC_DEF("e300c3",        CPU_POWERPC_e300c3,                 e300,
                 "PowerPC e300c3 core")
-    POWERPC_DEF("e300c4",        CPU_POWERPC_e300c4,                 e300,
+    POWERPC_DEF("e300c4",        CPU_POWERPC_e300c4_MPC83xx,         e300,
                 "PowerPC e300c4 core")
     /* PowerPC e300 microcontrollers                                         */
 #if defined(TODO)
