@@ -2953,9 +2953,18 @@ static void init_excp_603 (CPUPPCState *env)
     env->excp_vectors[POWERPC_EXCP_DSTLB]    = 0x00001200;
     env->excp_vectors[POWERPC_EXCP_IABR]     = 0x00001300;
     env->excp_vectors[POWERPC_EXCP_SMI]      = 0x00001400;
-    env->hreset_excp_prefix = 0x00000000UL;
+    env->hreset_excp_prefix = 0xFFF00000UL;
     /* Hardware reset vector */
-    env->hreset_vector = 0xFFFFFFFCUL;
+    env->hreset_vector = 0x00000100UL;
+#endif
+}
+
+static void init_excp_e300(CPUPPCState *env)
+{
+    init_excp_603(env);
+#if !defined(CONFIG_USER_ONLY)
+    env->excp_vectors[POWERPC_EXCP_CRITICAL] = 0x00000A00;
+    env->excp_vectors[POWERPC_EXCP_PERFM]    = 0x00000F00;
 #endif
 }
 
@@ -4099,7 +4108,7 @@ static void init_proc_MPC8xx (CPUPPCState *env)
                               PPC_MEM_TLBIE | PPC_MEM_TLBSYNC | PPC_6xx_TLB | \
                               PPC_SEGMENT | PPC_EXTERN)
 #define POWERPC_INSNS2_G2    (PPC_NONE)
-#define POWERPC_MSRM_G2      (0x000000000006FFF2ULL)
+#define POWERPC_MSRM_G2      (0x000000000007FFF3ULL)
 #define POWERPC_MMU_G2       (POWERPC_MMU_SOFT_6xx)
 //#define POWERPC_EXCP_G2      (POWERPC_EXCP_G2)
 #define POWERPC_INPUT_G2     (PPC_FLAGS_INPUT_6xx)
@@ -4403,7 +4412,7 @@ static void init_proc_e300 (CPUPPCState *env)
     gen_low_BATs(env);
     gen_high_BATs(env);
     gen_6xx_7xx_soft_tlb(env, 64, 2);
-    init_excp_603(env);
+    init_excp_e300(env);
     env->dcache_line_size = 32;
     env->icache_line_size = 32;
     /* Allocate hardware IRQ controller */
@@ -4830,7 +4839,7 @@ static void init_proc_603 (CPUPPCState *env)
 #define POWERPC_INSNS2_603E  (PPC_NONE)
 #define POWERPC_MSRM_603E    (0x000000000007FF73ULL)
 #define POWERPC_MMU_603E     (POWERPC_MMU_SOFT_6xx)
-//#define POWERPC_EXCP_603E    (POWERPC_EXCP_603E)
+#define POWERPC_EXCP_603E    (POWERPC_EXCP_603E)
 #define POWERPC_INPUT_603E   (PPC_FLAGS_INPUT_6xx)
 #define POWERPC_BFDM_603E    (bfd_mach_ppc_ec603e)
 #define POWERPC_FLAG_603E    (POWERPC_FLAG_TGPR | POWERPC_FLAG_SE |           \
@@ -7225,17 +7234,18 @@ enum {
     /* e300 family */
     /* e300 cores */
 #define CPU_POWERPC_e300             CPU_POWERPC_e300c3
-    CPU_POWERPC_e300c1             = 0x00830010,
-    CPU_POWERPC_e300c2             = 0x00840010,
-    CPU_POWERPC_e300c3             = 0x00850010,
-    CPU_POWERPC_e300c4             = 0x00860010,
+    CPU_POWERPC_e300c1             = 0x80830010,
+    CPU_POWERPC_e300c2             = 0x80840010,
+    CPU_POWERPC_e300c3             = 0x80850010,
+    CPU_POWERPC_e300c4_MPC5121e    = 0x80860010,
+    CPU_POWERPC_e300c4_MPC83xx     = 0x80861010,
     /* MPC83xx microcontrollers */
 #define CPU_POWERPC_MPC831x          CPU_POWERPC_e300c3
 #define CPU_POWERPC_MPC832x          CPU_POWERPC_e300c2
 #define CPU_POWERPC_MPC834x          CPU_POWERPC_e300c1
 #define CPU_POWERPC_MPC835x          CPU_POWERPC_e300c1
 #define CPU_POWERPC_MPC836x          CPU_POWERPC_e300c1
-#define CPU_POWERPC_MPC837x          CPU_POWERPC_e300c4
+#define CPU_POWERPC_MPC837x          CPU_POWERPC_e300c4_MPC83xx
     /* e500 family */
     /* e500 cores  */
 #define CPU_POWERPC_e500             CPU_POWERPC_e500v2_v22
@@ -8487,7 +8497,7 @@ static const ppc_def_t ppc_defs[] = {
     /* PowerPC e300c3 core                                                   */
     POWERPC_DEF("e300c3",        CPU_POWERPC_e300c3,                 e300),
     /* PowerPC e300c4 core                                                   */
-    POWERPC_DEF("e300c4",        CPU_POWERPC_e300c4,                 e300),
+    POWERPC_DEF("e300c4",        CPU_POWERPC_e300c4_MPC83xx,         e300),
     /* PowerPC e300 microcontrollers                                         */
 #if defined (TODO)
     /* MPC8313                                                               */
@@ -10150,7 +10160,7 @@ int cpu_ppc_register_internal (CPUPPCState *env, const ppc_def_t *def)
             excp_model = "PowerPC 603";
             break;
         case POWERPC_EXCP_603E:
-            excp_model = "PowerPC 603e";
+            excp_model = "PowerPC 603E";
             break;
         case POWERPC_EXCP_604:
             excp_model = "PowerPC 604";

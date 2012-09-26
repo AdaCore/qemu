@@ -3158,9 +3158,9 @@ void ppc_hw_interrupt (CPUPPCState *env)
         /* External interrupt */
         if (env->pending_interrupts & (1 << PPC_INTERRUPT_EXT)) {
             /* Taking an external interrupt does not clear the external
-             * interrupt status
+             * interrupt status. Yes it does (DBR).
              */
-#if 0
+#if 1
             env->pending_interrupts &= ~(1 << PPC_INTERRUPT_EXT);
 #endif
             powerpc_excp(env, env->excp_model, POWERPC_EXCP_EXTERNAL);
