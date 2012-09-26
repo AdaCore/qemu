@@ -24,3 +24,5 @@ obj-$(CONFIG_E500) += p2010rdb.o
 obj-$(CONFIG_XILINX) += virtex_ml507.o
 # SMP target
 obj-y += wrSbc8641d.o
+
+obj-y += wrSbc834x.o
