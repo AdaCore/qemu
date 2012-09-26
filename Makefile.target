@@ -258,6 +258,8 @@ obj-ppc-$(CONFIG_PSERIES) += spapr_pci.o device-hotplug.o pci-hotplug.o
 # PowerPC 4xx boards
 obj-ppc-y += ppc4xx_devs.o ppc4xx_pci.o ppc405_uc.o ppc405_boards.o
 obj-ppc-y += ppc440_bamboo.o
+# PowerPC e300 boards
+obj-ppc-y += wrSbc834x.o
 # PowerPC E500 boards
 obj-ppc-y += ppce500_mpc8544ds.o mpc8544_guts.o ppce500_spin.o ppce500_p2010rdb.o
 # PowerPC 440 Xilinx ML507 reference board.
