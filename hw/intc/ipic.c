@@ -76,7 +76,7 @@
 /* version of the saved state file */
 #define IPIC_VERSION 0
 
-#define IPIC_MEM_SIZE 256
+#define IPIC_MEM_SIZE 255
 
 typedef enum {
     IPIC_READ  = 1 << 0,
@@ -779,10 +779,8 @@ static struct ipic_source ipic_sources[] = {
     }
 };
 #define IPIC_SOURCES_SIZE ARRAY_SIZE(ipic_sources)
-/* #define IPIC_MASK(n) \
-    (ipic_sources[n].bit ? 1 << (31 - ipic_sources[n].bit) : 0) */
 #define IPIC_MASK(n) \
-    ((ipic_sources[n].bit >= 1) ? 1 << (31 - ipic_sources[n].bit) : 0)
+    ((ipic_sources[n].bit) ? 1 << (31 - ipic_sources[n].bit) : 0)
 #define IPIC_MASK_REG(s, n)          ((s)->regs_read[ipic_sources[n].mask])
 #define IPIC_PENDING_REG(s, n)       ((s)->regs_read[ipic_sources[n].pending])
 #define IPIC_FORCE_REG(s, n)         ((s)->regs_read[ipic_sources[n].force])
