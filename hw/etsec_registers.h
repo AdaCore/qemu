@@ -29,7 +29,10 @@ extern const eTSEC_Register_Definition eTSEC_registers_def[];
 #define IEVENT_RXB  (1 << 15)
 #define IEVENT_TXF  (1 << 20)
 #define IEVENT_TXB  (1 << 21)
+#define IEVENT_TXC  (1 << 23)
 #define IEVENT_GTSC (1 << 25)
+#define IEVENT_BSY  (1 << 29)
+#define IEVENT_RXC  (1 << 30)
 
 #define IMASK_RXFEN  (1 <<  7)
 #define IMASK_GRSCEN (1 <<  8)

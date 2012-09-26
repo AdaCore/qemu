@@ -127,6 +127,22 @@ static void write_rbasex(eTSEC          *etsec,
 
 }
 
+static void write_ievent(eTSEC          *etsec,
+                         eTSEC_Register *reg,
+                         uint32_t        reg_index,
+                         uint32_t        value)
+{
+    if (value & IEVENT_TXF) {
+        qemu_irq_lower(etsec->tx_irq);
+    }
+    if (value & IEVENT_RXF) {
+        qemu_irq_lower(etsec->rx_irq);
+    }
+
+    /* Write 1 to clear */
+    reg->value &= ~value;
+}
+
 static void write_dmactrl(eTSEC          *etsec,
                           eTSEC_Register *reg,
                           uint32_t        reg_index,
@@ -185,6 +201,10 @@ etsec_write(void *opaque, target_phys_addr_t addr, uint64_t value,
     before = reg->value;
 
     switch (reg_index) {
+    case IEVENT:
+        write_ievent(etsec, reg, reg_index, value);
+        break;
+
     case DMACTRL:
         write_dmactrl(etsec, reg, reg_index, value);
         break;
