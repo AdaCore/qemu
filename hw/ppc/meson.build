@@ -92,3 +92,4 @@ hw_arch += {'ppc': ppc_ss}
 ppc_ss.add(when: 'CONFIG_T2080RDB', if_true: files('t2080rdb.c'))
 ppc_ss.add(when: 'CONFIG_MPC8641D', if_true: files('mpc8641d.c'))
 ppc_ss.add(when: 'CONFIG_P3041DS', if_true: files('p3041ds.c'))
+ppc_ss.add(when: 'CONFIG_WRSBC834X', if_true: files('wrSbc834x.c'))
