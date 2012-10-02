@@ -255,8 +255,8 @@ static int grlib_apbuart_init(SysBusDevice *dev)
 
     /* Transmitter FIFO and shift registers are empty */
     uart->status =  UART_TRANSMIT_FIFO_EMPTY | UART_TRANSMIT_SHIFT_EMPTY;
-    /* Everything is off */
-    uart->control = 0;
+    /* Enable Tx and Rx as the bootloader would do */
+    uart->control = UART_RECEIVE_ENABLE | UART_TRANSMIT_ENABLE;
     /* Flush receive FIFO */
     uart->len = 0;
     uart->current = 0;
