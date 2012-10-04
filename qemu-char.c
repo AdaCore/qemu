@@ -1880,6 +1880,7 @@ static DWORD WINAPI win_stdio_thread(LPVOID param)
 
         /* Exit in case of error, continue if nothing read */
         if (!ret) {
+            printf("ReadFile failed (%d)\n", GetLastError());
             break;
         }
         if (!dwSize) {
@@ -1893,9 +1894,11 @@ static DWORD WINAPI win_stdio_thread(LPVOID param)
 
         /* Signal the main thread and wait until the byte was eaten */
         if (!SetEvent(hInputReadyEvent)) {
+            printf("SetEvent failed (%d)\n", GetLastError());
             break;
         }
         if (WaitForSingleObject(hInputDoneEvent, INFINITE) != WAIT_OBJECT_0) {
+            printf("WaitForSingleObject failed (%d)\n", GetLastError());
             break;
         }
     }
@@ -1910,7 +1913,9 @@ static void win_stdio_thread_wait_func(void *opaque)
 
     qemu_chr_me_write(chr, &win_stdio_buf, 1);
 
-    SetEvent(hInputDoneEvent);
+    if (!SetEvent(hInputDoneEvent)) {
+        printf("SetEvent failed (%d)\n", GetLastError());
+    }
 }
 
 static void qemu_chr_set_echo_win_stdio(CharDriverState *chr, bool echo)
