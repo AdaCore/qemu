@@ -172,7 +172,7 @@ void os_host_main_loop_wait(int *timeout)
         }
     }
 
-    /* *timeout = 0; */
+    *timeout = 0;
 }
 
 static BOOL WINAPI qemu_ctrl_handler(DWORD type)
