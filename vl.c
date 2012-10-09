@@ -1449,7 +1449,7 @@ void qemu_system_vmstop_request(RunState state)
 int main_loop_wait(int nonblocking)
 {
     fd_set rfds, wfds, xfds;
-    int ret, nfds = -1;
+    int ret = 0, nfds = -1;
     struct timeval tv;
     int timeout;
 
