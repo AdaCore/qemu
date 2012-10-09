@@ -125,9 +125,13 @@ ssize_t qemu_write_full(int fd, const void *buf, size_t count)
     return total;
 }
 
+#ifdef _WIN32
+
 /* Hack to avoid compilation error in Qemu's tools */
 #pragma weak qemu_add_wait_object
 int qemu_add_wait_object(HANDLE handle, WaitObjectFunc *func, void *opaque);
+
+#endif
 
 /*
  * Opens a socket with FD_CLOEXEC set
