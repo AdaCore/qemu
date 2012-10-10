@@ -594,7 +594,6 @@ static int gnatbus_init(const char *optarg)
 void gnatbus_master_init(qemu_irq *cpu_irqs, int nr_irq)
 {
     char        name[256];
-    char       *optarg_delim;
     const char *optarg;
 
     if (g_qbmaster == NULL) {
@@ -626,7 +625,6 @@ void gnatbus_master_init(qemu_irq *cpu_irqs, int nr_irq)
     optarg = g_qbmaster->optarg;
 
     while (*optarg) {
-        optarg_delim = strchr(optarg, ',');
 
         optarg = get_opt_name(name, sizeof(name), optarg, ',');
 

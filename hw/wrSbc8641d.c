@@ -385,7 +385,6 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
     ram_addr_t     bios_offset, params_offset;
     uint32_t       kernel_base, initrd_base;
     long           kernel_size, initrd_size;
-    int            ppc_boot_device;
     ResetData     *reset_info;
     uint64_t       elf_entry;
 
@@ -508,20 +507,11 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
             stb_phys(PARAMS_ADDR, 0);
         }
 
-        ppc_boot_device = 'm';
     } else {
         kernel_base = 0;
         kernel_size = 0;
         initrd_base = 0;
         initrd_size = 0;
-        ppc_boot_device = '\0';
-        /* For now, OHW cannot boot from the network. */
-        for (i = 0; boot_device[i] != '\0'; i++) {
-            if (boot_device[i] >= 'a' && boot_device[i] <= 'f') {
-                ppc_boot_device = boot_device[i];
-                break;
-            }
-        }
     }
 
     qemu_irq ** openpic_irqs;

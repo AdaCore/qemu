@@ -56,6 +56,10 @@ static void miim_read_cycle(eTSEC *etsec)
 
 #ifdef DEBUG_MIIM
     printf("%s phy:%d addr:0x%x value:0x%x\n", __func__, phy, addr, value);
+
+#else
+    /* unreferenced */
+    (void)phy;
 #endif
 
     etsec->regs[MIIMSTAT].value = value;
@@ -73,6 +77,9 @@ static void miim_write_cycle(eTSEC *etsec)
 
 #ifdef DEBUG_MIIM
     printf("%s phy:%d addr:0x%x value:0x%x\n", __func__, phy, addr, value);
+#else
+    /* unreferenced */
+    (void)phy;
 #endif
 
     switch (addr) {

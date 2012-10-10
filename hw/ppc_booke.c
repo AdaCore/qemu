@@ -132,12 +132,8 @@ static void booke_update_fixed_timer(CPUState         *env,
 static void booke_decr_cb (void *opaque)
 {
     CPUState *env;
-    ppc_tb_t *tb_env;
-    booke_timer_t *booke_timer;
 
     env = opaque;
-    tb_env = env->tb_env;
-    booke_timer = tb_env->opaque;
     env->spr[SPR_BOOKE_TSR] |= TSR_DIS;
     if (env->spr[SPR_BOOKE_TCR] & TCR_DIE) {
         ppc_set_irq(env, PPC_INTERRUPT_DECR, 1);
@@ -189,11 +185,6 @@ static void booke_wdt_cb (void *opaque)
 
 void store_booke_tsr (CPUState *env, target_ulong val)
 {
-    ppc_tb_t *tb_env = env->tb_env;
-    booke_timer_t *booke_timer;
-
-    booke_timer = tb_env->opaque;
-
     env->spr[SPR_BOOKE_TSR] &= ~val;
 
     if (val & TSR_DIS) {

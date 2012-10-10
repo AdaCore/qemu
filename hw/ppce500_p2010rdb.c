@@ -662,8 +662,6 @@ static void fsl_e500_init(fsl_e500_config *config,
     CPUState           *env;
     uint64_t            elf_entry;
     uint64_t            elf_lowaddr;
-    target_phys_addr_t  entry       = 0;
-    target_phys_addr_t  loadaddr    = UIMAGE_LOAD_BASE;
     target_long         kernel_size = 0;
     target_ulong        dt_base     = 0;
     int                 bios_size   = 0;
@@ -812,8 +810,6 @@ static void fsl_e500_init(fsl_e500_config *config,
     if (kernel_filename) {
         kernel_size = load_elf(kernel_filename, NULL, NULL, &elf_entry,
                                &elf_lowaddr, NULL, 1, ELF_MACHINE, 0);
-        entry = elf_entry;
-        loadaddr = elf_lowaddr;
 
         /* XXX try again as binary */
         if (kernel_size < 0) {

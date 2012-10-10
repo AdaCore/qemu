@@ -232,6 +232,9 @@ etsec_write(void *opaque, target_phys_addr_t addr, uint64_t value,
 #ifdef DEBUG_REGISTER
     printf("Write 0x%08x @ 0x" TARGET_FMT_plx" val:0x%08x->0x%08x : %s (%s)\n",
            (unsigned int)value, addr, before, reg->value, reg->name, reg->desc);
+#else
+    /* unreferenced */
+    (void)before;
 #endif
 
 }

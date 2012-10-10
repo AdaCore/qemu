@@ -78,9 +78,8 @@ void tracefile_history_for_tb_search(TranslationBlock *tb)
 static void trace_flush(void)
 {
     size_t len = (trace_current - trace_entries) * sizeof(trace_entries[0]);
-    size_t res;
 
-    res = fwrite(trace_entries, len, 1, tracefile);
+    fwrite(trace_entries, len, 1, tracefile);
     trace_current = trace_entries;
     if (tracefile_nobuf) {
         fflush(tracefile);
