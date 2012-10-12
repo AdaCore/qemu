@@ -6,7 +6,7 @@
 
 typedef uint32_t target_addr_t;
 
-#define QEMU_PLUGIN_INTERFACE_VERSION   (1)
+#define QEMU_PLUGIN_INTERFACE_VERSION   (2)
 
 #define QP_ERROR   (-1)
 #define QP_NOERROR ( 0)
@@ -90,11 +90,11 @@ struct QemuPlugin_Emulator
 
     uint32_t (*dma_read)(void          *dest,
                          target_addr_t  addr,
-                         int            size);
+                         uint32_t       size);
 
     uint32_t (*dma_write)(void          *src,
                           target_addr_t  addr,
-                          int            size);
+                          uint32_t       size);
 
     uint32_t (*attach_device)(QemuPlugin_DeviceInfo *dev);
 
