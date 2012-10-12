@@ -318,16 +318,16 @@ static void plugin_register_types(void)
 type_init(plugin_register_types)
 
 static uint32_t plugin_dma_write(void          *src,
-                             target_addr_t  addr,
-                             int            size)
+                                 target_addr_t  addr,
+                                 uint32_t       size)
 {
     cpu_physical_memory_write(addr, src, size);
     return QP_NOERROR;
 }
 
 static uint32_t plugin_dma_read(void          *dest,
-                            target_addr_t  addr,
-                            int            size)
+                                target_addr_t  addr,
+                                uint32_t       size)
 {
     cpu_physical_memory_read(addr, dest, size);
     return QP_NOERROR;
