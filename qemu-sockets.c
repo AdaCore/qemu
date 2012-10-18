@@ -577,7 +577,12 @@ int unix_connect_opts(QemuOpts *opts)
 
     memset(&un, 0, sizeof(un));
     un.sun_family = AF_UNIX;
-    snprintf(un.sun_path, sizeof(un.sun_path), "%s", path);
+    if (path[0] == '@') {
+        /* Abstract UDS */
+        snprintf(un.sun_path + 1, sizeof(un.sun_path) - 1, "%s", path + 1);
+    } else {
+        snprintf(un.sun_path, sizeof(un.sun_path), "%s", path);
+    }
     if (connect(sock, (struct sockaddr*) &un, sizeof(un)) < 0) {
         fprintf(stderr, "connect(unix:%s): "OS_SOCKET_ERROR_FMT"\n", path,
                 OS_SOCKET_ERROR_CALL);

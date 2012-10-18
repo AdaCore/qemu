@@ -44,6 +44,8 @@ struct GnatBus_Device {
 
     GnatBus_IOMEM_BaseAddr io_base[MAX_IOMEM];
 
+    int is_pipe;
+
     /* Chardev */
     GnatBusPacket   *curr_packet;
     uint32_t         curr_packet_size;

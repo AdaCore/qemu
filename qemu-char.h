@@ -331,4 +331,14 @@ typedef struct {
     int msgfd;
 } TCPCharDriver;
 
+#ifdef _WIN32
+typedef struct {
+    int max_size;
+    HANDLE hcom, hrecv, hsend;
+    OVERLAPPED orecv, osend;
+    BOOL fpipe;
+    DWORD len;
+} WinCharState;
+#endif
+
 #endif
