@@ -43,6 +43,8 @@ struct GnatBus_Device {
 
     GnatBus_Master *master;
 
+    int is_pipe;
+
     GnatBus_IORegion io_region[MAX_IOMEM];
 
     /* Chardev */

@@ -22,28 +22,6 @@ GnatBus_Master *g_qbmaster = NULL;
 
 /* Socket communication tools */
 
-static void dev_set_blocking(GnatBus_Device *qbdev)
-{
-    TCPCharDriver *s = qbdev->chr->opaque;
-
-    /* Remove fd from the active list.  */
-    qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
-
-    socket_set_block(s->fd);
-
-}
-
-static void dev_set_nonblocking(GnatBus_Device *qbdev)
-{
-    TCPCharDriver *s = qbdev->chr->opaque;
-
-    socket_set_nonblock(s->fd);
-
-    /* Put fd in the active list.  */
-    qemu_set_fd_handler2(s->fd, tcp_chr_read_poll,
-                         tcp_chr_read, NULL, qbdev->chr);
-}
-
 int gnatbus_send(GnatBus_Device *qbdev, const uint8_t *buf, int len)
 {
     if (qbdev->status != CHR_EVENT_OPENED) {
@@ -53,12 +31,39 @@ int gnatbus_send(GnatBus_Device *qbdev, const uint8_t *buf, int len)
     return qbdev->chr->chr_write(qbdev->chr, buf, len);
 }
 
+#ifdef _WIN32
+static int win_readfile(CharDriverState *chr,  uint8_t *buf, int len)
+{
+    WinCharState *s = chr->opaque;
+    int ret;
+    DWORD size;
+
+    ret = ReadFile(s->hcom, buf, len, &size, NULL);
+    if (!ret) {
+        if (GetLastError() == ERROR_MORE_DATA) {
+            return size;
+        }
+        fprintf(stderr, "GNATbus Read Pipe failed (%lu)\n", GetLastError());
+        return 0;
+    }
+
+    return size;
+}
+#endif
+
 static int gnatbus_recv(GnatBus_Device *qbdev, uint8_t *buf, int len)
 {
     int           read_size = 0;
 
     do {
-        read_size = tcp_chr_recv(qbdev->chr, (char *)buf, len);
+#ifdef _WIN32
+        if (qbdev->is_pipe) {
+            read_size = win_readfile(qbdev->chr, buf, len);
+        } else
+#endif
+        {
+            read_size = tcp_chr_recv(qbdev->chr, (char *)buf, len);
+        }
     } while (read_size == -1 && (errno == EINTR || errno == EAGAIN));
 
     return read_size;
@@ -80,6 +85,18 @@ static GnatBusPacket *gnatbus_receive_packet_sync(GnatBus_Device *qbdev)
 
     trace_gnatbus_receive_packet_sync();
 
+#ifdef _WIN32
+    if (qbdev->is_pipe) {
+        WinCharState  *s_wpipe = qbdev->chr->opaque;
+        DWORD dwMode = PIPE_READMODE_MESSAGE | PIPE_WAIT;
+        SetNamedPipeHandleState(s_wpipe->hcom, &dwMode, NULL, NULL);
+    } else
+#endif
+    {
+        TCPCharDriver *s_socket = qbdev->chr->opaque;
+        socket_set_block(s_socket->fd);
+    }
+
    /* Read first part of the packet to get its complete size */
 
     read_size = gnatbus_recv(qbdev, (uint8_t *)packet, init_packet_size);
@@ -89,7 +106,8 @@ static GnatBusPacket *gnatbus_receive_packet_sync(GnatBus_Device *qbdev)
         fprintf(stderr, "%s: Failed to read packet header (read_size:%d)\n",
                 __func__, read_size);
         g_free(packet);
-        return NULL;
+        packet = NULL;
+        goto fail;
     }
 
     /* Now we have the real size of this packet */
@@ -109,14 +127,27 @@ static GnatBusPacket *gnatbus_receive_packet_sync(GnatBus_Device *qbdev)
 
     } while (read_size > 0 && remaining_data > 0);
 
-    if (remaining_data == 0) {
-        return packet;
-    } else {
+
+    if (remaining_data != 0) {
         fprintf(stderr, "%s: Not enough data PacketSize:%u received:%u\n",
                 __func__, packet->size, packet->size - remaining_data);
         g_free(packet);
-        return NULL;
+        packet = NULL;
     }
+
+ fail:
+#ifdef _WIN32
+    if (qbdev->is_pipe) {
+        WinCharState  *s_wpipe = qbdev->chr->opaque;
+        DWORD dwMode = PIPE_READMODE_MESSAGE | PIPE_NOWAIT;
+        SetNamedPipeHandleState(s_wpipe->hcom, &dwMode, NULL, NULL);
+    } else
+#endif
+    {
+        TCPCharDriver *s_socket = qbdev->chr->opaque;
+        socket_set_nonblock(s_socket->fd);
+    }
+    return packet;
 }
 
 static int freeze_nested = 0;
@@ -276,11 +307,8 @@ void gnatbus_device_init(void)
     trace_gnatbus_device_init();
 
     QLIST_FOREACH(qbdev, &g_qbmaster->devices_list, list) {
-        dev_set_blocking(qbdev);
 
         resp = send_and_wait_resp(qbdev, (GnatBusPacket_Request *)&init);
-
-        dev_set_nonblocking(qbdev);
 
         /* We don't really need to read the response */
         g_free(resp);
@@ -325,11 +353,8 @@ static void gnatbus_cpu_reset(void *null)
     trace_gnatbus_device_reset();
 
     QLIST_FOREACH(qbdev, &g_qbmaster->devices_list, list) {
-        dev_set_blocking(qbdev);
 
         resp = send_and_wait_resp(qbdev, (GnatBusPacket_Request *)&reset);
-
-        dev_set_nonblocking(qbdev);
 
         /* We don't really need to read the response */
         g_free(resp);
@@ -464,12 +489,8 @@ static inline void gnatbus_write(void               *opaque,
 
     trace_gnatbus_send_write(write->address, write->length);
 
-    dev_set_blocking(io_region->qbdev);
-
     resp = (GnatBusPacket_Error *)send_and_wait_resp(io_region->qbdev,
                                                      (GnatBusPacket_Request *)write);
-
-    dev_set_nonblocking(io_region->qbdev);
 
     /* We don't really need to read the response */
     g_free(resp);
@@ -501,12 +522,8 @@ static inline uint64_t gnatbus_read(void               *opaque,
 
     trace_gnatbus_send_read(read.address, read.length);
 
-    dev_set_blocking(io_region->qbdev);
-
     resp = (GnatBusPacket_Data *)send_and_wait_resp(io_region->qbdev,
                                                     (GnatBusPacket_Request *)&read);
-
-    dev_set_nonblocking(io_region->qbdev);
 
     if (resp == NULL
         || (GnatBusResponseType)resp->parent.type != GnatBusResponse_Data
@@ -543,10 +560,30 @@ static int gnatbus_init(const char *optarg)
     int              status = 0;
     GnatBusPacket   *packet = NULL;
 
-    status = snprintf(buf, sizeof(buf), "tcp:%s", optarg);
-    if (status < 0 || status >= sizeof(buf)) {
-        printf("%s: Invalid device address (hostname too long)\n", __func__);
-        return -1;
+    if (optarg[0] == '@') {
+#ifdef _WIN32
+        /* Windows named pipe */
+        status = snprintf(buf, sizeof(buf), "pipe_client:gnatbus\\%s",
+                          optarg + 1);
+        if (status < 0 || status >= sizeof(buf)) {
+            printf("%s: Device name too long\n", __func__);
+            return -1;
+        }
+#else
+        /* UNIX domain socket */
+        status = snprintf(buf, sizeof(buf), "unix:@/gnatbus/%s", optarg + 1);
+        if (status < 0 || status >= sizeof(buf)) {
+            printf("%s: Device name too long\n", __func__);
+            return -1;
+        }
+#endif
+    } else {
+        status = snprintf(buf, sizeof(buf), "tcp:%s", optarg);
+        if (status < 0 || status >= sizeof(buf)) {
+            printf("%s: Invalid device address (hostname too long)\n",
+                   __func__);
+            return -1;
+        }
     }
 
     /* Connect chardev */
@@ -562,26 +599,27 @@ static int gnatbus_init(const char *optarg)
     qbdev->chr    = chr;
     qbdev->status = CHR_EVENT_OPENED;
 
+    if (optarg[0] == '@') {
+        qbdev->is_pipe = 1;
+    } else {
+        qbdev->is_pipe = 0;
+    }
+
     qemu_chr_add_handlers(qbdev->chr,
                           gnatbus_chr_can_receive,
                           gnatbus_chr_receive,
                           gnatbus_chr_event,
                           qbdev);
 
-    dev_set_blocking(qbdev);
-
     packet = gnatbus_receive_packet_sync(qbdev);
 
     if (packet == NULL) {
         printf("%s: Device initialization failure: Cannot read Register packet\n", __func__);
-        dev_set_nonblocking(qbdev);
         return -1;
     }
 
     status = gnatbus_process_packet(qbdev, packet);
     g_free(packet);
-
-    dev_set_nonblocking(qbdev);
 
     if (status != 0 || ! qbdev->start_ok) {
         printf("%s: Device initialization failure\n", __func__);
