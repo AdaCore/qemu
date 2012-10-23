@@ -273,6 +273,9 @@ obj-ppc-y += xilinx_timer.o
 obj-ppc-y += xilinx_uartlite.o
 obj-ppc-y += xilinx_ethlite.o
 
+# vxWorks utils
+obj-ppc-y += vxworks.o
+
 # LM32 boards
 obj-lm32-y += lm32_boards.o
 obj-lm32-y += milkymist.o
