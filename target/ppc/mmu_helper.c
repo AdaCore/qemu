@@ -909,11 +909,16 @@ static int ppcmas_tlb_check(CPUPPCState *env, ppcmas_tlb_t *tlb,
     /* Check PID */
     tlb_pid = (tlb->mas1 & MAS1_TID_MASK) >> MAS1_TID_SHIFT;
     if (tlb_pid != 0 && tlb_pid != pid) {
+        LOG_SWTLB("%s: PID ERROR tlb_pid:%d pid:%d"
+                  " (tlb_pid != 0 && tlb_pid != pid)\n",
+                  __func__, tlb_pid, pid);
         return -1;
     }
 
     /* Check effective address */
     if ((address & mask) != (tlb->mas2 & MAS2_EPN_MASK)) {
+        LOG_SWTLB("%s: ADDRESS ERROR ("TARGET_FMT_lx" != "TARGET_FMT_lx ")\n",
+                  __func__, (address & mask), (tlb->mas2 & MAS2_EPN_MASK));
         return -1;
     }
 
@@ -1036,7 +1041,8 @@ found_tlb:
         /* There is no way to fetch code using epid load */
         assert(!use_epid);
         if (msr_ir != ((tlb->mas1 & MAS1_TS) >> MAS1_TS_SHIFT)) {
-            LOG_SWTLB("%s: AS doesn't match\n", __func__);
+            LOG_SWTLB("%s: AS doesn't match (msr_ir: %d != TS: %d)\n", __func__,
+                      msr_ir, ((tlb->mas1 & MAS1_TS) >> MAS1_TS_SHIFT));
             return -1;
         }
 
@@ -1050,7 +1056,8 @@ found_tlb:
         ret = -3;
     } else {
         if (as != ((tlb->mas1 & MAS1_TS) >> MAS1_TS_SHIFT)) {
-            LOG_SWTLB("%s: AS doesn't match\n", __func__);
+            LOG_SWTLB("%s: AS doesn't match (msr_dr: %d != TS: %d)\n", __func__,
+                      as, ((tlb->mas1 & MAS1_TS) >> MAS1_TS_SHIFT));
             return -1;
         }
 
@@ -1080,6 +1087,8 @@ static int mmubooke206_get_physical_address(CPUPPCState *env, mmu_ctx_t *ctx,
 
     for (i = 0; i < BOOKE206_MAX_TLBN; i++) {
         int ways = booke206_tlb_ways(env, i);
+
+        LOG_SWTLB("%s: TLB:%d ways:%d\n", __func__, i, ways);
 
         for (j = 0; j < ways; j++) {
             tlb = booke206_get_tlbm(env, i, address, j);
