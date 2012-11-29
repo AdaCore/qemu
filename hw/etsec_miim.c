@@ -31,6 +31,7 @@
 #define MIIM_STATUS     1
 #define MIIM_PHY_ID_1   2
 #define MIIM_PHY_ID_2   3
+#define MIIM_T2_STATUS  10
 #define MIIM_EXT_STATUS 15
 
 static void miim_read_cycle(eTSEC *etsec)
@@ -49,6 +50,9 @@ static void miim_read_cycle(eTSEC *etsec)
         break;
     case MIIM_STATUS:
         value = etsec->phy_status;
+        break;
+    case MIIM_T2_STATUS:
+        value = 0x1800;           /* Local and remote receivers OK */
         break;
     default:
         value = 0x0;

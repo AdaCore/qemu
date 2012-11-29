@@ -194,14 +194,14 @@ const eTSEC_Register_Definition eTSEC_registers_def[] = {
 {0x814, "IGADDR5", "Individual/group address register 5", ACC_RW, 0x00000000},
 {0x818, "IGADDR6", "Individual/group address register 6", ACC_RW, 0x00000000},
 {0x81C, "IGADDR7", "Individual/group address register 7", ACC_RW, 0x00000000},
-{0x880, "GADDR0",  "Group address register 0 ",           ACC_RW, 0x00000000},
-{0x884, "GADDR1",  "Group address register 1 ",           ACC_RW, 0x00000000},
-{0x888, "GADDR2",  "Group address register 2 ",           ACC_RW, 0x00000000},
-{0x88C, "GADDR3",  "Group address register 3 ",           ACC_RW, 0x00000000},
-{0x890, "GADDR4",  "Group address register 4 ",           ACC_RW, 0x00000000},
-{0x894, "GADDR5",  "Group address register 5 ",           ACC_RW, 0x00000000},
-{0x898, "GADDR6",  "Group address register 6 ",           ACC_RW, 0x00000000},
-{0x89C, "GADDR7",  "Group address register 7 ",           ACC_RW, 0x00000000},
+{0x880, "GADDR0",  "Group address register 0",            ACC_RW, 0x00000000},
+{0x884, "GADDR1",  "Group address register 1",            ACC_RW, 0x00000000},
+{0x888, "GADDR2",  "Group address register 2",            ACC_RW, 0x00000000},
+{0x88C, "GADDR3",  "Group address register 3",            ACC_RW, 0x00000000},
+{0x890, "GADDR4",  "Group address register 4",            ACC_RW, 0x00000000},
+{0x894, "GADDR5",  "Group address register 5",            ACC_RW, 0x00000000},
+{0x898, "GADDR6",  "Group address register 6",            ACC_RW, 0x00000000},
+{0x89C, "GADDR7",  "Group address register 7",            ACC_RW, 0x00000000},
 
 /* eTSEC DMA Attribute Registers */
 
