@@ -123,6 +123,8 @@ typedef struct fsl_e500_config {
     int espi_irq;
     int i2c_irq;
 
+    int cfi01_flash;
+
     int etsec_irq_err[MAX_ETSEC_CONTROLLERS];
     int etsec_irq_tx[MAX_ETSEC_CONTROLLERS];
     int etsec_irq_rx[MAX_ETSEC_CONTROLLERS];
@@ -894,13 +896,24 @@ static void fsl_e500_init(fsl_e500_config *config,
         bios_size   = bdrv_getlength(dinfo->bdrv);
         fl_sectors  = (bios_size + 65535) >> 16;
 
-        if (pflash_cfi02_register((uint32_t)(-bios_size), NULL, "p2010.bios",
-                                  bios_size, dinfo->bdrv, 65536, fl_sectors,
-                                  1, 2, 0x0001, 0x22DA, 0x0000, 0x0000,
-                                  0x555, 0x2AA, 1) == NULL) {
-            fprintf(stderr, "%s: Failed to load flash image\n", __func__);
-            abort();
+        if (config->cfi01_flash) {
+            if (pflash_cfi01_register(0xff800000, NULL, "8548.flash.1",
+                                      bios_size, dinfo->bdrv, 65536, fl_sectors,
+                                      2, 0x0001, 0x22DA, 0x0000, 0x0000,
+                                      1) == NULL) {
+                fprintf(stderr, "%s: Failed to load flash image\n", __func__);
+                abort();
+            }
+        } else {
+            if (pflash_cfi02_register((uint32_t)(-bios_size), NULL,
+                                      "p2010.bios", bios_size, dinfo->bdrv,
+                                      65536, fl_sectors, 1, 2, 0x0001, 0x22DA,
+                                      0x0, 0x0, 0x555, 0x2AA, 1) == NULL) {
+                fprintf(stderr, "%s: Failed to load flash image\n", __func__);
+                abort();
+            }
         }
+
     }
 
     /* Load kernel. */
@@ -972,6 +985,7 @@ static fsl_e500_config p2010rdb_vxworks_config = {
     .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
     .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
     .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+    .cfi01_flash    = FALSE,
 };
 
 static void p2010rdb_vxworks_init(ram_addr_t ram_size,
@@ -1001,6 +1015,7 @@ static fsl_e500_config p2010rdb_config = {
     .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
     .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
     .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+    .cfi01_flash    = FALSE,
 };
 
 static void p2010rdb_init(ram_addr_t ram_size,
@@ -1030,6 +1045,7 @@ static fsl_e500_config wrsbc8548_vxworks_config = {
     .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
     .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
     .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+    .cfi01_flash    = TRUE,
 };
 
 static void wrsbc8548_vxworks_init(ram_addr_t ram_size,
@@ -1045,8 +1061,38 @@ static void wrsbc8548_vxworks_init(ram_addr_t ram_size,
 
 static QEMUMachine wrsbc8548_vxworks_machine = {
     .name = "wrsbc8548_vxworks",
-    .desc = "wrsbc8548 initialized for VxWorks653",
+    .desc = "wrsbc8548 initialized for VxWorks6",
     .init = wrsbc8548_vxworks_init,
+};
+
+static fsl_e500_config wrsbc8548_vx653_config = {
+    .ccsr_init_addr = 0xE0000000,
+    .cpu_model      = "p2010",
+    .freq           = 700000000UL >> 3,
+    .serial_irq     = 12 + 26,
+    .espi_irq       = 12 + 43,
+    .i2c_irq        = 12 + 27,
+    .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
+    .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
+    .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+    .cfi01_flash    = TRUE,
+};
+
+static void wrsbc8548_vx653_init(ram_addr_t ram_size,
+                                 const char *boot_device,
+                                 const char *kernel_filename,
+                                 const char *kernel_cmdline,
+                                 const char *initrd_filename,
+                                 const char *cpu_model)
+{
+    fsl_e500_init(&wrsbc8548_vx653_config, ram_size, boot_device,
+                  kernel_filename, kernel_cmdline, initrd_filename, cpu_model);
+}
+
+static QEMUMachine wrsbc8548_vx653_machine = {
+    .name = "wrsbc8548_vx653",
+    .desc = "wrsbc8548 initialized for VxWorks653",
+    .init = wrsbc8548_vx653_init,
 };
 
 static fsl_e500_config wrsbc8548_config = {
@@ -1059,6 +1105,7 @@ static fsl_e500_config wrsbc8548_config = {
     .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
     .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
     .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+    .cfi01_flash    = TRUE,
 };
 
 static void wrsbc8548_init(ram_addr_t ram_size,
@@ -1083,6 +1130,7 @@ static void p2010rdb_machine_init(void)
     qemu_register_machine(&p2010rdb_machine);
     qemu_register_machine(&p2010rdb_vxworks_machine);
     qemu_register_machine(&wrsbc8548_vxworks_machine);
+    qemu_register_machine(&wrsbc8548_vx653_machine);
     qemu_register_machine(&wrsbc8548_machine);
 }
 
