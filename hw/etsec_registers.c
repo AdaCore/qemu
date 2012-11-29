@@ -11,6 +11,14 @@ const eTSEC_Register_Definition eTSEC_registers_def[] = {
 {0x02C, "DMACTRL",  "DMA control register",      ACC_RW,  0x00000000},
 {0x030, "TBIPA",    "TBI PHY address register",  ACC_RW,  0x00000000},
 
+/* eTSEC FIFO Control and Status Registers */
+
+{0x058, "FIFO_RX_ALARM",          "FIFO receive alarm start threshold register",    ACC_RW, 0x00000040},
+{0x05C, "FIFO_RX_ALARM_SHUTOFF",  "FIFO receive alarm shut-off threshold register", ACC_RW, 0x00000080},
+{0x08C, "FIFO_TX_THR",            "FIFO transmit threshold register",               ACC_RW, 0x00000080},
+{0x098, "FIFO_TX_STARVE",         "FIFO transmit starve register",                  ACC_RW, 0x00000040},
+{0x09C, "FIFO_TX_STARVE_SHUTOFF", "FIFO transmit starve shut-off register",         ACC_RW, 0x00000080},
+
 /* eTSEC Transmit Control and Status Registers */
 
 {0x100, "TCTRL",        "Transmit control register",                ACC_RW,  0x00000000},
