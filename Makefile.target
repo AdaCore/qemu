@@ -261,7 +261,8 @@ obj-ppc-y += ppc440_bamboo.o
 # PowerPC e300 boards
 obj-ppc-y += wrSbc834x.o
 # PowerPC E500 boards
-obj-ppc-y += ppce500_mpc8544ds.o mpc8544_guts.o ppce500_spin.o ppce500_p2010rdb.o
+obj-ppc-y += ppce500_mpc8544ds.o mpc8544_guts.o ppce500_spin.o \
+	ppce500_p2010rdb.o mpc55xx.o
 # PowerPC 440 Xilinx ML507 reference board.
 obj-ppc-y += virtex_ml507.o
 obj-ppc-$(CONFIG_KVM) += kvm_ppc.o
