@@ -122,3 +122,6 @@ config XIVE_SPAPR
     default y
     depends on PSERIES
     select XIVE
+
+config MPC55XX
+    bool
