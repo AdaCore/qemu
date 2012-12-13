@@ -34,3 +34,4 @@ obj-$(CONFIG_VIRTEX) += virtex_ml507.o
 obj-y += wrSbc8641d.o
 
 obj-y += wrSbc834x.o
+obj-y += mpc55xx.o
