@@ -270,6 +270,7 @@ hw-obj-$(CONFIG_DEC_PCI) += dec_pci.o
 hw-obj-$(CONFIG_PPCE500_PCI) += ppce500_pci.o
 #mpc55xx devices
 hw-obj-y += esci.o
+hw-obj-y += mpc55xx_intc.o
 
 
 # MIPS devices
