@@ -77,18 +77,29 @@ struct booke_timer_t {
 static void booke_update_irq(PowerPCCPU *cpu)
 {
     CPUPPCState *env = &cpu->env;
+    bool DECR_new = env->spr[SPR_BOOKE_TSR] & TSR_DIS
+        && env->spr[SPR_BOOKE_TCR] & TCR_DIE;
+    bool DECR_old = env->pending_interrupts & (1 << PPC_INTERRUPT_DECR);
 
-    ppc_set_irq(cpu, PPC_INTERRUPT_DECR,
-                (env->spr[SPR_BOOKE_TSR] & TSR_DIS
-                 && env->spr[SPR_BOOKE_TCR] & TCR_DIE));
+    bool WDT_new = env->spr[SPR_BOOKE_TSR] & TSR_WIS
+        && env->spr[SPR_BOOKE_TCR] & TCR_WIE;
+    bool WDT_old = env->pending_interrupts & (1 << PPC_INTERRUPT_WDT);
 
-    ppc_set_irq(cpu, PPC_INTERRUPT_WDT,
-                (env->spr[SPR_BOOKE_TSR] & TSR_WIS
-                 && env->spr[SPR_BOOKE_TCR] & TCR_WIE));
+    bool FIT_new = env->spr[SPR_BOOKE_TSR] & TSR_DIS
+        && env->spr[SPR_BOOKE_TCR] & TCR_DIE;
+    bool FIT_old = env->pending_interrupts & (1 << PPC_INTERRUPT_FIT);
 
-    ppc_set_irq(cpu, PPC_INTERRUPT_FIT,
-                (env->spr[SPR_BOOKE_TSR] & TSR_FIS
-                 && env->spr[SPR_BOOKE_TCR] & TCR_FIE));
+    if (DECR_new != DECR_old) {
+        ppc_set_irq(cpu, PPC_INTERRUPT_DECR, DECR_new);
+    }
+
+    if (WDT_new != WDT_old) {
+        ppc_set_irq(cpu, PPC_INTERRUPT_WDT, WDT_new);
+    }
+
+    if (FIT_new != FIT_old) {
+        ppc_set_irq(cpu, PPC_INTERRUPT_DECR, FIT_new);
+    }
 }
 
 /* Return the location of the bit of time base at which the FIT will raise an
