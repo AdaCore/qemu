@@ -268,6 +268,9 @@ hw-obj-$(CONFIG_UNIN_PCI) += unin_pci.o
 hw-obj-$(CONFIG_DEC_PCI) += dec_pci.o
 # PowerPC E500 boards
 hw-obj-$(CONFIG_PPCE500_PCI) += ppce500_pci.o
+#mpc55xx devices
+hw-obj-y += esci.o
+
 
 # MIPS devices
 hw-obj-$(CONFIG_PIIX4) += piix4.o
