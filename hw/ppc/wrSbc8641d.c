@@ -1,5 +1,5 @@
 /*
- * QEMU PPC SMP Hardware System Emulator
+ * QM PPC SMP Hardware System Emulator
  *
  * Copyright (c) 2011 AdaCore
  *
