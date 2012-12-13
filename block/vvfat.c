@@ -1014,7 +1014,13 @@ DLOG(if (stderr == NULL) {
 
     s->current_cluster=0xffffffff;
 
-    s->first_sectors_number=0x40;
+
+    if (strstr(dirname, ":no-mbr:")) {
+        s->first_sectors_number = 1;
+    } else {
+        s->first_sectors_number=0x40;
+    }
+
     /* read only is the default for safety */
     bs->read_only = 1;
     s->qcow = s->write_target = NULL;
