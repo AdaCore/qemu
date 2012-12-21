@@ -22,6 +22,7 @@
 #include "elf.h"
 #include "ipic.h"
 #include "etsec.h"
+#include "hostfs.h"
 
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
@@ -43,6 +44,12 @@
 #define KERNEL_LOAD_ADDR 0
 #define INITRD_LOAD_ADDR 0x01800000
 
+#define PARAMS_ADDR     (CCSBAR_BASE + 0x80000)
+#define PARAMS_SIZE     (0x01000)
+#define QTRACE_START    (CCSBAR_BASE + 0x81000)
+#define QTRACE_SIZE     (0x01000)
+#define HOSTFS_START    (CCSBAR_BASE + 0x82000)
+
 /* #define DEBUG_MPC83XX */
 #ifdef DEBUG_MPC83XX
     /* set it to 1 to print configuration changes */
@@ -61,8 +68,8 @@
 #endif
 
 #define eprintf(fmt, args...) { \
-    fprintf(stderr, CPU_NAME ": " fmt "\n", ## args) ; \
-    abort() ; \
+    fprintf(stderr, CPU_NAME ": " fmt "\n", ## args); \
+    abort(); \
 }
 #define not_implemented0(fmt, args...) \
     fprintf(stderr, CPU_NAME ": " fmt ": not implemented\n", ## args)
@@ -93,18 +100,18 @@
         do {} while (0)
     #define not_implemented(fmt, args...) \
         if (DEBUG_NOT_IMPLEMENTED) { \
-            static int once ; \
+            static int once; \
             if (!once) { \
-                once = 1 ; \
-                not_implemented0(fmt, ## args) ; \
+                once = 1; \
+                not_implemented0(fmt, ## args); \
             } \
         }
     #define not_implemented_register(offset) \
         if (DEBUG_NOT_IMPLEMENTED) { \
-            static int once ; \
+            static int once; \
             if (!once) { \
-                once = 1 ; \
-                not_implemented_register0(offset) ; \
+                once = 1; \
+                not_implemented_register0(offset); \
             } \
         }
 #endif
@@ -114,15 +121,17 @@
 #define IMMR_SIZE 0x40000
 #define IMMR_BASE 0xff400000 /* TODO: address from device tree */
 #define IMMRBAR_DEFAULT IMMR_BASE
-/* timebase enable */
+/* timebase enable ??? unused */
 #define SPCR_OFFSET 0x110
 #define SPCR_TBEN_BIT (1 << (31 - 9))
 /* software reset */
-#define RPR_OFFSET  0x918
+#define RESET_MEM_SIZE 255
+#define RESET_OFFSET   0x0900
+#define RPR_OFFSET  0x18
 #define RPR_RSTE_VALUE 0x52535445
-#define RCR_OFFSET  0x91C
+#define RCR_OFFSET  0x1C
 #define RCR_SWxR_BITS 3
-#define RCER_OFFSET 0x920
+#define RCER_OFFSET 0x20
 #define RCER_CRE_BIT  1
 
 /* memory mapped registers handled by other modules */
@@ -154,16 +163,16 @@ static uint64_t      ccsr_addr = IMMR_BASE;
 typedef struct {
 
     /* internal storage */
-    CPUState *cpu ;
-    int immr_index ;
-    target_phys_addr_t immr_base ;
+    CPUState *cpu;
+    int immr_index;
+    target_phys_addr_t immr_base;
 
     /* registers */
-    uint32_t immrbar ;
-    uint32_t spcr ;
-    uint32_t rcer ;
+    uint32_t immrbar;
+    uint32_t spcr;
+    uint32_t rcer;
 
-} MPC83xxState ;
+} MPC83xxState;
 #endif
 
 #if 0
@@ -175,9 +184,9 @@ static mpc83xx_config sbc834x_config = {
 
 static uint64_t mpc83xx_immr_read(void *state, target_phys_addr_t address,
                                   unsigned size) {
-    CPUArchState *s     = state;
-    int           offset;
-    uint32_t      value = 0;
+    CPUArchState *s = state;
+    int offset;
+    uint32_t value = 0;
 
     offset = address & 0xfffff;
     if (DEBUG_RW) {
@@ -185,12 +194,6 @@ static uint64_t mpc83xx_immr_read(void *state, target_phys_addr_t address,
                 size << 3, offset, address);
     }
     switch (offset) {
-    case SPCR_OFFSET:
-        value = s->spcr;
-        break ;
-    case RCER_OFFSET:
-        value = s->rcer;
-        break;
     default:
         not_implemented_register(offset);
     }
@@ -201,8 +204,8 @@ static uint64_t mpc83xx_immr_read(void *state, target_phys_addr_t address,
 static void mpc83xx_immr_write(void *state, target_phys_addr_t address,
                                 uint64_t value, unsigned size) {
     CPUArchState *s = state;
-    int           offset;
-    uint64_t      old_value;
+    int offset;
+    uint64_t old_value;
 
     offset = address & 0xfffff;
     if (DEBUG_RW) {
@@ -210,17 +213,77 @@ static void mpc83xx_immr_write(void *state, target_phys_addr_t address,
                 size << 3, value, offset);
     }
     switch (offset) {
-    case SPCR_OFFSET:
-        old_value = s->spcr;
-        s->spcr = value;
-        if ((old_value ^ value) & SPCR_TBEN_BIT) {
-            /* TBEN bit has changed */
-            qemu_set_irq(s->irq_inputs[PPC6xx_INPUT_TBEN],
-                         value & SPCR_TBEN_BIT);
-        }
+    default:
+        not_implemented_register(offset);
+    }
+}
+
+static const MemoryRegionOps mpc83xx_ops = {
+    .write = mpc83xx_immr_write,
+    .read  = mpc83xx_immr_read,
+    .endianness = DEVICE_BIG_ENDIAN,
+};
+
+static void main_cpu_reset(void *opaque)
+{
+    ResetData *s   = (ResetData *) opaque;
+    CPUArchState *cpu   = s->env;
+
+    cpu_state_reset(cpu);
+
+    cpu->nip = s->entry;
+}
+
+typedef struct {
+
+   /* board mapping */
+   MemoryRegion mem;
+
+   /* registers */
+   uint32_t rcwlr;
+   uint32_t rcwhr;
+   uint32_t rsr;
+   uint32_t rmr;
+   uint32_t rpr;
+   uint32_t rcr;
+   uint32_t rcer;
+} ResetState;
+
+static uint64_t mpc83xx_reset_read(void *state, target_phys_addr_t address,
+                                  unsigned size) {
+    ResetState *s = state;
+    int offset;
+    uint32_t value = 0;
+
+    offset = address & 0xfffff;
+    if (DEBUG_RW) {
+        dprintf("%d-bits read from register 0x%05X address 0x%x\n",
+                size << 3, offset, 0x900 + offset);
+    }
+    switch (offset) {
+    case RCER_OFFSET:
+        value = s->rcer;
         break;
+    default:
+        not_implemented_register(offset);
+    }
+
+    return value;
+}
+
+static void mpc83xx_reset_write(void *state, target_phys_addr_t address,
+                                uint64_t value, unsigned size) {
+    ResetState *s = state;
+    int offset;
+
+    offset = address & 0xfffff;
+    if (DEBUG_RW)
+        dprintf("%d-bits write 0x%08X to register 0x%05X\n",
+                size << 3, value, 0x900+offset);
+    switch (offset) {
     case RPR_OFFSET:
         if (value == RPR_RSTE_VALUE) {
+            dprintf("disable reset protection\n");
             /* disable reset protection */
             s->rcer = RCER_CRE_BIT;
         }
@@ -242,20 +305,41 @@ static void mpc83xx_immr_write(void *state, target_phys_addr_t address,
     }
 }
 
-static const MemoryRegionOps mpc83xx_ops = {
-    .write = mpc83xx_immr_write,
-    .read  = mpc83xx_immr_read,
+static const MemoryRegionOps reset_ops = {
+    .write = mpc83xx_reset_write,
+    .read  = mpc83xx_reset_read,
     .endianness = DEVICE_BIG_ENDIAN,
 };
 
-static void main_cpu_reset(void *opaque)
+static void reset_reset(void *state)
 {
-    ResetData *s   = (ResetData *) opaque;
-    CPUArchState *cpu   = s->env;
+   ResetState *s = state;
+   dprintf("reset reset\n");
+   memset(&s->rcwlr, 0, sizeof(uint32_t));
+   memset(&s->rcwhr, 0, sizeof(uint32_t));
+   memset(&s->rsr, 0, sizeof(uint32_t));
+   memset(&s->rmr, 0, sizeof(uint32_t));
+   memset(&s->rpr, 0, sizeof(uint32_t));
+   memset(&s->rcr, 0, sizeof(uint32_t));
+   memset(&s->rcer, 0, sizeof(uint32_t));
+}
 
-    cpu_state_reset(cpu);
+static void reset_init(MemoryRegion *address_space,
+                       target_phys_addr_t base_addr)
+{
+    ResetState *s = NULL;
 
-    cpu->nip = s->entry;
+    if (DEBUG_CONFIG) {
+        dprintf("mapped at address 0x%08x\n", (uint32_t)base_addr);
+    }
+
+    /* instantiate the object and intiialize it to 0 */
+    s = g_malloc0(sizeof(ResetState));
+    memory_region_init_io(&s->mem, &reset_ops, s, "reset", RESET_MEM_SIZE);
+    memory_region_add_subregion(address_space, base_addr, &s->mem);
+
+    /* initialzie registers with their default values */
+    reset_reset(s);
 }
 
 static void sbc834x_init(ram_addr_t  ram_size,
@@ -279,6 +363,7 @@ static void sbc834x_init(ram_addr_t  ram_size,
     qemu_irq     *devirqs;
     MemoryRegion *ram     = g_new(MemoryRegion, 1);
     MemoryRegion *immr    = g_new(MemoryRegion, 1);
+    MemoryRegion *params  = g_new(MemoryRegion, 1);
     int32_t       kernel_size;
     uint64_t      kernel_pentry, kernel_lowaddr;
     target_ulong  dt_base = 0;
@@ -332,6 +417,9 @@ static void sbc834x_init(ram_addr_t  ram_size,
     /* TODO: check ISA, 1 MB ? Why needed ? */
     isa_mmio_init(0xff500000, 0x100000);
 #endif
+
+    /* initialize the reset registers */
+    reset_init(ccsr_space, RESET_OFFSET);
 
     /* initialize interrupt controller */
     irqs = g_malloc0(sizeof(qemu_irq) * IPIC_OUTPUT_SIZE);
@@ -413,6 +501,24 @@ static void sbc834x_init(ram_addr_t  ram_size,
         initrd_size = 0;
     }
 #endif
+
+    /* Set params.  */
+    memory_region_init_ram(params, "ppc83xx.params", PARAMS_SIZE);
+    memory_region_add_subregion(get_system_memory(), PARAMS_ADDR, params);
+    vmstate_register_ram_global(params);
+
+    if (kernel_cmdline) {
+        cpu_physical_memory_write(PARAMS_ADDR, kernel_cmdline,
+                                  strlen(kernel_cmdline) + 1);
+       } else {
+            stb_phys(PARAMS_ADDR, 0);
+    }
+
+    /* Set read-only after writing command line */
+    memory_region_set_readonly(params, true);
+
+    /* HostFS */
+    hostfs_create(HOSTFS_START, get_system_memory());
 
     /* Initialize plug-ins */
     plugin_init(devirqs, 16);
