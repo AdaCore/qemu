@@ -417,7 +417,7 @@ static void sbc834x_init(ram_addr_t  ram_size,
 
     /* set time-base frequency to 66 Mhz */
     /* should be controlled by M66EN to switch between 33 and 66 */
-    cpu_ppc_tb_init(s, 66000000);
+    cpu_ppc_tb_init(s, 660000000);
 
     /* configure reset */
     reset_info = g_malloc0(sizeof(ResetData));
