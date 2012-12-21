@@ -26,6 +26,7 @@
 
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
+#include "qemu-traces.h"
 
 #define e300_VECTOR_MASK  0x000fffff
 #define e300_RESET_VECTOR 0x00000100
@@ -188,6 +189,8 @@ static uint64_t mpc83xx_immr_read(void *state, target_phys_addr_t address,
     int offset;
     uint32_t value = 0;
 
+    (void)s;
+
     offset = address & 0xfffff;
     if (DEBUG_RW) {
         dprintf("%d-bits read from register 0x%05X address 0x%x\n",
@@ -205,8 +208,8 @@ static void mpc83xx_immr_write(void *state, target_phys_addr_t address,
                                 uint64_t value, unsigned size) {
     CPUArchState *s = state;
     int offset;
-    uint64_t old_value;
 
+    (void)s;
     offset = address & 0xfffff;
     if (DEBUG_RW) {
         dprintf("%d-bits write 0x%08X to register 0x%05X\n",
@@ -311,6 +314,31 @@ static const MemoryRegionOps reset_ops = {
     .endianness = DEVICE_BIG_ENDIAN,
 };
 
+static void write_qtrace(void *opaque, target_phys_addr_t addr, uint64_t value,
+                         unsigned size)
+{
+    switch (addr & 0xfff) {
+    case 0x00:
+        trace_special(TRACE_SPECIAL_LOADADDR, value);
+        break;
+    default:
+#ifdef DEBUG_MPC83XX
+        printf("%s: writing non implemented register 0x%8x\n", __func__,
+               QTRACE_START + addr);
+#endif
+        break;
+    }
+}
+
+static const MemoryRegionOps qtrace_ops = {
+    .write = write_qtrace,
+    .endianness = DEVICE_BIG_ENDIAN,
+    .valid = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
+};
+
 static void reset_reset(void *state)
 {
    ResetState *s = state;
@@ -351,7 +379,6 @@ static void sbc834x_init(ram_addr_t  ram_size,
 {
 
     CPUArchState *s;
-    clk_setup_cb  clock;
 #if 0
     RTCState     *rtc;
     ISADevice    *pit;
@@ -364,6 +391,7 @@ static void sbc834x_init(ram_addr_t  ram_size,
     MemoryRegion *ram     = g_new(MemoryRegion, 1);
     MemoryRegion *immr    = g_new(MemoryRegion, 1);
     MemoryRegion *params  = g_new(MemoryRegion, 1);
+    MemoryRegion *qtrace  = g_new(MemoryRegion, 1);
     int32_t       kernel_size;
     uint64_t      kernel_pentry, kernel_lowaddr;
     target_ulong  dt_base = 0;
@@ -389,7 +417,7 @@ static void sbc834x_init(ram_addr_t  ram_size,
 
     /* set time-base frequency to 66 Mhz */
     /* should be controlled by M66EN to switch between 33 and 66 */
-    clock = cpu_ppc_tb_init(s, 66000000);
+    cpu_ppc_tb_init(s, 66000000);
 
     /* configure reset */
     reset_info = g_malloc0(sizeof(ResetData));
@@ -516,6 +544,11 @@ static void sbc834x_init(ram_addr_t  ram_size,
 
     /* Set read-only after writing command line */
     memory_region_set_readonly(params, true);
+
+    /* Qtrace*/
+    memory_region_init_io(qtrace, &qtrace_ops, s,
+                          "Exec-traces", QTRACE_SIZE);
+    memory_region_add_subregion(get_system_memory(), QTRACE_START, qtrace);
 
     /* HostFS */
     hostfs_create(HOSTFS_START, get_system_memory());
