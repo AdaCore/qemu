@@ -344,6 +344,11 @@ static void pit_realizefn(DeviceState *dev, Error **errp)
     qdev_init_gpio_in(dev, pit_irq_control, 1);
 
     pc->parent_realize(dev, errp);
+
+    /* Disable the interrupt at initialization in order to go back to
+     * Qemu-0.15's behavior.
+     */
+    s->irq_disabled = 1;
 }
 
 static Property pit_properties[] = {
