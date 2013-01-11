@@ -324,6 +324,12 @@ static int pit_initfn(PITCommonState *pit)
 
     qdev_init_gpio_in(&pit->dev.qdev, pit_irq_control, 1);
 
+
+    /* Disable the interrupt at initialization in order to go back to
+     * Qemu-0.15's behavior.
+     */
+    s->irq_disabled = 1;
+
     return 0;
 }
 
