@@ -899,60 +899,49 @@ static void ipic_lower_output_irq(IPICState *s, int source_id)
 }
 
 /* check if an interrupt must be triggered */
-static void ipic_check_mask(IPICState *s, int mask_reg, uint32_t unmasked)
+static void ipic_check_mask(IPICState *s)
 {
-    uint32_t pending_unmasked = 0;
     int source_id;
     int count = 0;
 
-    /* get unmasked sources */
-    switch (mask_reg) {
-    case IPIC_SIMSR_L:
-        pending_unmasked = s->regs.sipnr_l & unmasked;
-        break;
-    case IPIC_SIMSR_H:
-        pending_unmasked = s->regs.sipnr_h & unmasked;
-        break;
-    case IPIC_SEMSR:
-        pending_unmasked = s->regs.sepnr   & unmasked;
-        break;
-    }
-
-    if (pending_unmasked != 0) {
-        /* find the first source which should be triggered */
-        /* TODO: handle priorities */
-#ifdef DEBUG_TRIGGER
-        dprintf("trigger IRQs: ");
-        for (source_id = 0; source_id < IPIC_SOURCES_SIZE; source_id++) {
-            if (ipic_sources[source_id].mask == mask_reg &&
-                (pending_unmasked & IPIC_MASK(source_id)) != 0) {
-                dprintf0("#%d ", source_id);
-                count++;
-            }
+    /* find the first source which should be triggered */
+    /* TODO: handle priorities */
+#if DEBUG_TRIGGER
+    dprintf("trigger IRQs: ");
+    for (source_id = 0; source_id < IPIC_SOURCES_SIZE; source_id++) {
+	    const struct ipic_source *src = &ipic_sources[source_id];
+	    uint32_t pending = *s->regs_read[src->pending];
+	    uint32_t mask = *s->regs_read[src->mask];
+	    uint32_t force = *s->regs_read[src->force];
+        if (((force | pending) & mask & IPIC_MASK(source_id)) != 0) {
+            dprintf0("#%d ", source_id);
+            count++;
         }
-        dprintf0("\n");
+    }
+    dprintf0("\n");
 #endif
-        for (source_id = 0; source_id < IPIC_SOURCES_SIZE; source_id++) {
-            if (ipic_sources[source_id].mask == mask_reg &&
-                (pending_unmasked & IPIC_MASK(source_id)) != 0) {
-                break;
-            }
+    for (source_id = 0; source_id < IPIC_SOURCES_SIZE; source_id++) {
+	    const struct ipic_source *src = &ipic_sources[source_id];
+	    uint32_t pending = *s->regs_read[src->pending];
+	    uint32_t mask = *s->regs_read[src->mask];
+	    uint32_t force = *s->regs_read[src->force];
+        if (((force | pending) & mask & IPIC_MASK(source_id)) != 0) {
+            break;
         }
-        if (source_id == IPIC_SOURCES_SIZE) {
-            eprintf("interrupt has no source");
-            return;
-        }
-        /* TODO: what should happen if many sources are unmasked at once ? */
-        if ((unmasked ^ IPIC_MASK(source_id)) != 0 && count > 1) {
-            dprintf("WARNING: many sources unmasked at once (0x%08X / %s)\n",
-                unmasked,  ipic_reg_name[mask_reg]);
-        }
-        /* trigger ISR */
-        if (DEBUG_UNMASK) {
-            dprintf("unmasked IRQ #%d\n", source_id);
-        }
-        ipic_raise_output_irq(s, source_id);
     }
+    if (source_id == IPIC_SOURCES_SIZE) {
+	ipic_lower_output_irq(s, source_id);
+        return;
+    }
+    /* TODO: what should happen if many sources are unmasked at once ? */
+    if (count > 1) {
+        dprintf("WARNING: many sources unmasked at once\n");
+    }
+    /* trigger ISR */
+    if (DEBUG_UNMASK) {
+        dprintf("unmasked IRQ #%d\n", source_id);
+    }
+    ipic_raise_output_irq(s, source_id);
 }
 
 /* input IRQs are set by devices */
@@ -1126,8 +1115,11 @@ static void ipic_write(void *state, target_phys_addr_t address, uint64_t value,
     case IPIC_SIMSR_L:
     case IPIC_SIMSR_H:
     case IPIC_SEMSR:
-        ipic_check_mask(s, reg_offset, *reg & (old_value ^ *reg));
-        break;
+    case IPIC_SIFCR_L:
+    case IPIC_SIFCR_H:
+    case IPIC_SEFCR:
+        ipic_check_mask(s);
+	break;
     }
 }
 
