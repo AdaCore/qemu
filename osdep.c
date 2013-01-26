@@ -125,22 +125,11 @@ ssize_t qemu_write_full(int fd, const void *buf, size_t count)
     return total;
 }
 
-#ifdef _WIN32
-
-/* Hack to avoid compilation error in Qemu's tools */
-#pragma weak qemu_add_wait_object
-int qemu_add_wait_object(HANDLE handle, WaitObjectFunc *func, void *opaque);
-
-#endif
-
 /*
  * Opens a socket with FD_CLOEXEC set
  */
 int qemu_socket(int domain, int type, int protocol)
 {
-#ifdef _WIN32
-    HANDLE socketEventHandle = WSACreateEvent();
-#endif
     int ret;
 
 #ifdef SOCK_CLOEXEC
@@ -154,22 +143,6 @@ int qemu_socket(int domain, int type, int protocol)
         qemu_set_cloexec(ret);
     }
 
-#ifdef _WIN32
-    /*
-     * On Windows we have two event functions, select for sockets and
-     * WaitForMultipleObjects (WFMO) for the rest. WFMO is blocking while select
-     * is not, therefore when a socket receive a packet we have to wait for WFMO
-     * to reach the end of its timeout. This adds latency in socket
-     * communication.
-     *
-     * By creating a Windows event attached to the socket, WFMO will return as
-     * soon as there something to read on a socket.
-     */
-    if (qemu_add_wait_object) {
-        WSAEventSelect(ret, socketEventHandle, FD_READ | FD_CLOSE);
-        qemu_add_wait_object(socketEventHandle, NULL, NULL);
-    }
-#endif
     return ret;
 }
 

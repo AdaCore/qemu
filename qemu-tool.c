@@ -21,6 +21,10 @@
 QEMUClock *rt_clock;
 QEMUClock *vm_clock;
 
+#ifdef _WIN32
+HANDLE qemu_event_handle;
+#endif
+
 FILE *logfile;
 
 struct QEMUBH

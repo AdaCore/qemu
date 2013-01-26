@@ -73,15 +73,20 @@ void qemu_vfree(void *ptr)
     VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
+extern HANDLE qemu_event_handle;
+
 void socket_set_nonblock(int fd)
 {
     unsigned long opt = 1;
+    WSAEventSelect(fd, qemu_event_handle, FD_READ | FD_WRITE | FD_ACCEPT |
+                   FD_CLOSE | FD_CONNECT | FD_OOB);
     ioctlsocket(fd, FIONBIO, &opt);
 }
 
 void socket_set_block(int fd)
 {
     unsigned long opt = 0;
+    WSAEventSelect(fd, qemu_event_handle, 0);
     ioctlsocket(fd, FIONBIO, &opt);
 }
 
