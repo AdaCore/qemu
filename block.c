@@ -420,9 +420,16 @@ int get_tmp_filename(char *filename, int size)
     /* GetTempFileName requires that its output buffer (4th param)
        have length MAX_PATH or greater.  */
     assert(size >= MAX_PATH);
-    return (GetTempPath(MAX_PATH, temp_dir)
-            && GetTempFileName(temp_dir, "qem", 0, filename)
-            ? 0 : -GetLastError());
+    if (GetTempPath(MAX_PATH, temp_dir) == 0) {
+        fprintf(stderr, "GetTempPath() error: %d\n", GetLastError());
+        return -GetLastError();
+    }
+    if (GetTempFileName(temp_dir, "qem", 0, filename) == 0) {
+        fprintf(stderr, "GetTempFileName(%s) error: %d\n", temp_dir,
+                GetLastError());
+        return -GetLastError();
+    }
+    return 0;
 #else
     int fd;
     const char *tmpdir;
