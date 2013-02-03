@@ -852,9 +852,21 @@ static void qemu_cpu_kick_thread(CPUArchState *env)
     }
 #else /* _WIN32 */
     if (!qemu_cpu_is_self(env)) {
-        SuspendThread(env->hThread);
+	CONTEXT tcgContext;
+
+        if (SuspendThread(env->hThread) == (DWORD)-1) {
+            fprintf(stderr, "qemu:%s: GetLastError:%d\n", __func__, GetLastError());
+            exit(1);
+        }
+	tcgContext.ContextFlags = CONTEXT_CONTROL;
+	while (GetThreadContext (env->hThread, &tcgContext) != 0) {
+	    continue;
+	}
         cpu_signal(0);
-        ResumeThread(env->hThread);
+        if (ResumeThread(env->hThread) == (DWORD)-1) {
+            fprintf(stderr, "qemu:%s: GetLastError:%d\n", __func__, GetLastError());
+            exit(1);
+        }
     }
 #endif
 }
