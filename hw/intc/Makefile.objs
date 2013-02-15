@@ -43,3 +43,4 @@ obj-$(CONFIG_ARM_GIC) += arm_gicv3_cpuif.o
 obj-$(CONFIG_MIPS_CPS) += mips_gic.o
 obj-y += ipic.o
 obj-$(CONFIG_MPC55XX) += mpc55xx_intc.o
+obj-$(CONFIG_TMS570) += TMS570_vim.o
