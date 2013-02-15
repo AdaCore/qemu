@@ -494,3 +494,9 @@ config ARMSSE_CPUID
 
 config ARMSSE_MHU
     bool
+
+config MUSCA
+    bool
+
+config TMS570
+    bool
