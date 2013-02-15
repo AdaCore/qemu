@@ -122,3 +122,6 @@ config ARMSSE_MHU
 
 config MUSCA
     bool
+
+config TMS570
+    bool

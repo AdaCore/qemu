@@ -35,3 +35,4 @@ common-obj-$(CONFIG_SCLPCONSOLE) += sclpconsole.o sclpconsole-lm.o
 obj-$(CONFIG_VIRTIO) += virtio-serial-bus.o
 obj-$(CONFIG_TERMINAL3270) += terminal3270.o
 obj-$(CONFIG_MPC55XX) += esci.o
+obj-$(CONFIG_TMS570) += TMS570_sci.o
