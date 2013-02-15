@@ -1,3 +1,4 @@
+softmmu_ss.add(when: 'CONFIG_TMS570', if_true: files('TMS570_sci.c'))
 softmmu_ss.add(when: 'CONFIG_CADENCE', if_true: files('cadence_uart.c'))
 softmmu_ss.add(when: 'CONFIG_CMSDK_APB_UART', if_true: files('cmsdk-apb-uart.c'))
 softmmu_ss.add(when: 'CONFIG_ESCC', if_true: files('escc.c'))
