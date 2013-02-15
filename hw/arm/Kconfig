@@ -260,6 +260,13 @@ config STRONGARM
     bool
     select PXA2XX
 
+config TMS570
+    bool
+    select TMS570_GIO
+    select TMS570_RTI
+    select TMS570_SCI
+    select TMS570_VIM
+
 config COLLIE
     bool
     select PFLASH_CFI01
