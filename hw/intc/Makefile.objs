@@ -28,3 +28,4 @@ obj-$(CONFIG_ALLWINNER_A10_PIC) += allwinner-a10-pic.o
 obj-$(CONFIG_S390_FLIC) += s390_flic.o
 obj-y += ipic.o
 obj-$(CONFIG_MPC55XX) += mpc55xx_intc.o
+obj-$(CONFIG_TMS570) += TMS570_vim.o
