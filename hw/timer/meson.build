@@ -1,3 +1,4 @@
+softmmu_ss.add(when: 'CONFIG_TMS570', if_true: files('TMS570_rti.c'))
 softmmu_ss.add(when: 'CONFIG_A9_GTIMER', if_true: files('a9gtimer.c'))
 softmmu_ss.add(when: 'CONFIG_ALLWINNER_A10_PIT', if_true: files('allwinner-a10-pit.c'))
 softmmu_ss.add(when: 'CONFIG_ALTERA_TIMER', if_true: files('altera_timer.c'))
