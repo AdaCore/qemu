@@ -50,3 +50,4 @@ obj-$(CONFIG_NIOS2) += nios2_iic.o
 obj-$(CONFIG_OMPIC) += ompic.o
 obj-y += ipic.o
 obj-$(CONFIG_MPC55XX) += mpc55xx_intc.o
+obj-$(CONFIG_TMS570) += TMS570_vim.o
