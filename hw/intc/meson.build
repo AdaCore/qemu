@@ -1,3 +1,4 @@
+softmmu_ss.add(when: 'CONFIG_TMS570', if_true: files('TMS570_vim.c'))
 softmmu_ss.add(files('intc.c'))
 softmmu_ss.add(when: 'CONFIG_ARM_GIC', if_true: files(
   'arm_gic.c',
