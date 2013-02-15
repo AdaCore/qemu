@@ -25,6 +25,7 @@ common-obj-$(CONFIG_PXA2XX) += pxa2xx_timer.o
 common-obj-$(CONFIG_SH4) += sh_timer.o
 common-obj-$(CONFIG_DIGIC) += digic-timer.o
 common-obj-$(CONFIG_MIPS_CPS) += mips_gictimer.o
+common-obj-$(CONFIG_TMS570) += TMS570_rti.o
 
 common-obj-$(CONFIG_ALLWINNER_A10_PIT) += allwinner-a10-pit.o
 
