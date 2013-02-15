@@ -1,3 +1,6 @@
+config TMS570_VIM
+    bool
+
 config HEATHROW_PIC
     bool
 
