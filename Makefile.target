@@ -384,6 +384,7 @@ obj-arm-$(CONFIG_FDT) += device_tree.o
 obj-arm-y += TMS570_sci.o
 obj-arm-y += TMS570_rti.o
 obj-arm-y += TMS570_vim.o
+obj-arm-y += TMS570.o
 
 obj-sh4-y = shix.o r2d.o sh7750.o sh7750_regnames.o tc58128.o
 obj-sh4-y += sh_timer.o sh_serial.o sh_intc.o sh_pci.o sm501.o
