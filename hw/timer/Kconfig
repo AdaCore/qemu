@@ -6,6 +6,9 @@ config ARM_MPTIMER
     bool
     select PTIMER
 
+config TMS570_RTI
+    bool
+
 config A9_GTIMER
     bool
 
