@@ -13,18 +13,22 @@ static int vfp_gdb_get_reg(CPUARMState *env, uint8_t *buf, int reg)
 {
     int nregs;
 
-    /* VFP data registers are always little-endian.  */
     nregs = arm_feature(env, ARM_FEATURE_VFP3) ? 32 : 16;
     if (reg < nregs) {
-        stfq_le_p(buf, env->vfp.regs[reg]);
+        stfq_p(buf, env->vfp.regs[reg]);
         return 8;
     }
     if (arm_feature(env, ARM_FEATURE_NEON)) {
         /* Aliases for Q regs.  */
         nregs += 16;
         if (reg < nregs) {
-            stfq_le_p(buf, env->vfp.regs[(reg - 32) * 2]);
-            stfq_le_p(buf + 8, env->vfp.regs[(reg - 32) * 2 + 1]);
+#ifdef TARGET_WORDS_BIGENDIAN
+            stfq_p(buf, env->vfp.regs[(reg - 32) * 2 + 1]);
+            stfq_p(buf + 8, env->vfp.regs[(reg - 32) * 2]);
+#else
+            stfq_p(buf, env->vfp.regs[(reg - 32) * 2]);
+            stfq_p(buf + 8, env->vfp.regs[(reg - 32) * 2 + 1]);
+#endif  /* TARGET_WORDS_BIGENDIAN */
             return 16;
         }
     }
@@ -42,14 +46,19 @@ static int vfp_gdb_set_reg(CPUARMState *env, uint8_t *buf, int reg)
 
     nregs = arm_feature(env, ARM_FEATURE_VFP3) ? 32 : 16;
     if (reg < nregs) {
-        env->vfp.regs[reg] = ldfq_le_p(buf);
+        env->vfp.regs[reg] = ldfq_p(buf);
         return 8;
     }
     if (arm_feature(env, ARM_FEATURE_NEON)) {
         nregs += 16;
         if (reg < nregs) {
-            env->vfp.regs[(reg - 32) * 2] = ldfq_le_p(buf);
-            env->vfp.regs[(reg - 32) * 2 + 1] = ldfq_le_p(buf + 8);
+#ifdef TARGET_WORDS_BIGENDIAN
+            env->vfp.regs[(reg - 32) * 2 + 1] = ldfq_p(buf);
+            env->vfp.regs[(reg - 32) * 2] = ldfq_p(buf + 8);
+#else
+            env->vfp.regs[(reg - 32) * 2] = ldfq_p(buf);
+            env->vfp.regs[(reg - 32) * 2 + 1] = ldfq_p(buf + 8);
+#endif  /* TARGET_WORDS_BIGENDIAN */
             return 16;
         }
     }
