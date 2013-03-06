@@ -3062,12 +3062,12 @@ static void check_watchpoint(int offset, int len_mask, int flags)
                 cpu_restore_state(tb, env, env->mem_io_pc);
                 tb_phys_invalidate(tb, -1);
                 if (wp->flags & BP_STOP_BEFORE_ACCESS) {
-                    cpu_resume_from_exception (env, EXCP_DEBUG);
+                    env->exception_index = EXCP_DEBUG;
                     cpu_loop_exit(env);
                 } else {
                     cpu_get_tb_cpu_state(env, &pc, &cs_base, &cpu_flags);
                     tb_gen_code(env, pc, cs_base, cpu_flags, 1);
-                    cpu_resume_from_exception (env, -1);
+                    cpu_resume_from_signal(env, NULL);
                 }
             }
         } else {
