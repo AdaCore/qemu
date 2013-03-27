@@ -52,11 +52,14 @@
 #include "exec/exec-all.h"
 #include "sysemu/replay.h"
 
-#ifdef CONFIG_USER_ONLY
+/* #ifdef CONFIG_USER_ONLY */
+/* #define GDB_ATTACHED "0" */
+/* #else */
+/* #define GDB_ATTACHED "1" */
+/* #endif */
+
+/* For GNATemu, we want to keep GDB not attached (M129-013) */
 #define GDB_ATTACHED "0"
-#else
-#define GDB_ATTACHED "1"
-#endif
 
 #ifndef CONFIG_USER_ONLY
 static int phy_memory_mode;
