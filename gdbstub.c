@@ -41,6 +41,9 @@
 #include "qemu_socket.h"
 #include "kvm.h"
 
+/* For GNATemu, we want to keep GDB not attached (M129-013) */
+#define GDB_ATTACHED "0"
+
 #ifndef TARGET_CPU_MEMORY_RW_DEBUG
 static inline int target_memory_rw_debug(CPUArchState *env, target_ulong addr,
                                          uint8_t *buf, int len, int is_write)
@@ -2369,6 +2372,11 @@ static int gdb_handle_packet(GDBState *s, const char *line_buf)
             break;
         }
 #endif
+        if (strncmp(p, "Attached", 8) == 0) {
+            put_packet(s, GDB_ATTACHED);
+            break;
+        }
+
         /* Unrecognised 'q' command.  */
         goto unknown_command;
 
