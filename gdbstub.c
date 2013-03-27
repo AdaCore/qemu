@@ -40,11 +40,14 @@
 #include "exec/semihost.h"
 #include "exec/exec-all.h"
 
-#ifdef CONFIG_USER_ONLY
+/* #ifdef CONFIG_USER_ONLY */
+/* #define GDB_ATTACHED "0" */
+/* #else */
+/* #define GDB_ATTACHED "1" */
+/* #endif */
+
+/* For GNATemu, we want to keep GDB not attached (M129-013) */
 #define GDB_ATTACHED "0"
-#else
-#define GDB_ATTACHED "1"
-#endif
 
 static inline int target_memory_rw_debug(CPUState *cpu, target_ulong addr,
                                          uint8_t *buf, int len, bool is_write)
