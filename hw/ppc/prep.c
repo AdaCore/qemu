@@ -51,6 +51,11 @@
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
 
+typedef struct ResetData {
+    PowerPCCPU *cpu;
+    uint32_t    entry;          /* save kernel entry in case of reset */
+} ResetData;
+
 /* Copied from hw/isa/i82378.c until we find a better solution... */
 
 #define TYPE_I82378 "i82378"
@@ -376,9 +381,14 @@ static void cpu_request_exit(void *opaque, int irq, int level)
 
 static void ppc_prep_reset(void *opaque)
 {
-    PowerPCCPU *cpu = opaque;
+    ResetData *s   = (ResetData *)opaque;
+    PowerPCCPU *cpu = s->cpu;
 
     cpu_reset(CPU(cpu));
+
+    if (s->entry != 0) {
+        cpu->env.nip = s->entry;
+    }
 }
 
 static const MemoryRegionPortio prep_portio_list[] = {
@@ -559,10 +569,13 @@ static void ppc_prep_init(MachineState *machine)
     int ppc_boot_device;
     I82378State *i82378;
     DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
+    ResetData  *reset_info;
 
     sysctrl = g_malloc0(sizeof(sysctrl_t));
 
     linux_boot = (kernel_filename != NULL);
+
+    reset_info = g_malloc0(sizeof(ResetData) * smp_cpus);
 
     /* init CPUs */
     if (machine->cpu_model == NULL)
@@ -582,7 +595,11 @@ static void ppc_prep_init(MachineState *machine)
             /* Set time-base frequency to 100 Mhz */
             cpu_ppc_tb_init(env, 100UL * 1000UL * 1000UL);
         }
-        qemu_register_reset(ppc_prep_reset, cpu);
+
+        /* Reset data */
+        reset_info[i].cpu = cpu;
+
+        qemu_register_reset(ppc_prep_reset, &reset_info[i]);
     }
 
     /* allocate RAM */
@@ -590,9 +607,11 @@ static void ppc_prep_init(MachineState *machine)
     memory_region_add_subregion(sysmem, 0, ram);
 
     if (linux_boot) {
+        uint64_t entry;
+
         kernel_base = KERNEL_LOAD_ADDR;
         /* now we can load the kernel */
-        kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, NULL, NULL,
+        kernel_size = load_elf(kernel_filename, NULL, NULL, &entry, NULL, NULL,
                                1, ELF_MACHINE, 0);
         if (kernel_size < 0) {
             kernel_size = load_image_targphys(kernel_filename, kernel_base,
@@ -601,6 +620,11 @@ static void ppc_prep_init(MachineState *machine)
         if (kernel_size < 0) {
             hw_error("qemu: could not load kernel '%s'\n", kernel_filename);
         }
+
+        for (i = 0; i < smp_cpus; i++) {
+            reset_info[i].entry = entry;
+        }
+
         /* load initrd */
         if (initrd_filename) {
             initrd_base = INITRD_LOAD_ADDR;
