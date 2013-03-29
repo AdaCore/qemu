@@ -47,6 +47,11 @@
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
 
+typedef struct ResetData {
+    CPUPPCState *env;
+    uint32_t  entry;            /* save kernel entry in case of reset */
+} ResetData;
+
 typedef struct I82378State {
     qemu_irq out[2];
     qemu_irq *i8259;
@@ -469,9 +474,14 @@ static void cpu_request_exit(void *opaque, int irq, int level)
 
 static void ppc_prep_reset(void *opaque)
 {
-    CPUPPCState *env = opaque;
+    ResetData *s   = (ResetData *)opaque;
+    CPUPPCState *env = s->env;
 
     cpu_state_reset(env);
+
+    if (s->entry != 0) {
+        env->nip = s->entry;
+    }
 }
 
 /* PowerPC PREP hardware initialisation */
@@ -508,10 +518,13 @@ static void ppc_prep_init (ram_addr_t ram_size,
     PCIi82378State *i82378;
     DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
     DriveInfo *fd[MAX_FD];
+    ResetData  *reset_info;
 
     sysctrl = g_malloc0(sizeof(sysctrl_t));
 
     linux_boot = (kernel_filename != NULL);
+
+    reset_info = g_malloc0(sizeof(ResetData) * smp_cpus);
 
     /* init CPUs */
     if (cpu_model == NULL)
@@ -529,7 +542,11 @@ static void ppc_prep_init (ram_addr_t ram_size,
             /* Set time-base frequency to 100 Mhz */
             cpu_ppc_tb_init(env, 100UL * 1000UL * 1000UL);
         }
-        qemu_register_reset(ppc_prep_reset, env);
+
+        /* Reset data */
+        reset_info[i].env = env;
+
+        qemu_register_reset(ppc_prep_reset, &reset_info[i]);
     }
 
     /* allocate RAM */
@@ -574,9 +591,11 @@ static void ppc_prep_init (ram_addr_t ram_size,
     }
 
     if (linux_boot) {
+        uint64_t entry;
+
         kernel_base = KERNEL_LOAD_ADDR;
         /* now we can load the kernel */
-        kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, NULL, NULL,
+        kernel_size = load_elf(kernel_filename, NULL, NULL, &entry, NULL, NULL,
                                1, ELF_MACHINE, 0);
         if (kernel_size < 0) {
             kernel_size = load_image_targphys(kernel_filename, kernel_base,
@@ -585,6 +604,11 @@ static void ppc_prep_init (ram_addr_t ram_size,
         if (kernel_size < 0) {
             hw_error("qemu: could not load kernel '%s'\n", kernel_filename);
         }
+
+        for (i = 0; i < smp_cpus; i++) {
+            reset_info[i].entry = entry;
+        }
+
         /* load initrd */
         if (initrd_filename) {
             initrd_base = INITRD_LOAD_ADDR;
