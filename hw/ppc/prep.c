@@ -55,6 +55,11 @@
 
 #include "hw/adacore/gnat-bus.h"
 
+typedef struct ResetData {
+    PowerPCCPU *cpu;
+    uint32_t    entry;          /* save kernel entry in case of reset */
+} ResetData;
+
 /* Copied from hw/isa/i82378.c until we find a better solution... */
 
 #define TYPE_I82378 "i82378"
@@ -269,9 +274,14 @@ static void fw_cfg_boot_set(void *opaque, const char *boot_device,
 
 static void ppc_prep_reset(void *opaque)
 {
-    PowerPCCPU *cpu = opaque;
+    ResetData *s   = (ResetData *)opaque;
+    PowerPCCPU *cpu = s->cpu;
 
     cpu_reset(CPU(cpu));
+
+    if (s->entry != 0) {
+        cpu->env.nip = s->entry;
+    }
 }
 
 static const MemoryRegionPortio prep_portio_list[] = {
@@ -452,10 +462,13 @@ static void ppc_prep_init(MachineState *machine)
     int ppc_boot_device;
     I82378State *i82378;
     DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
+    ResetData  *reset_info;
 
     sysctrl = g_malloc0(sizeof(sysctrl_t));
 
     linux_boot = (kernel_filename != NULL);
+
+    reset_info = g_malloc0(sizeof(ResetData) * smp_cpus);
 
     /* init CPUs */
     for (i = 0; i < smp_cpus; i++) {
@@ -469,7 +482,11 @@ static void ppc_prep_init(MachineState *machine)
             /* Set time-base frequency to 100 Mhz */
             cpu_ppc_tb_init(env, 100UL * 1000UL * 1000UL);
         }
-        qemu_register_reset(ppc_prep_reset, cpu);
+
+        /* Reset data */
+        reset_info[i].cpu = cpu;
+
+        qemu_register_reset(ppc_prep_reset, &reset_info[i]);
     }
 
     /* allocate RAM */
@@ -491,6 +508,11 @@ static void ppc_prep_init(MachineState *machine)
             error_report("could not load kernel '%s'", kernel_filename);
             exit(1);
         }
+
+        for (i = 0; i < smp_cpus; i++) {
+            reset_info[i].entry = entry;
+        }
+
         /* load initrd */
         if (initrd_filename) {
             initrd_base = INITRD_LOAD_ADDR;
