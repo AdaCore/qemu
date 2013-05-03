@@ -164,6 +164,9 @@ typedef struct CPUARMState {
         int current_sp;
         int exception;
         int pending_exception;
+        uint32_t actlr;
+        uint32_t fpccr;
+        uint32_t fpcar;         /* reserved stack area */
     } v7m;
 
     /* Thumb-2 EE state.  */
@@ -444,6 +447,7 @@ void cpu_arm_set_cp_io(CPUARMState *env, int cpnum,
 #define ARM_CPUID_CORTEXA9    0x410fc090
 #define ARM_CPUID_CORTEXA15   0x412fc0f1
 #define ARM_CPUID_CORTEXM3    0x410fc231
+#define ARM_CPUID_CORTEXM4    0x410FC241
 #define ARM_CPUID_ANY         0xffffffff
 
 #if defined(CONFIG_USER_ONLY)
