@@ -611,6 +611,16 @@ static const ARMCPRegInfo cortexa8_cp_reginfo[] = {
     REGINFO_SENTINEL
 };
 
+static void cortex_m4f_initfn(Object *obj)
+{
+    ARMCPU *cpu = ARM_CPU(obj);
+
+    cortex_m3_initfn(obj);
+    set_feature(&cpu->env, ARM_FEATURE_VFP4);
+    set_feature(&cpu->env, ARM_FEATURE_THUMB2);
+    cpu->midr = 0x410FC241;
+}
+
 static void cortex_a8_initfn(Object *obj)
 {
     ARMCPU *cpu = ARM_CPU(obj);
@@ -987,6 +997,8 @@ static const ARMCPUInfo arm_cpus[] = {
     { .name = "arm1176",     .initfn = arm1176_initfn },
     { .name = "arm11mpcore", .initfn = arm11mpcore_initfn },
     { .name = "cortex-m3",   .initfn = cortex_m3_initfn,
+                             .class_init = arm_v7m_class_init },
+    { .name = "cortex-m4f",  .initfn = cortex_m4f_initfn,
                              .class_init = arm_v7m_class_init },
     { .name = "cortex-a8",   .initfn = cortex_a8_initfn },
     { .name = "cortex-a9",   .initfn = cortex_a9_initfn },
