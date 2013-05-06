@@ -188,11 +188,15 @@ static uint64_t vim_read(void *opaque, target_phys_addr_t offset,
         DPRINTF("%s: FIQINDEX:0x%x\n", __func__, s->IRQINDEX);
         return s->FIQINDEX;
 
-    case 0x10 ... 0x18: /* FIRQPRx */
-        return s->FIRQPR[offset - 0x10];
+    case 0x10: /* FIRQPR0 */
+    case 0x14: /* FIRQPR1 */
+    case 0x18: /* FIRQPR2 */
+        return s->FIRQPR[(offset - 0x10) / 4];
 
-    case 0x20 ... 0x28: /* INTREQx */
-        return s->INTREQ[offset - 0x20];
+    case 0x20: /* INTREQ0 */
+    case 0x24: /* INTREQ1 */
+    case 0x28: /* INTREQ2 */
+        return s->INTREQ[(offset - 0x20) / 4];
 
     case 0x30: /* REQENASET0 */
     case 0x40: /* REQENACLR0 */
@@ -225,8 +229,7 @@ static uint64_t vim_read(void *opaque, target_phys_addr_t offset,
         break;
 
     case 0x80 ... 0xDC: /* CHANCTRL */
-        offset -= 0x80;
-        return s->CHANMAP._32[offset];
+        return s->CHANMAP._32[(offset - 0x80) / 4];
     default:
         hw_error("vim_read: Bad offset 0x%x\n", (int)offset);
         return 0;
@@ -254,8 +257,11 @@ static void vim_write(void *opaque, target_phys_addr_t offset,
         /* Channel 0 and channel 1 are routed exclusively to FIQ */
         s->FIRQPR[0] = val | 0x3;
         break;
-    case 0x14 ... 0x18: /* FIRQPR1-2 */
-        s->FIRQPR[offset - 0x14] = val;
+    case 0x14: /* FIRQPR1 */
+        s->FIRQPR[1] = val;
+        break;
+    case 0x18: /* FIRQPR2 */
+        s->FIRQPR[2] = val;
         break;
 
     case 0x20 ... 0x28: /* INTREQx */
@@ -265,22 +271,32 @@ static void vim_write(void *opaque, target_phys_addr_t offset,
     case 0x30: /* REQENASET0 */
         s->ENA[0] |= val | 0x3;
         break;
-    case 0x34 ... 0x38: /* REQENASET1-2 */
-        s->ENA[offset - 0x34] |= val;
+    case 0x34: /* REQENASET1 */
+        s->ENA[1] |= val;
+        break;
+    case 0x38: /* REQENASET2 */
+        s->ENA[2] |= val;
         break;
 
     case 0x40: /* REQENACLR0 */
         s->ENA[0] &= ~val | 0x3;
         break;
-    case 0x44 ... 0x48: /* REQENACLR1-2 */
-        s->ENA[offset - 0x44] &= ~val;
+    case 0x44: /* REQENACLR1 */
+        s->ENA[1] &= ~val;
+        break;
+    case 0x48: /* REQENACLR2 */
+        s->ENA[2] &= ~val;
         break;
 
-    case 0x50 ... 0x58: /* WAKEENASETz */
-        s->WAKEENA[offset - 0x50] |= val;
+    case 0x50: /* WAKEENASET0 */
+    case 0x54: /* WAKEENASET1 */
+    case 0x58: /* WAKEENASET2 */
+        s->WAKEENA[(offset - 0x50) / 4] |= val;
         break;
-    case 0x60: /* WAKEENACLRx */
-        s->WAKEENA[offset - 0x60] &= ~val;
+    case 0x60: /* WAKEENACLR0 */
+    case 0x64: /* WAKEENACLR1 */
+    case 0x68: /* WAKEENACLR2 */
+        s->WAKEENA[(offset - 0x60) / 4] &= ~val;
         break;
 
     case 0x70: /* IRQVECREG */
@@ -295,8 +311,7 @@ static void vim_write(void *opaque, target_phys_addr_t offset,
         break;
 
     case 0x80 ... 0xBC: /* CHANCTRL */
-        offset -= 0x80;
-        s->CHANMAP._32[offset] = val & 0x7F7F7F7F;
+        s->CHANMAP._32[(offset - 0x80) / 4] = val & 0x7F7F7F7F;
         return;
         break;
 
