@@ -4488,10 +4488,38 @@ static void switch_v7m_sp(CPUARMState *env, int process)
     }
 }
 
+uint32_t HELPER(v7m_vfp_pre_insn)(CPUARMState *env)
+{
+    int i;
+
+    if (env->v7m.fpccr & 1) {
+        uint32_t fp = env->regs[13];
+
+        if (!(env->v7m.actlr & 0x100 /* DISFPCA */)) {
+            env->v7m.control |= 1;/* FP extension is active */
+        }
+
+        env->regs[13] = env->v7m.fpcar + 4 * 16;
+        env->v7m.fpccr &= ~1;    /* Clear lazy state preservation */
+
+        /* Actually push the registers */
+        for (i = 15; i >= 0; i--) {
+            v7m_push(env, env->vfp.regs[i]);
+        }
+
+        env->regs[13] = fp;
+    }
+
+    return 0;
+}
+
 static void do_v7m_exception_exit(CPUARMState *env)
 {
     uint32_t type;
     uint32_t xpsr;
+    uint32_t addr;
+    uint32_t lr = env->regs[14];
+    int      i;
 
     type = env->regs[15];
     if (env->v7m.exception != 0)
@@ -4506,8 +4534,10 @@ static void do_v7m_exception_exit(CPUARMState *env)
     env->regs[3] = v7m_pop(env);
     env->regs[12] = v7m_pop(env);
     env->regs[14] = v7m_pop(env);
-    env->regs[15] = v7m_pop(env);
-    if (env->regs[15] & 1) {
+    addr = v7m_pop(env);
+    env->regs[15] = addr & 0xfffffffe;
+    env->thumb = addr & 1;
+    if (addr & 1) {
         qemu_log_mask(LOG_GUEST_ERROR,
                       "M profile return from interrupt with misaligned "
                       "PC is UNPREDICTABLE\n");
@@ -4517,8 +4547,27 @@ static void do_v7m_exception_exit(CPUARMState *env)
          */
         env->regs[15] &= ~1U;
     }
+
     xpsr = v7m_pop(env);
     xpsr_write(env, xpsr, 0xfffffdff);
+
+    /* Pop VFP */
+    if (arm_feature(env, ARM_FEATURE_VFP)) {
+        if (!(lr & 0x10)) {
+            /* Extended frame */
+
+            if ((env->v7m.fpccr & 1) /* LSPACT */) {
+                /* Just release memory space */
+                env->regs[13] += 4 * 16;
+            } else {
+                /* Actually pop the registers */
+                for (i = 0; i < 16; i++) {
+                    env->vfp.regs[i] = v7m_pop(env);
+                }
+            }
+        }
+    }
+
     /* Undo stack alignment.  */
     if (xpsr & 0x200)
         env->regs[13] |= 4;
@@ -4536,6 +4585,7 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
     uint32_t xpsr = xpsr_read(env);
     uint32_t lr;
     uint32_t addr;
+    int      i;
 
     arm_log_exception(cs->exception_index);
 
@@ -4589,13 +4639,39 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
     }
 
     /* Align stack pointer.  */
-    /* ??? Should only do this if Configuration Control Register
-       STACKALIGN bit is set.  */
-    if (env->regs[13] & 4) {
-        env->regs[13] -= 4;
-        xpsr |= 0x200;
+    if (env->v7m.CFGCTRL & (1 << 9)) {
+        /* Only do this if Configuration Control Register
+         * STACKALIGN bit is set.
+         */
+        if (env->regs[13] & 4) {
+            env->regs[13] -= 4;
+            xpsr |= 0x200;
+        }
     }
+
     /* Switch to the handler mode.  */
+
+    /* VFP push */
+    if (arm_feature(env, ARM_FEATURE_VFP)) {
+        if ((env->v7m.fpccr & (1 << 31)) /* ASPEN */) {
+            if ((env->v7m.fpccr & (1 << 30)) /* LSPEN */) {
+
+                hw_error("Lazy FPU context save not supported");
+                /* Lazy */
+                env->regs[13] -= 4 * 16;
+                env->v7m.fpcar = env->regs[13];
+                env->v7m.fpccr |= 1;    /* Lazy state preservation is active */
+            } else {
+                /* Actually push the registers */
+                for (i = 15; i >= 0; i--) {
+                    v7m_push(env, env->vfp.regs[i]);
+                }
+            }
+
+            lr &= ~0x10; /* Extended frame */
+        }
+    }
+
     v7m_push(env, xpsr);
     v7m_push(env, env->regs[15]);
     v7m_push(env, env->regs[14]);

@@ -3068,6 +3068,16 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
         return disas_vfp_v8_insn(s, insn);
     }
 
+#if 0 /* Lazy VFP stacking not implemented yet */
+    if (arm_feature(env, ARM_FEATURE_M)) {
+        tmp = load_reg(s, 13);
+        /* ???: I don't know how to have an helper without register argument, so
+         * I just pick up one without using it.
+         */
+        gen_helper_v7m_vfp_pre_insn(tmp, cpu_env);
+    }
+#endif
+
     dp = ((insn & 0xf00) == 0xb00);
     switch ((insn >> 24) & 0xf) {
     case 0xe:
@@ -11292,7 +11302,7 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
             break;
         }
 #else
-        if (dc->pc >= 0xfffffff0 && arm_dc_feature(dc, ARM_FEATURE_M)) {
+        if (dc->pc >= 0xffffff00 && arm_dc_feature(dc, ARM_FEATURE_M)) {
             /* We always get here via a jump, so know we are not in a
                conditional execution block.  */
             gen_exception_internal(EXCP_EXCEPTION_EXIT);
