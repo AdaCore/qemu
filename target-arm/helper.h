@@ -1,5 +1,7 @@
 #include "def-helper.h"
 
+DEF_HELPER_1(v7m_vfp_pre_insn, i32, env)
+
 DEF_HELPER_1(clz, i32, i32)
 DEF_HELPER_1(sxtb16, i32, i32)
 DEF_HELPER_1(uxtb16, i32, i32)

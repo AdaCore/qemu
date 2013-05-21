@@ -193,7 +193,7 @@ static uint32_t nvic_readl(void *opaque, uint32_t offset)
         /* TODO: Implement SLEEPONEXIT.  */
         return 0;
     case 0xd14: /* Configuration Control.  */
-        /* TODO: Implement Configuration Control bits.  */
+        return cpu_single_env->v7m.CFGCTRL;
         return 0;
     case 0xd18: case 0xd1c: case 0xd20: /* System Handler Priority.  */
         irq = offset - 0xd14;
@@ -342,8 +342,8 @@ static void nvic_writel(void *opaque, uint32_t offset, uint32_t value)
         break;
     case 0xd10: /* System Control.  */
     case 0xd14: /* Configuration Control.  */
-        /* TODO: Implement control registers.  */
-        goto bad_reg;
+        cpu_single_env->v7m.CFGCTRL = value;
+        break;
     case 0xd18: case 0xd1c: case 0xd20: /* System Handler Priority.  */
         {
             int irq;
