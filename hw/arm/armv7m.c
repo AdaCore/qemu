@@ -198,6 +198,7 @@ qemu_irq *armv7m_init(MemoryRegion *system_memory, int mem_size, int num_irq,
     nvic = qdev_create(NULL, "armv7m_nvic");
     qdev_prop_set_uint32(nvic, "num-irq", num_irq);
     env->nvic = nvic;
+    qdev_prop_set_uint32(nvic, "num-irq", 128);
     qdev_init_nofail(nvic);
     sysbus_connect_irq(SYS_BUS_DEVICE(nvic), 0,
                        qdev_get_gpio_in(DEVICE(cpu), ARM_CPU_IRQ));
