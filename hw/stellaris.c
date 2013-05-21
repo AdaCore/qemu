@@ -7,6 +7,7 @@
  * This code is licensed under the GPL.
  */
 
+#include "sysemu.h"
 #include "sysbus.h"
 #include "ssi.h"
 #include "arm-misc.h"
@@ -1374,6 +1375,40 @@ static void lm3s6965evb_init(ram_addr_t ram_size,
     stellaris_init(kernel_filename, cpu_model, &stellaris_boards[1]);
 }
 
+static void stm32_init(ram_addr_t ram_size,
+                     const char *boot_device,
+                     const char *kernel_filename, const char *kernel_cmdline,
+                     const char *initrd_filename, const char *cpu_model)
+{
+
+    MemoryRegion *address_space_mem = get_system_memory();
+    qemu_irq *pic;
+    int sram_size;
+    int flash_size;
+    DeviceState *dev;
+
+    flash_size = 0x100;
+    sram_size = 0x40;
+    pic = armv7m_init(address_space_mem,
+                      flash_size, sram_size, kernel_filename, cpu_model);
+
+    /* UART */
+    if (serial_hds[0]) {
+        dev = qdev_create(NULL, "stm32_UART");
+        qdev_prop_set_chr(dev, "chrdev", serial_hds[0]);
+        qdev_init_nofail(dev);
+        sysbus_mmio_map(sysbus_from_qdev(dev), 0, 0x40011000);
+        sysbus_connect_irq(sysbus_from_qdev(dev), 0, pic[7]);
+    }
+}
+
+static QEMUMachine stm32_machine = {
+    .name = "stm32",
+    .desc = "stm32",
+    .init = stm32_init,
+};
+
+
 static QEMUMachine lm3s811evb_machine = {
     .name = "lm3s811evb",
     .desc = "Stellaris LM3S811EVB",
@@ -1390,6 +1425,7 @@ static void stellaris_machine_init(void)
 {
     qemu_register_machine(&lm3s811evb_machine);
     qemu_register_machine(&lm3s6965evb_machine);
+    qemu_register_machine(&stm32_machine);
 }
 
 machine_init(stellaris_machine_init);
