@@ -2512,7 +2512,7 @@ static void do_v7m_exception_exit(CPUARMState *env)
     uint32_t type;
     uint32_t xpsr;
     uint32_t addr;
-    uint32_t lr = env->regs[14];
+    uint32_t pc = env->regs[15];
     int      i;
 
     type = env->regs[15];
@@ -2537,7 +2537,7 @@ static void do_v7m_exception_exit(CPUARMState *env)
 
     /* Pop VFP */
     if (arm_feature(env, ARM_FEATURE_VFP)) {
-        if (!(lr & 0x10)) {
+        if (!(pc & 0x10)) {
             /* Extended frame */
 
             if ((env->v7m.fpccr & 1) /* LSPACT */) {
