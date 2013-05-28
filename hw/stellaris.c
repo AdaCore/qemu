@@ -1392,6 +1392,14 @@ static void stm32_init(ram_addr_t ram_size,
     pic = armv7m_init(address_space_mem,
                       flash_size, sram_size, kernel_filename, cpu_model);
 
+    dev = qdev_create(NULL, "stm32_PWR");
+    qdev_init_nofail(dev);
+    sysbus_mmio_map(sysbus_from_qdev(dev), 0, 0x40007000);
+
+    dev = qdev_create(NULL, "stm32_RCC");
+    qdev_init_nofail(dev);
+    sysbus_mmio_map(sysbus_from_qdev(dev), 0, 0x40023800);
+
     /* UART */
     if (serial_hds[0]) {
         dev = qdev_create(NULL, "stm32_UART");

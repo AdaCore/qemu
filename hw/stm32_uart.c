@@ -225,9 +225,130 @@ static TypeInfo stm32_UART_info = {
     .class_init    = stm32_UART_class_init,
 };
 
+typedef struct {
+    SysBusDevice busdev;
+    MemoryRegion iomem;
+} stm32_RCC_state;
+
+
+static uint64_t stm32_RCC_read(void *opaque, target_phys_addr_t offset,
+                                   unsigned size)
+{
+    /* Just statically set the flags expected by the run-time */
+
+    switch (offset) {
+    case 0x0: /* CR */
+        return (1 << 1) | (1 << 17) | (1 << 25); /* HSIRDY | HSERDY | PLLRDY */
+    case 0x74: /* CSR */
+        return 1 << 1; /* LSIRDY */
+    default:
+        return 0;
+    }
+}
+
+static void stm32_RCC_write(void *opaque, target_phys_addr_t offset,
+                                uint64_t value, unsigned size)
+{
+    /* Nothing to do here */
+}
+
+static const MemoryRegionOps stm32_RCC_ops = {
+    .read = stm32_RCC_read,
+    .write = stm32_RCC_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .valid = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
+};
+
+static int stm32_RCC_init(SysBusDevice *dev)
+{
+    stm32_RCC_state *uart = FROM_SYSBUS(stm32_RCC_state, dev);
+
+    memory_region_init_io(&uart->iomem, &stm32_RCC_ops, uart,
+                          "stm32_RCC", 0x100);
+    sysbus_init_mmio(dev, &uart->iomem);
+    return 0;
+}
+
+static void stm32_RCC_class_init(ObjectClass *klass, void *data)
+{
+    SysBusDeviceClass *sdc = SYS_BUS_DEVICE_CLASS(klass);
+
+    sdc->init = stm32_RCC_init;
+}
+
+static TypeInfo stm32_RCC_info = {
+    .name          = "stm32_RCC",
+    .parent        = TYPE_SYS_BUS_DEVICE,
+    .instance_size = sizeof(stm32_RCC_state),
+    .class_init    = stm32_RCC_class_init,
+};
+
+typedef struct {
+    SysBusDevice busdev;
+    MemoryRegion iomem;
+} stm32_PWR_state;
+
+static uint64_t stm32_PWR_read(void *opaque, target_phys_addr_t offset,
+                                   unsigned size)
+{
+    /* Just statically set the flags expected by the run-time */
+
+    switch (offset) {
+    case 0x4: /* CSR */
+        return 1 << 14; /* VOSRDY */
+    default:
+        return 0;
+    }
+}
+
+static void stm32_PWR_write(void *opaque, target_phys_addr_t offset,
+                                uint64_t value, unsigned size)
+{
+    /* Nothing to do here */
+}
+
+static const MemoryRegionOps stm32_PWR_ops = {
+    .read = stm32_PWR_read,
+    .write = stm32_PWR_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .valid = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
+};
+
+static int stm32_PWR_init(SysBusDevice *dev)
+{
+    stm32_PWR_state *uart = FROM_SYSBUS(stm32_PWR_state, dev);
+
+    memory_region_init_io(&uart->iomem, &stm32_PWR_ops, uart,
+                          "stm32_PWR", 0x8);
+    sysbus_init_mmio(dev, &uart->iomem);
+    return 0;
+}
+
+static void stm32_PWR_class_init(ObjectClass *klass, void *data)
+{
+    SysBusDeviceClass *sdc = SYS_BUS_DEVICE_CLASS(klass);
+
+    sdc->init = stm32_PWR_init;
+}
+
+static TypeInfo stm32_PWR_info = {
+    .name          = "stm32_PWR",
+    .parent        = TYPE_SYS_BUS_DEVICE,
+    .instance_size = sizeof(stm32_PWR_state),
+    .class_init    = stm32_PWR_class_init,
+};
+
 static void stm32_UART_register_types(void)
 {
     type_register_static(&stm32_UART_info);
+    type_register_static(&stm32_RCC_info);
+    type_register_static(&stm32_PWR_info);
 }
 
 type_init(stm32_UART_register_types)
