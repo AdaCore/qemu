@@ -165,11 +165,18 @@ static uint32_t nvic_readl(nvic_state *s, uint32_t offset)
             if (t >= s->systick.tick)
                 return 0;
             val = ((s->systick.tick - (t + 1)) / systick_scale(s)) + 1;
+
+
             /* The interrupt in triggered when the timer reaches zero.
                However the counter is not reloaded until the next clock
                tick.  This is a hack to return zero during the first tick.  */
-            if (val > s->systick.reload)
-                val = 0;
+
+            /* Hack disabled: This doesn't work with the way we use the timer in
+             * Ravenscar run-time.
+             */
+            /* if (val > s->systick.reload) */
+            /*     val = 0; */
+
             return val;
         }
     case 0x1c: /* SysTick Calibration Value.  */
