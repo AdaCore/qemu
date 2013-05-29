@@ -1387,8 +1387,8 @@ static void stm32_init(ram_addr_t ram_size,
     int flash_size;
     DeviceState *dev;
 
-    flash_size = 0x100;
-    sram_size = 0x40;
+    flash_size = 1024; /* 1024K */
+    sram_size = 112; /* 112K */
     pic = armv7m_init(address_space_mem,
                       flash_size, sram_size, kernel_filename, cpu_model);
 
