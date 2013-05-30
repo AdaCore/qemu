@@ -283,7 +283,7 @@ static bool arm_v7m_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
      */
     if (interrupt_request & CPU_INTERRUPT_HARD
         && !(env->daif & PSTATE_I)
-        && (env->regs[15] < 0xfffffff0)) {
+        && (env->regs[15] < 0xffffff00)) {
         cs->exception_index = EXCP_IRQ;
         cc->do_interrupt(cs);
         ret = true;
