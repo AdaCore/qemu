@@ -566,11 +566,11 @@ static void wrsbc8641d_init(ram_addr_t ram_size,
     hostfs_create(HOSTFS_START, get_system_memory());
 
     /* Initialize plug-ins */
-    plugin_init(pic, 16);
+    plugin_init(pic, 96);
     plugin_device_init();
 
     /* Initialize the GnatBus Master */
-    gnatbus_master_init(pic, 16);
+    gnatbus_master_init(pic, 96);
     gnatbus_device_init();
 }
 
