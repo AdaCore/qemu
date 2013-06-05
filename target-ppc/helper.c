@@ -1592,6 +1592,41 @@ static void mmubooke206_dump_mmu(FILE *f, fprintf_function cpu_fprintf,
     }
 }
 
+static void mmu6xx_dump_mmu(FILE *f, fprintf_function cpu_fprintf,
+                            CPUPPCState *env)
+{
+    ppc6xx_tlb_t *tlb;
+
+    int type, way, entry;
+
+    if (kvm_enabled() && !env->kvm_sw_tlb) {
+        cpu_fprintf(f, "Cannot access KVM TLB\n");
+        return;
+    }
+
+    if (env->id_tlbs != 1) {
+        cpu_fprintf(f, "ERROR: 6xx MMU should have separated TLB"
+                    " for code and data\n");
+    }
+
+    cpu_fprintf(f, "                           [EPN    EPN + SIZE]\n");
+
+    for (type = 0; type < 2; type++)
+        for (way = 0; way < env->nb_ways; way++)
+            for (entry = env->nb_tlb * type + env->tlb_per_way * way;
+                 entry < (env->nb_tlb * type + env->tlb_per_way * (way + 1));
+                 entry++) {
+
+                tlb = &env->tlb.tlb6[entry];
+                cpu_fprintf(f, "TLB %02d/%02d %s way:%d %s ["
+                            TARGET_FMT_lx " " TARGET_FMT_lx "]\n",
+                            entry % env->nb_tlb, env->nb_tlb,
+                            type ? "code" : "data", way,
+                            pte_is_valid(tlb->pte0) ? "valid" : "inval",
+                            tlb->EPN, tlb->EPN + TARGET_PAGE_SIZE);
+            }
+}
+
 #if defined(TARGET_PPC64)
 static void mmubooks_dump_mmu(FILE *f, fprintf_function cpu_fprintf,
                               CPUPPCState *env)
@@ -1622,6 +1657,10 @@ void dump_mmu(FILE *f, fprintf_function cpu_fprintf, CPUPPCState *env)
         break;
     case POWERPC_MMU_BOOKE206:
         mmubooke206_dump_mmu(f, cpu_fprintf, env);
+        break;
+    case POWERPC_MMU_SOFT_6xx:
+    case POWERPC_MMU_SOFT_74xx:
+        mmu6xx_dump_mmu(f, cpu_fprintf, env);
         break;
 #if defined(TARGET_PPC64)
     case POWERPC_MMU_64B:
