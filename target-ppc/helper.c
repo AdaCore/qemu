@@ -1817,9 +1817,14 @@ int get_physical_address (CPUPPCState *env, mmu_ctx_t *ctx, target_ulong eaddr,
 target_phys_addr_t cpu_get_phys_page_debug (CPUPPCState *env, target_ulong addr)
 {
     mmu_ctx_t ctx;
+    bool error;
 
-    if (unlikely(get_physical_address(env, &ctx, addr, 0, ACCESS_INT) != 0))
+    error = get_physical_address(env, &ctx, addr, 0, ACCESS_INT) != 0;
+
+    if (unlikely(error) && unlikely(get_physical_address(env, &ctx, addr, 0,
+                                                         ACCESS_CODE) != 0)) {
         return -1;
+    }
 
     return ctx.raddr & TARGET_PAGE_MASK;
 }
