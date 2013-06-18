@@ -554,11 +554,11 @@ static void sbc834x_init(ram_addr_t  ram_size,
     hostfs_create(HOSTFS_START, get_system_memory());
 
     /* Initialize plug-ins */
-    plugin_init(devirqs, 96);
+    plugin_init(devirqs, 94);
     plugin_device_init();
 
     /* Initialize the GnatBus Master */
-    gnatbus_master_init(devirqs, 96);
+    gnatbus_master_init(devirqs, 94);
     gnatbus_device_init();
 
     /* TODO: append command line parameters
