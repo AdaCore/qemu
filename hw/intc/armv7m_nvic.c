@@ -234,7 +234,7 @@ static uint32_t nvic_readl(nvic_state *s, uint32_t offset)
         cpu = ARM_CPU(current_cpu);
         return cpu->env.v7m.vecbase;
     case 0xd0c: /* Application Interrupt/Reset Control.  */
-        return 0xfa050000;
+        return 0xfa050300;
     case 0xd10: /* System Control.  */
         /* TODO: Implement SLEEPONEXIT.  */
         return 0;
