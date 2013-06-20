@@ -195,7 +195,7 @@ static uint32_t nvic_readl(void *opaque, uint32_t offset)
     case 0xd08: /* Vector Table Offset.  */
         return cpu_single_env->v7m.vecbase;
     case 0xd0c: /* Application Interrupt/Reset Control.  */
-        return 0xfa05000;
+        return 0xfa050300;
     case 0xd10: /* System Control.  */
         /* TODO: Implement SLEEPONEXIT.  */
         return 0;
