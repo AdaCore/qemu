@@ -9954,11 +9954,17 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
                     switch (op) {
                     case 0: /* msr cpsr.  */
                         if (arm_dc_feature(s, ARM_FEATURE_M)) {
+                            if (use_icount) {
+                                gen_io_start();
+                            }
                             tmp = load_reg(s, rn);
                             addr = tcg_const_i32(insn & 0xff);
                             gen_helper_v7m_msr(cpu_env, addr, tmp);
                             tcg_temp_free_i32(addr);
                             tcg_temp_free_i32(tmp);
+                            if (use_icount) {
+                                gen_io_end();
+                            }
                             gen_lookup_tb(s);
                             break;
                         }
@@ -11020,15 +11026,27 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s)
                     tmp = tcg_const_i32((insn & (1 << 4)) != 0);
                     /* FAULTMASK */
                     if (insn & 1) {
+                        if (use_icount) {
+                            gen_io_start();
+                        }
                         addr = tcg_const_i32(19);
                         gen_helper_v7m_msr(cpu_env, addr, tmp);
                         tcg_temp_free_i32(addr);
+                        if (use_icount) {
+                            gen_io_end();
+                        }
                     }
                     /* PRIMASK */
                     if (insn & 2) {
+                        if (use_icount) {
+                            gen_io_start();
+                        }
                         addr = tcg_const_i32(16);
                         gen_helper_v7m_msr(cpu_env, addr, tmp);
                         tcg_temp_free_i32(addr);
+                        if (use_icount) {
+                            gen_io_end();
+                        }
                     }
                     tcg_temp_free_i32(tmp);
                     gen_lookup_tb(s);

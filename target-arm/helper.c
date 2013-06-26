@@ -6363,6 +6363,7 @@ uint32_t HELPER(v7m_mrs)(CPUARMState *env, uint32_t reg)
 void HELPER(v7m_msr)(CPUARMState *env, uint32_t reg, uint32_t val)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
+    CPUState *cs = CPU(arm_env_get_cpu(env));
 
     switch (reg) {
     case 0: /* APSR */
@@ -6401,12 +6402,17 @@ void HELPER(v7m_msr)(CPUARMState *env, uint32_t reg, uint32_t val)
     case 16: /* PRIMASK */
         if (val & 1) {
             env->daif |= PSTATE_I;
+            armv7m_nvic_change_priority(env->nvic, cs->cpu_index, -1);
         } else {
             env->daif &= ~PSTATE_I;
+            armv7m_nvic_change_priority(env->nvic, cs->cpu_index,
+                                        env->v7m.basepri);
         }
         break;
     case 17: /* BASEPRI */
         env->v7m.basepri = val & 0xff;
+        armv7m_nvic_change_priority(env->nvic, cs->cpu_index,
+                                    env->v7m.basepri);
         break;
     case 18: /* BASEPRI_MAX */
         val &= 0xff;
