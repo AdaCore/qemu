@@ -115,6 +115,18 @@ void armv7m_nvic_complete_irq(void *opaque, int irq)
     gic_complete_irq(&s->gic, 0, irq);
 }
 
+void armv7m_nvic_change_priority(void *opaque, int cpu_index, int prio)
+{
+    nvic_state *s = (nvic_state *)opaque;
+
+    if (prio != 0) {
+        s->gic.priority_mask[cpu_index] = prio - 1;
+    } else {
+        s->gic.priority_mask[cpu_index] = 0x100;
+    }
+    gic_update(&s->gic);
+}
+
 static uint32_t nvic_readl(void *opaque, uint32_t offset)
 {
     nvic_state *s = (nvic_state *)opaque;

@@ -2084,13 +2084,19 @@ void HELPER(v7m_msr)(CPUARMState *env, uint32_t reg, uint32_t val)
             env->v7m.other_sp = val;
         break;
     case 16: /* PRIMASK */
-        if (val & 1)
+        if (val & 1) {
             env->uncached_cpsr |= CPSR_I;
-        else
+            armv7m_nvic_change_priority(env->nvic, env->cpu_index, -1);
+        } else {
             env->uncached_cpsr &= ~CPSR_I;
+            armv7m_nvic_change_priority(env->nvic, env->cpu_index,
+                                        env->v7m.basepri);
+        }
         break;
     case 17: /* BASEPRI */
         env->v7m.basepri = val & 0xff;
+        armv7m_nvic_change_priority(env->nvic, env->cpu_index,
+                                    env->v7m.basepri);
         break;
     case 18: /* BASEPRI_MAX */
         val &= 0xff;
