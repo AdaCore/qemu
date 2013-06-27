@@ -532,6 +532,8 @@ static void gic_dist_writel(void *opaque, hwaddr offset,
             mask = ALL_CPU_MASK;
             break;
         }
+        DPRINTF("%s set pending irq0x%x mask:0x%x\n", __func__, irq, mask);
+
         GIC_SET_PENDING(irq, mask);
         gic_update(s);
         return;
