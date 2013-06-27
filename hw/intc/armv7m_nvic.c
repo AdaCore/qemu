@@ -426,7 +426,10 @@ static void nvic_writel(nvic_state *s, uint32_t offset, uint32_t value)
         break;
     case 0xf00: /* Software Triggered Interrupt Register */
         if ((value & 0x1ff) < s->num_irq) {
-            gic_set_pending_private(&s->gic, 0, value & 0x1ff);
+            /* A value of 0x3 specifies IRQ3 not Hard Fault. The internal GIC
+             * routines use #32 as the first IRQ.
+             */
+            gic_set_pending_private(&s->gic, 0, (value & 0x1ff) + 32);
         }
     /* Cortex-M4F Floating Point system registers */
     case 0xF34: /* FP Context Control Register */
