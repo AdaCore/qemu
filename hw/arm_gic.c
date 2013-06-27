@@ -616,7 +616,20 @@ static void gic_dist_writel(void *opaque, target_phys_addr_t offset,
         nvic_writel(s, addr, value);
         return;
     }
-#endif
+    if (offset == 0xf00) {
+        int irq;
+
+
+        /* A value of 0x3 specifies IRQ3 not Hard Fault. The internal GIC
+         * routines use #32 as the first IRQ.
+         */
+        irq = (value & 0xff) + 32;
+
+        GIC_SET_PENDING(irq, GIC_TARGET(irq));
+        gic_update(s);
+        return;
+    }
+#else
     if (offset == 0xf00) {
         int cpu;
         int irq;
@@ -639,10 +652,13 @@ static void gic_dist_writel(void *opaque, target_phys_addr_t offset,
             mask = ALL_CPU_MASK;
             break;
         }
+        printf("%s set pending irq0x%x mask:0x%x\n", __func__, irq, mask);
+
         GIC_SET_PENDING(irq, mask);
         gic_update(s);
         return;
     }
+#endif
     gic_dist_writew(opaque, offset, value & 0xffff);
     gic_dist_writew(opaque, offset + 2, value >> 16);
 }
