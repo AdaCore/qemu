@@ -172,6 +172,7 @@ qemu_irq *armv7m_init(MemoryRegion *address_space_mem,
     int big_endian;
     MemoryRegion *sram = g_new(MemoryRegion, 1);
     MemoryRegion *flash = g_new(MemoryRegion, 1);
+    MemoryRegion *flash_mirror = g_new(MemoryRegion, 1);
     MemoryRegion *hack = g_new(MemoryRegion, 1);
 
     flash_size *= 1024;
@@ -202,6 +203,10 @@ qemu_irq *armv7m_init(MemoryRegion *address_space_mem,
     vmstate_register_ram_global(flash);
     memory_region_set_readonly(flash, true);
     memory_region_add_subregion(address_space_mem, 0, flash);
+
+    memory_region_init_alias(flash_mirror, "armv7m.flash_mirror", flash,
+                             0, flash_size);
+    memory_region_add_subregion(address_space_mem, 0x08000000, flash_mirror);
     memory_region_init_ram(sram, "armv7m.sram", sram_size);
     vmstate_register_ram_global(sram);
     memory_region_add_subregion(address_space_mem, 0x20000000, sram);
