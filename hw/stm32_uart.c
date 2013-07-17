@@ -239,6 +239,8 @@ static uint64_t stm32_RCC_read(void *opaque, target_phys_addr_t offset,
     switch (offset) {
     case 0x0: /* CR */
         return (1 << 1) | (1 << 17) | (1 << 25); /* HSIRDY | HSERDY | PLLRDY */
+    case 0x8: /* CFGR */
+        return 1 << 3; /* SWS1 */
     case 0x74: /* CSR */
         return 1 << 1; /* LSIRDY */
     default:
