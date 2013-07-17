@@ -135,6 +135,9 @@ static void arm_cpu_reset(CPUState *s)
         uint8_t *rom;
         env->daif &= ~PSTATE_I;
         rom = rom_ptr(0);
+        if (!rom) {
+            rom = rom_ptr(0x08000000);
+        }
         if (rom) {
             /* We should really use ldl_phys here, in case the guest
                modified flash and reset itself.  However images
