@@ -1502,8 +1502,23 @@ void HELPER(set_cp15)(CPUARMState *env, uint32_t insn, uint32_t val)
     case 10: /* MMU TLB lockdown.  */
         /* ??? TLB lockdown not implemented.  */
         break;
-    case 12: /* Reserved.  */
-        goto bad_reg;
+    case 12: /* Vector Base Address Registers */
+        switch (op1) {
+        case 0:
+            if ((val & ~0xF) != 0) {
+                cpu_abort(env, "Unimplemented [M]VBAR write 0x%08x\n",
+                          val & ~0xF);
+            }
+            if (op2) {
+                env->cp15.c12_mvbar = val & ~0xF;
+            } else {
+                env->cp15.c12_vbar = val & ~0xF;
+            }
+            break;
+        default:
+            goto bad_reg;
+        }
+        break;
     case 13: /* Process ID.  */
         switch (op2) {
         case 0:
@@ -1904,8 +1919,19 @@ uint32_t HELPER(get_cp15)(CPUARMState *env, uint32_t insn)
         /* ??? TLB lockdown not implemented.  */
         return 0;
     case 11: /* TCM DMA control.  */
-    case 12: /* Reserved.  */
-        goto bad_reg;
+    case 12: /* Vector Base Address Registers */
+        switch (op1) {
+        case 0:
+            if (op2) {
+                return env->cp15.c12_mvbar;
+            } else {
+                return env->cp15.c12_vbar;
+            }
+            break;
+        default:
+            goto bad_reg;
+        }
+        break;
     case 13: /* Process ID.  */
         switch (op2) {
         case 0:

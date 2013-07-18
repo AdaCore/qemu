@@ -145,6 +145,8 @@ typedef struct CPUARMState {
         uint32_t c13_tls1; /* User RW Thread register.  */
         uint32_t c13_tls2; /* User RO Thread register.  */
         uint32_t c13_tls3; /* Privileged Thread register.  */
+        uint32_t c12_vbar; /* Vector Base Address Register.  */
+        uint32_t c12_mvbar; /* Monitor Vector Base Address Register. */
         uint32_t c15_cpar; /* XScale Coprocessor Access Register */
         uint32_t c15_ticonfig; /* TI925T configuration byte.  */
         uint32_t c15_i_max; /* Maximum D-cache dirty line index.  */
