@@ -10,6 +10,7 @@
  * NVIC.  Much of that is also implemented here.
  */
 
+#include "sysemu/sysemu.h"
 #include "hw/sysbus.h"
 #include "qemu/timer.h"
 #include "hw/arm/arm.h"
@@ -392,7 +393,7 @@ static void nvic_writel(nvic_state *s, uint32_t offset, uint32_t value)
                 qemu_log_mask(LOG_UNIMP, "VECTCLRACTIVE unimplemented\n");
             }
             if (value & 5) {
-                qemu_log_mask(LOG_UNIMP, "AIRCR system reset unimplemented\n");
+                qemu_system_reset_request();
             }
             if (value & 0x700) {
                 qemu_log_mask(LOG_UNIMP, "PRIGROUP unimplemented\n");
