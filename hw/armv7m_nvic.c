@@ -10,6 +10,7 @@
  * NVIC.  Much of that is also implemented here.
  */
 
+#include "sysemu.h"
 #include "sysbus.h"
 #include "qemu-timer.h"
 #include "arm-misc.h"
@@ -355,8 +356,9 @@ static void nvic_writel(void *opaque, uint32_t offset, uint32_t value)
                 hw_error("VECTCLRACTIVE not implemented");
             }
             if (value & 5) {
-                hw_error("System reset");
+                qemu_system_reset_request();
             }
+
         }
         break;
     case 0xd10: /* System Control.  */
