@@ -1,3 +1,26 @@
+/*
+ * QEMU Freescale eTSEC Emulator
+ *
+ * Copyright (c) 2011-2013 AdaCore
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 #ifndef _ETSEC_H_
 #define _ETSEC_H_
 
@@ -71,7 +94,8 @@ typedef struct eTSEC_rxtx_bd {
 
 /* eTSEC */
 
-#define REG_NUMBER 1024
+/* Number of register in the device */
+#define ETSEC_REG_NUMBER 1024
 
 typedef struct eTSEC_Register {
     const char *name;
@@ -85,7 +109,7 @@ typedef struct eTSEC {
 
     MemoryRegion  io_area;
 
-    eTSEC_Register regs[REG_NUMBER];
+    eTSEC_Register regs[ETSEC_REG_NUMBER];
 
     NICState *nic;
     NICConf   conf;
@@ -122,6 +146,10 @@ typedef struct eTSEC {
 
 } eTSEC;
 
+#define TYPE_ETSEC_COMMON "eTSEC"
+#define ETSEC_COMMON(obj) \
+     OBJECT_CHECK(eTSEC, (obj), TYPE_ETSEC_COMMON)
+
 #define eTSEC_TRANSMIT 1
 #define eTSEC_RECEIVE  2
 
@@ -132,15 +160,15 @@ DeviceState *etsec_create(target_phys_addr_t  base,
                           qemu_irq            rx_irq,
                           qemu_irq            err_irq);
 
-void walk_tx_ring(eTSEC *etsec, int ring_nbr);
-void walk_rx_ring(eTSEC *etsec, int ring_nbr);
-void rx_ring_write (eTSEC *etsec, const uint8_t *buf, size_t size);
+void etsec_walk_tx_ring(eTSEC *etsec, int ring_nbr);
+void etsec_walk_rx_ring(eTSEC *etsec, int ring_nbr);
+void etsec_rx_ring_write(eTSEC *etsec, const uint8_t *buf, size_t size);
 
-void write_miim(eTSEC          *etsec,
-                eTSEC_Register *reg,
-                uint32_t        reg_index,
-                uint32_t        value);
+void etsec_write_miim(eTSEC          *etsec,
+                      eTSEC_Register *reg,
+                      uint32_t        reg_index,
+                      uint32_t        value);
 
-void miim_link_status (eTSEC *etsec, VLANClientState *nc);
+void etsec_miim_link_status(eTSEC *etsec, VLANClientState *nc);
 
 #endif /* ! _ETSEC_H_ */

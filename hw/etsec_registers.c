@@ -1,9 +1,32 @@
+/*
+ * QEMU Freescale eTSEC Emulator
+ *
+ * Copyright (c) 2011-2013 AdaCore
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 #include "etsec_registers.h"
 
 const eTSEC_Register_Definition eTSEC_registers_def[] = {
 {0x000, "TSEC_ID",  "Controller ID register",    ACC_RO,  0x01240000},
 {0x004, "TSEC_ID2", "Controller ID register 2",  ACC_RO,  0x003000F0},
-{0x010, "IEVENT",   "Interrupt event register",  ACC_w1c, 0x00000000},
+{0x010, "IEVENT",   "Interrupt event register",  ACC_W1C, 0x00000000},
 {0x014, "IMASK",    "Interrupt mask register",   ACC_RW,  0x00000000},
 {0x018, "EDIS",     "Error disabled register",   ACC_RW,  0x00000000},
 {0x020, "ECNTRL",   "Ethernet control register", ACC_RW,  0x00000040},
@@ -22,7 +45,7 @@ const eTSEC_Register_Definition eTSEC_registers_def[] = {
 /* eTSEC Transmit Control and Status Registers */
 
 {0x100, "TCTRL",        "Transmit control register",                ACC_RW,  0x00000000},
-{0x104, "TSTAT",        "Transmit status register",                 ACC_w1c, 0x00000000},
+{0x104, "TSTAT",        "Transmit status register",                 ACC_W1C, 0x00000000},
 {0x108, "DFVLAN",       "Default VLAN control word",                ACC_RW,  0x81000000},
 {0x110, "TXIC",         "Transmit interrupt coalescing register",   ACC_RW,  0x00000000},
 {0x114, "TQUEUE",       "Transmit queue control register",          ACC_RW,  0x00008000},
@@ -56,7 +79,7 @@ const eTSEC_Register_Definition eTSEC_registers_def[] = {
 /* eTSEC Receive Control and Status Registers */
 
 {0x300, "RCTRL",      "Receive control register",                     ACC_RW,  0x00000000},
-{0x304, "RSTAT",      "Receive status register",                      ACC_w1c, 0x00000000},
+{0x304, "RSTAT",      "Receive status register",                      ACC_W1C, 0x00000000},
 {0x310, "RXIC",       "Receive interrupt coalescing register",        ACC_RW,  0x00000000},
 {0x314, "RQUEUE",     "Receive queue control register.",              ACC_RW,  0x00800080},
 {0x330, "RBIFX",      "Receive bit field extract control register",   ACC_RW,  0x00000000},
@@ -186,8 +209,8 @@ const eTSEC_Register_Definition eTSEC_registers_def[] = {
 
 /* eTSEC Counter Control and TOE Statistics Registers */
 
-{0x730, "CAR1", "Carry register one register",           ACC_w1c, 0x00000000},
-{0x734, "CAR2", "Carry register two register ",          ACC_w1c, 0x00000000},
+{0x730, "CAR1", "Carry register one register",           ACC_W1C, 0x00000000},
+{0x734, "CAR2", "Carry register two register ",          ACC_W1C, 0x00000000},
 {0x738, "CAM1", "Carry register one mask register ",     ACC_RW,  0xFE03FFFF},
 {0x73C, "CAM2", "Carry register two mask register ",     ACC_RW,  0x000FFFFD},
 {0x740, "RREJ", "Receive filer rejected packet counter", ACC_RW,  0x00000000},
@@ -243,7 +266,7 @@ const eTSEC_Register_Definition eTSEC_registers_def[] = {
 /* eTSEC IEEE 1588 Registers */
 
 {0xE00, "TMR_CTRL",     "Timer control register",                          ACC_RW,  0x00010001},
-{0xE04, "TMR_TEVENT",   "time stamp event register",                       ACC_w1c, 0x00000000},
+{0xE04, "TMR_TEVENT",   "time stamp event register",                       ACC_W1C, 0x00000000},
 {0xE08, "TMR_TEMASK",   "Timer event mask register",                       ACC_RW,  0x00000000},
 {0xE0C, "TMR_PEVENT",   "time stamp event register",                       ACC_RW,  0x00000000},
 {0xE10, "TMR_PEMASK",   "Timer event mask register",                       ACC_RW,  0x00000000},

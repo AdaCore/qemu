@@ -1,7 +1,7 @@
 /*
  * QEMU Freescale eTSEC Emulator
  *
- * Copyright (c) 2011 AdaCore
+ * Copyright (c) 2011-2013 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 #include "etsec.h"
 #include "etsec_registers.h"
 
-//#define DEBUG_MIIM
+/* #define DEBUG_MIIM */
 
 #define MIIM_CONTROL    0
 #define MIIM_STATUS     1
@@ -90,10 +90,10 @@ static void miim_write_cycle(eTSEC *etsec)
     };
 }
 
-void write_miim(eTSEC          *etsec,
-               eTSEC_Register *reg,
-               uint32_t        reg_index,
-               uint32_t        value)
+void etsec_write_miim(eTSEC          *etsec,
+                      eTSEC_Register *reg,
+                      uint32_t        reg_index,
+                      uint32_t        value)
 {
 
     switch (reg_index) {
@@ -101,7 +101,7 @@ void write_miim(eTSEC          *etsec,
     case MIIMCOM:
         /* Read and scan cycle */
 
-        if (( ! (reg->value & MIIMCOM_READ)) && (value & MIIMCOM_READ)) {
+        if ((!(reg->value & MIIMCOM_READ)) && (value & MIIMCOM_READ)) {
             /* Read */
             miim_read_cycle(etsec);
         }
@@ -122,20 +122,20 @@ void write_miim(eTSEC          *etsec,
             reg->value = value;
             break;
 
-        case ACC_w1c:
+        case ACC_W1C:
             reg->value &= ~value;
             break;
 
         case ACC_RO:
         default:
-            /* Read         Only or Unknown register */
+            /* Read Only or Unknown register */
             break;
         }
     }
 
 }
 
-void miim_link_status (eTSEC *etsec, VLANClientState *nc)
+void etsec_miim_link_status(eTSEC *etsec, VLANClientState *nc)
 {
     /* Set link status */
     if (nc->link_down) {

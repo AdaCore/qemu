@@ -1,22 +1,47 @@
+/*
+ * QEMU Freescale eTSEC Emulator
+ *
+ * Copyright (c) 2011-2013 AdaCore
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 #include "bswap.h"
-/* For crc32 */
-#include <zlib.h>
 #include "net/checksum.h"
 
 #include "etsec.h"
 #include "etsec_registers.h"
 
-//#define ETSEC_RING_DEBUG
-//#define HEX_DUMP
-//#define DEBUG_BD
+/* #define ETSEC_RING_DEBUG */
+/* #define HEX_DUMP */
+/* #define DEBUG_BD */
 
 #ifdef ETSEC_RING_DEBUG
-#define RING_DEBUG(fmt, ...) printf ("%s:%s " fmt, __func__ , etsec->nic->nc.name, ## __VA_ARGS__)
+static const int debug_etsec = 1;
 #else
-#define RING_DEBUG(...)
-#endif  /* ETSEC_RING_DEBUG */
+static const int debug_etsec;
+#endif
 
-#define RING_DEBUG_A(fmt, ...) printf ("%s:%s " fmt, __func__ , etsec->nic->nc.name, ## __VA_ARGS__)
+#define RING_DEBUG(fmt, ...) do {              \
+ if (debug_etsec) {                            \
+        printf(fmt , ## __VA_ARGS__);        \
+    }                                          \
+    } while (0)
 
 #ifdef DEBUG_BD
 
@@ -28,11 +53,16 @@ static void print_tx_bd_flags(uint16_t flags)
     printf("      Interrupt: %d\n", !!(flags & BD_INTERRUPT));
     printf("      Last in frame: %d\n", !!(flags & BD_LAST));
     printf("      Tx CRC: %d\n", !!(flags & BD_TX_TC));
-    printf("      User-defined preamble / defer: %d\n", !!(flags & BD_TX_PREDEF));
-    printf("      Huge frame enable / Late collision: %d\n", !!(flags & BD_TX_HFELC));
-    printf("      Control frame / Retransmission Limit: %d\n", !!(flags & BD_TX_CFRL));
-    printf("      Retry count: %d\n", (flags >> BD_TX_RC_OFFSET) & BD_TX_RC_MASK);
-    printf("      Underrun / TCP/IP off-load enable: %d\n", !!(flags & BD_TX_TOEUN));
+    printf("      User-defined preamble / defer: %d\n",
+           !!(flags & BD_TX_PREDEF));
+    printf("      Huge frame enable / Late collision: %d\n",
+           !!(flags & BD_TX_HFELC));
+    printf("      Control frame / Retransmission Limit: %d\n",
+           !!(flags & BD_TX_CFRL));
+    printf("      Retry count: %d\n",
+           (flags >> BD_TX_RC_OFFSET) & BD_TX_RC_MASK);
+    printf("      Underrun / TCP/IP off-load enable: %d\n",
+           !!(flags & BD_TX_TOEUN));
     printf("      Truncation: %d\n", !!(flags & BD_TX_TR));
 }
 
@@ -73,40 +103,9 @@ static void print_bd(eTSEC_rxtx_bd bd, int mode, uint32_t index)
 
 #endif  /* DEBUG_BD */
 
-#ifdef HEX_DUMP
-
-static void hex_dump(FILE *f, const uint8_t *buf, int size)
-{
-    int len, i, j, c;
-
-    for (i = 0; i < size; i += 16) {
-        len = size - i;
-        if (len > 16) {
-            len = 16;
-        }
-        fprintf(f, "%08x ", i);
-        for (j = 0; j < 16; j++) {
-            if (j < len)
-                fprintf(f, " %02x", buf[i + j]);
-            else
-                fprintf(f, "   ");
-        }
-        fprintf(f, " ");
-        for (j = 0; j < len; j++) {
-            c = buf[i + j];
-            if (c < ' ' || c > '~')
-                c = '.';
-            fprintf(f, "%c", c);
-        }
-        fprintf(f, "\n");
-    }
-}
-
-#endif
-
-static void read_buffer_descriptor(eTSEC              *etsec,
-                                   target_phys_addr_t  addr,
-                                   eTSEC_rxtx_bd      *bd)
+static void read_buffer_descriptor(eTSEC         *etsec,
+                                   target_phys_addr_t         addr,
+                                   eTSEC_rxtx_bd *bd)
 {
     assert(bd != NULL);
 
@@ -116,37 +115,36 @@ static void read_buffer_descriptor(eTSEC              *etsec,
                              sizeof(eTSEC_rxtx_bd));
 
     if (etsec->regs[DMACTRL].value & DMACTRL_LE) {
-        bd->flags  = le16_to_cpupu(&bd->flags);
-        bd->length = le16_to_cpupu(&bd->length);
-        bd->bufptr = le32_to_cpupu(&bd->bufptr);
+        bd->flags  = lduw_le_p(&bd->flags);
+        bd->length = lduw_le_p(&bd->length);
+        bd->bufptr = ldl_le_p(&bd->bufptr);
     } else {
-        bd->flags  = be16_to_cpupu(&bd->flags);
-        bd->length = be16_to_cpupu(&bd->length);
-        bd->bufptr = be32_to_cpupu(&bd->bufptr);
+        bd->flags  = lduw_be_p(&bd->flags);
+        bd->length = lduw_be_p(&bd->length);
+        bd->bufptr = ldl_be_p(&bd->bufptr);
     }
 }
 
-static void write_buffer_descriptor(eTSEC              *etsec,
-                                    target_phys_addr_t  addr,
-                                    eTSEC_rxtx_bd      *bd)
+static void write_buffer_descriptor(eTSEC         *etsec,
+                                    target_phys_addr_t         addr,
+                                    eTSEC_rxtx_bd *bd)
 {
     assert(bd != NULL);
 
     if (etsec->regs[DMACTRL].value & DMACTRL_LE) {
-        cpu_to_le16wu(&bd->flags, bd->flags);
-        cpu_to_le16wu(&bd->length, bd->length);
-        cpu_to_le32wu(&bd->bufptr, bd->bufptr);
+        stw_le_p(&bd->flags, bd->flags);
+        stw_le_p(&bd->length, bd->length);
+        stl_le_p(&bd->bufptr, bd->bufptr);
     } else {
-        cpu_to_be16wu(&bd->flags, bd->flags);
-        cpu_to_be16wu(&bd->length, bd->length);
-        cpu_to_be32wu(&bd->bufptr, bd->bufptr);
+        stw_be_p(&bd->flags, bd->flags);
+        stw_be_p(&bd->length, bd->length);
+        stl_be_p(&bd->bufptr, bd->bufptr);
     }
 
     RING_DEBUG("Write Buffer Descriptor @ 0x" TARGET_FMT_plx"\n", addr);
     cpu_physical_memory_write(addr,
                               bd,
                               sizeof(eTSEC_rxtx_bd));
-
 }
 
 static void ievent_set(eTSEC    *etsec,
@@ -167,19 +165,6 @@ static void ievent_set(eTSEC    *etsec,
     }
 }
 
-static void tx_append_crc(eTSEC *etsec)
-{
-    /* Never add CRC in Qemu */
-
-    /* uint32_t crc = (uint32_t)crc32(~0, etsec->tx_buffer, etsec->tx_buffer_len); */
-
-    /* /\* Append 32bits CRC to tx buffer *\/ */
-
-    /* etsec->tx_buffer_len += 4; */
-    /* etsec->tx_buffer = g_realloc(etsec->tx_buffer, etsec->tx_buffer_len); */
-    /* *((uint32_t*)(etsec->tx_buffer + etsec->tx_buffer_len - 4)) = crc; */
-}
-
 static void tx_padding_and_crc(eTSEC *etsec, uint32_t min_frame_len)
 {
     int add = min_frame_len - etsec->tx_buffer_len;
@@ -194,11 +179,10 @@ static void tx_padding_and_crc(eTSEC *etsec, uint32_t min_frame_len)
         etsec->tx_buffer_len += add;
     }
 
-    /* CRC */
-    tx_append_crc(etsec);
+    /* Never add CRC in QEMU */
 }
 
-static void process_tx_fcb(eTSEC        *etsec)
+static void process_tx_fcb(eTSEC *etsec)
 {
     uint8_t flags = (uint8_t)(*etsec->tx_buffer);
     /* L3 header offset from start of frame */
@@ -209,8 +193,6 @@ static void process_tx_fcb(eTSEC        *etsec)
     uint8_t *l3_header = etsec->tx_buffer + 8 + l3_header_offset;
     /* L4 header */
     uint8_t *l4_header = l3_header + l4_header_offset;
-
-    /* uint16_t crc16; */
 
     /* if packet is IP4 and IP checksum is requested */
     if (flags & FCB_TX_IP && flags & FCB_TX_CIP) {
@@ -229,18 +211,6 @@ static void process_tx_fcb(eTSEC        *etsec)
             /* if checksum is requested */
             if (flags & FCB_TX_CTU) {
                 /* do UDP checksum */
-                //int add = pow2roundup(etsec->tx_buffer_len) -
-                //    etsec->tx_buffer_len;
-                //if (add > 0) {
-                //    etsec->tx_buffer = g_realloc(etsec->tx_buffer,
-                //            etsec->tx_buffer_len + add);
-                //    memset(etsec->tx_buffer + etsec->tx_buffer_len, 0x0, add);
-                //    etsec->tx_buffer_len += add;
-                //}
-
-                //l3_packet_len = etsec->tx_buffer_len - l3_header_offset;
-                //crc16 = (uint16_t)crc32(~0, l3_header, l3_packet_len);
-                //*((uint16_t*)(l4_header + 6)) = htons(crc16);
 
                 net_checksum_calculate(etsec->tx_buffer + 8,
                         etsec->tx_buffer_len - 8);
@@ -251,18 +221,46 @@ static void process_tx_fcb(eTSEC        *etsec)
             }
         } else if (flags & FCB_TX_CTU) { /* if TCP and checksum is requested */
             /* do TCP checksum */
-            net_checksum_calculate(etsec->tx_buffer + 8, etsec->tx_buffer_len -
-                    8);
-            //l4_header[31] = 0;
-            //l4_header[32] = 0;
+            net_checksum_calculate(etsec->tx_buffer + 8,
+                                   etsec->tx_buffer_len - 8);
         }
     }
 }
 
+#ifdef HEX_DUMP
+static void hex_dump(FILE *f, const uint8_t *buf, int size)
+{
+    int len, i, j, c;
+
+    for(i=0;i<size;i+=16) {
+        len = size - i;
+        if (len > 16)
+            len = 16;
+        fprintf(f, "%08x ", i);
+        for(j=0;j<16;j++) {
+            if (j < len)
+                fprintf(f, " %02x", buf[i+j]);
+            else
+                fprintf(f, "   ");
+        }
+        fprintf(f, " ");
+        for(j=0;j<len;j++) {
+            c = buf[i+j];
+            if (c < ' ' || c > '~')
+                c = '.';
+            fprintf(f, "%c", c);
+        }
+        fprintf(f, "\n");
+    }
+}
+#endif
+
 static void process_tx_bd(eTSEC         *etsec,
                           eTSEC_rxtx_bd *bd)
 {
-    uint8_t *tmp_buff = NULL;
+    uint8_t            *tmp_buff = NULL;
+    target_phys_addr_t  tbdbth   = 0;
+        /* (target_phys_addr_t)(etsec->regs[TBDBPH].value & 0xF) << 32; */
 
     if (bd->length == 0) {
         /* ERROR */
@@ -280,7 +278,7 @@ static void process_tx_bd(eTSEC         *etsec,
     etsec->tx_buffer = g_realloc(etsec->tx_buffer,
                                     etsec->tx_buffer_len + bd->length);
     tmp_buff = etsec->tx_buffer + etsec->tx_buffer_len;
-    cpu_physical_memory_read(bd->bufptr, tmp_buff, bd->length);
+    cpu_physical_memory_read(bd->bufptr + tbdbth, tmp_buff, bd->length);
 
     /* Update buffer length */
     etsec->tx_buffer_len += bd->length;
@@ -291,8 +289,9 @@ static void process_tx_bd(eTSEC         *etsec,
             /* MAC Transmit enabled */
 
             /* Process offload Tx FCB */
-            if (etsec->first_bd.flags & BD_TX_TOEUN)
+            if (etsec->first_bd.flags & BD_TX_TOEUN) {
                 process_tx_fcb(etsec);
+            }
 
             if (etsec->first_bd.flags & BD_TX_PADCRC
                 || etsec->regs[MACCFG2].value & MACCFG2_PADCRC) {
@@ -304,11 +303,11 @@ static void process_tx_bd(eTSEC         *etsec,
                        || etsec->regs[MACCFG2].value & MACCFG2_CRC_EN) {
 
                 /* Only CRC */
-                tx_append_crc(etsec);
+                /* Never add CRC in QEMU */
             }
 
 #if defined(HEX_DUMP)
-            fprintf(stderr,"eTSEC Send packet size:%d\n", etsec->tx_buffer_len);
+            printf("eTSEC Send packet size:%d\n", etsec->tx_buffer_len);
             hex_dump(stderr, etsec->tx_buffer, etsec->tx_buffer_len);
 #endif  /* ETSEC_RING_DEBUG */
 
@@ -359,19 +358,19 @@ static void process_tx_bd(eTSEC         *etsec,
     bd->flags &= ~BD_TX_TR;
 }
 
-void walk_tx_ring(eTSEC *etsec, int ring_nbr)
+void etsec_walk_tx_ring(eTSEC *etsec, int ring_nbr)
 {
     target_phys_addr_t ring_base = 0;
     target_phys_addr_t bd_addr   = 0;
     eTSEC_rxtx_bd      bd;
     uint16_t           bd_flags;
 
-    if ( ! (etsec->regs[MACCFG1].value & MACCFG1_TX_EN)) {
+    if (!(etsec->regs[MACCFG1].value & MACCFG1_TX_EN)) {
         RING_DEBUG("%s: MAC Transmit not enabled\n", __func__);
         return;
     }
 
-    /* ring_base = (etsec->regs[TBASEH].value & 0xF) << 32; */
+    /* ring_base = (target_phys_addr_t)(etsec->regs[TBASEH].value & 0xF) << 32; */
     ring_base += etsec->regs[TBASE0 + ring_nbr].value & ~0x7;
     bd_addr    = etsec->regs[TBPTR0 + ring_nbr].value & ~0x7;
 
@@ -402,7 +401,7 @@ void walk_tx_ring(eTSEC *etsec, int ring_nbr)
             bd_addr += sizeof(eTSEC_rxtx_bd);
         }
 
-    } while (bd_addr != ring_base); //bd_flags & BD_TX_READY);
+    } while (bd_addr != ring_base);
 
     bd_addr = ring_base;
 
@@ -418,26 +417,36 @@ static void fill_rx_bd(eTSEC          *etsec,
                        const uint8_t **buf,
                        size_t         *size)
 {
-    uint16_t to_write = MIN(etsec->rx_fcb_size + *size - etsec->rx_padding,
-                            etsec->regs[MRBLR].value);
-    uint32_t bufptr   = bd->bufptr;
+    uint16_t to_write;
+    target_phys_addr_t   bufptr = bd->bufptr + 0;
+        /* ((target_phys_addr_t)(etsec->regs[TBDBPH].value & 0xF) << 32); */
     uint8_t  padd[etsec->rx_padding];
     uint8_t  rem;
 
-    RING_DEBUG("eTSEC fill Rx buffer @ 0x%08x size:%u(padding + crc:%u) + fcb:%u\n",
+    RING_DEBUG("eTSEC fill Rx buffer @ 0x" TARGET_FMT_plx
+               " size:%u(padding + crc:%u) + fcb:%u\n",
                bufptr, *size, etsec->rx_padding, etsec->rx_fcb_size);
 
     bd->length = 0;
+
+    /* This operation will only write FCB */
     if (etsec->rx_fcb_size != 0) {
+
         cpu_physical_memory_write(bufptr, etsec->rx_fcb, etsec->rx_fcb_size);
 
         bufptr             += etsec->rx_fcb_size;
         bd->length         += etsec->rx_fcb_size;
-        to_write           -= etsec->rx_fcb_size;
         etsec->rx_fcb_size  = 0;
 
     }
 
+    /* We remove padding from the computation of to_write because it is not
+     * allocated in the buffer.
+     */
+    to_write = MIN(*size - etsec->rx_padding,
+                   etsec->regs[MRBLR].value - etsec->rx_fcb_size);
+
+    /* This operation can only write packet data and no padding */
     if (to_write > 0) {
         cpu_physical_memory_write(bufptr, *buf, to_write);
 
@@ -450,13 +459,14 @@ static void fill_rx_bd(eTSEC          *etsec,
     }
 
     if (*size == etsec->rx_padding) {
-        /* The remaining bytes are for padding which is not actually allocated
-           in the buffer */
+        /* The remaining bytes are only for padding which is not actually
+         * allocated in the data buffer.
+         */
 
         rem = MIN(etsec->regs[MRBLR].value - bd->length, etsec->rx_padding);
 
-        if (rem > 0){
-            memset(padd, 0x0, sizeof (padd));
+        if (rem > 0) {
+            memset(padd, 0x0, sizeof(padd));
             etsec->rx_padding -= rem;
             *size             -= rem;
             bd->length        += rem;
@@ -472,10 +482,8 @@ static void rx_init_frame(eTSEC *etsec, const uint8_t *buf, size_t size)
         & RCTRL_PRSDEP_MASK;
 
     if (prsdep != 0) {
-        /* Prepend FCB */
-        fcb_size = 8 + 2;          /* FCB size + align */
-        /* I can't find this 2 bytes alignement in fsl documentation but VxWorks
-           expects them */
+        /* Prepend FCB (FCB size + RCTRL[PAL]) */
+        fcb_size = 8 + ((etsec->regs[RCTRL].value >> 16) & 0x1F);
 
         etsec->rx_fcb_size = fcb_size;
 
@@ -491,13 +499,11 @@ static void rx_init_frame(eTSEC *etsec, const uint8_t *buf, size_t size)
     }
 
     /* Do not copy the frame for now */
-    etsec->rx_buffer     = (uint8_t*)buf;
+    etsec->rx_buffer     = (uint8_t *)buf;
     etsec->rx_buffer_len = size;
-    etsec->rx_padding    = 4;
 
-    if (size < 60) {
-        etsec->rx_padding += 60 - size;
-    }
+    /* CRC padding (We don't have to compute the CRC) */
+    etsec->rx_padding = 4;
 
     etsec->rx_first_in_frame = 1;
     etsec->rx_remaining_data = etsec->rx_buffer_len;
@@ -505,9 +511,9 @@ static void rx_init_frame(eTSEC *etsec, const uint8_t *buf, size_t size)
                etsec->rx_buffer_len, etsec->rx_padding);
 }
 
-void rx_ring_write(eTSEC *etsec, const uint8_t *buf, size_t size)
+void etsec_rx_ring_write(eTSEC *etsec, const uint8_t *buf, size_t size)
 {
-    int                ring_nbr       = 0; /* Always use ring0 (no filer) */
+    int ring_nbr = 0;           /* Always use ring0 (no filer) */
 
     if (etsec->rx_buffer_len != 0) {
         RING_DEBUG("%s: We can't receive now,"
@@ -525,19 +531,23 @@ void rx_ring_write(eTSEC *etsec, const uint8_t *buf, size_t size)
         return;
     }
 
-    if ( ! (etsec->regs[MACCFG1].value & MACCFG1_RX_EN)) {
+    if (!(etsec->regs[MACCFG1].value & MACCFG1_RX_EN)) {
         RING_DEBUG("%s: MAC Receive not enabled\n", __func__);
         return;
     }
 
-    /* Don't drop short packets, just add padding (later) */
+    if ((etsec->regs[RCTRL].value & RCTRL_RSF) && (size < 60)) {
+        /* CRC is not in the packet yet, so short frame is below 60 bytes */
+        RING_DEBUG("%s: Drop short frame\n", __func__);
+        return;
+    }
 
     rx_init_frame(etsec, buf, size);
 
-    walk_rx_ring(etsec, ring_nbr);
+    etsec_walk_rx_ring(etsec, ring_nbr);
 }
 
-void walk_rx_ring(eTSEC *etsec, int ring_nbr)
+void etsec_walk_rx_ring(eTSEC *etsec, int ring_nbr)
 {
     target_phys_addr_t  ring_base     = 0;
     target_phys_addr_t  bd_addr       = 0;
@@ -548,7 +558,6 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
     const uint8_t      *buf;
     uint8_t            *tmp_buf;
     size_t              size;
-
 
     if (etsec->rx_buffer_len == 0) {
         /* No frame to send */
@@ -561,8 +570,8 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
         + (etsec->rx_buffer_len - etsec->rx_remaining_data);
     size           = etsec->rx_buffer_len + etsec->rx_padding;
 
-    /* ring_base = (etsec->regs[RBASEH].value & 0xF) << 32; */
-    ring_base     += etsec->regs[RBASE0 + ring_nbr].value & ~0x7;
+    /* ring_base = (target_phys_addr_t)(etsec->regs[RBASEH].value & 0xF) << 32; */
+    ring_base += etsec->regs[RBASE0 + ring_nbr].value & ~0x7;
     start_bd_addr  = bd_addr = etsec->regs[RBPTR0 + ring_nbr].value & ~0x7;
 
     do {
@@ -608,7 +617,6 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
 
                 if (size  < 64) {
                     /* Short frame */
-                    printf("%s Short frame: %d\n", __func__, size);
                     bd.flags |= BD_RX_SH;
                 }
 
@@ -639,7 +647,7 @@ void walk_rx_ring(eTSEC *etsec, int ring_nbr)
         } else {
             bd_addr += sizeof(eTSEC_rxtx_bd);
         }
-    } while (   remaining_data != 0
+    } while (remaining_data != 0
              && (bd_flags & BD_RX_EMPTY)
              && bd_addr != start_bd_addr);
 

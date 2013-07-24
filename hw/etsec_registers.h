@@ -1,21 +1,46 @@
+/*
+ * QEMU Freescale eTSEC Emulator
+ *
+ * Copyright (c) 2011-2013 AdaCore
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 #ifndef _ETSEC_REGISTERS_H_
 #define _ETSEC_REGISTERS_H_
 
 #include <stdint.h>
 
-typedef struct eTSEC_Register_Definition {
-    uint32_t offset;
-    const char *name;
-    const char *desc;
-    uint32_t access;
-    uint32_t reset;
-} eTSEC_Register_Definition;
+enum eTSEC_Register_Access_Type {
+    ACC_RW      = 1,            /* Read/Write */
+    ACC_RO      = 2,            /* Read Only */
+    ACC_WO      = 3,            /* Write Only */
+    ACC_W1C     = 4,            /* Write 1 to clear */
+    ACC_UNKNOWN = 5             /* Unknown register*/
+};
 
-#define ACC_RW      1           /* Read/Write */
-#define ACC_RO      2           /* Read Only */
-#define ACC_WO      3           /* Write Only */
-#define ACC_w1c     4           /* Write 1 to clear */
-#define ACC_UNKNOWN 4           /* Unknown register*/
+typedef struct eTSEC_Register_Definition {
+    uint32_t                         offset;
+    const char                      *name;
+    const char                      *desc;
+    enum eTSEC_Register_Access_Type  access;
+    uint32_t                         reset;
+} eTSEC_Register_Definition;
 
 extern const eTSEC_Register_Definition eTSEC_registers_def[];
 
@@ -24,15 +49,31 @@ extern const eTSEC_Register_Definition eTSEC_registers_def[];
 #define DMACTRL_GTS (1 <<  3)
 #define DMACTRL_WOP (1 <<  0)
 
-#define IEVENT_RXF  (1 <<  7)
-#define IEVENT_GRSC (1 <<  8)
-#define IEVENT_RXB  (1 << 15)
-#define IEVENT_TXF  (1 << 20)
-#define IEVENT_TXB  (1 << 21)
-#define IEVENT_TXC  (1 << 23)
-#define IEVENT_GTSC (1 << 25)
-#define IEVENT_BSY  (1 << 29)
-#define IEVENT_RXC  (1 << 30)
+#define IEVENT_PERR  (1 <<  0)
+#define IEVENT_DPE   (1 <<  1)
+#define IEVENT_FIQ   (1 <<  2)
+#define IEVENT_FIR   (1 <<  3)
+#define IEVENT_FGPI  (1 <<  4)
+#define IEVENT_RXF   (1 <<  7)
+#define IEVENT_GRSC  (1 <<  8)
+#define IEVENT_MMRW  (1 <<  9)
+#define IEVENT_MMRD  (1 << 10)
+#define IEVENT_MAG   (1 << 11)
+#define IEVENT_RXB   (1 << 15)
+#define IEVENT_XFUN  (1 << 16)
+#define IEVENT_CRL   (1 << 17)
+#define IEVENT_LC    (1 << 18)
+#define IEVENT_TXF   (1 << 20)
+#define IEVENT_TXB   (1 << 21)
+#define IEVENT_TXE   (1 << 22)
+#define IEVENT_TXC   (1 << 23)
+#define IEVENT_BABT  (1 << 24)
+#define IEVENT_GTSC  (1 << 25)
+#define IEVENT_MSRO  (1 << 26)
+#define IEVENT_EBERR (1 << 28)
+#define IEVENT_BSY   (1 << 29)
+#define IEVENT_RXC   (1 << 30)
+#define IEVENT_BABR  (1 << 31)
 
 #define IMASK_RXFEN  (1 <<  7)
 #define IMASK_GRSCEN (1 <<  8)
