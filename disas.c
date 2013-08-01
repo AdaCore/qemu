@@ -528,11 +528,19 @@ void monitor_disas(Monitor *mon, CPUArchState *env,
 #endif
 
     for(i = 0; i < nb_insn; i++) {
-	monitor_printf(mon, "0x" TARGET_FMT_lx ":  ", pc);
+        const char *sym = lookup_symbol(pc);
+
+        monitor_printf(mon, "0x" TARGET_FMT_lx " ", pc);
+        if (sym[0] != '\0') {
+            monitor_printf(mon, "<%s>:  ", sym);
+        } else {
+            monitor_printf(mon, ":  ");
+        }
         count = print_insn(pc, &s.info);
-	monitor_printf(mon, "\n");
-	if (count < 0)
-	    break;
+        monitor_printf(mon, "\n");
+        if (count < 0) {
+            break;
+        }
         pc += count;
     }
 }
