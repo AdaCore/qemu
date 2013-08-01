@@ -2276,6 +2276,71 @@ int qemu_init_main_loop(void)
     return main_loop_init();
 }
 
+/***********************************************************/
+/* rLimit */
+static uint64_t rlimit;
+
+static void rlimit_timer_tick(void *opaque)
+{
+    Error      *local_err = NULL;
+    Error     **errp      = &local_err;
+    char       *retval    = NULL;
+    int         i;
+    const char *cmds[]    = {
+        "info version",
+        "info status",
+        "info registers",
+        "print $pc",
+        "x/16i $pc - 32",
+        "info roms",
+        "info mtree",
+        "info tlb",
+        NULL,
+    };
+
+    fprintf(stderr, "\nQEMU rlimit exceeded (%llds)\n", rlimit);
+
+    for (i = 0; cmds[i] != NULL; i++) {
+        retval = qmp_human_monitor_command(cmds[i],
+                                           false /* has_cpu_index */,
+                                           0 /*cpu_index */,
+                                           errp);
+        fprintf(stderr, "===============\n%s\n===============\n%s\n",
+                cmds[i], retval);
+    }
+
+    exit(1);
+}
+
+
+static void rlimit_set_value(const char *optarg)
+{
+    char      *endptr = NULL;
+
+    rlimit = strtol(optarg, &endptr, 10);
+
+    if (endptr == optarg) {
+        fprintf(stderr, "Invalid rlimit value '%s'\n", optarg);
+        abort();
+    }
+}
+
+static void rlimit_init(void)
+{
+    uint64_t   now;
+    QEMUTimer *timer;
+
+    if (rlimit != 0) {
+        timer = qemu_new_timer_ns(host_clock, rlimit_timer_tick, NULL);
+        if (timer == NULL) {
+            fprintf(stderr, "%s: Cannot allocate timer\n", __func__);
+            abort();
+        }
+        now = qemu_get_clock_ns(host_clock);
+        qemu_mod_timer(timer, now + rlimit * 1000000000ULL);
+    }
+}
+
 int main(int argc, char **argv, char **envp)
 {
     int i;
@@ -3227,6 +3292,10 @@ int main(int argc, char **argv, char **envp)
                 set_cpu_affinity(optarg);
                 break;
 
+            case QEMU_OPTION_rlimit:
+                rlimit_set_value(optarg);
+                break;
+
             default:
                 os_parse_cmd_args(popt->index, optarg);
             }
@@ -3417,6 +3486,8 @@ int main(int argc, char **argv, char **envp)
         fprintf(stderr, "could not initialize alarm timer\n");
         exit(1);
     }
+
+    rlimit_init();
 
 #ifdef CONFIG_SPICE
     /* spice needs the timers to be initialized by this point */
