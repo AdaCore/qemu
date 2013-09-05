@@ -8,6 +8,8 @@
 
 #include "wrSbc834x_mm.h"
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "qemu-common.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/kvm.h"
@@ -34,8 +36,6 @@
 #define e300_RESET_VECTOR 0x00000100
 
 #define CPU_NAME "MPC83xx"
-#define BOARD_NAME "wrsbc834x_vxworks"
-#define BOARD_DESC "WindRiver SBC834x board"
 
 #define CPU_MODEL "MPC8349E"
 #define MAX_CPUS 1
@@ -122,8 +122,6 @@
 
 /* memory mapped registers (IMMR) */
 #define IMMR_SIZE 0x40000
-#define IMMR_BASE 0xff400000 /* TODO: address from device tree */
-#define IMMRBAR_DEFAULT IMMR_BASE
 /* timebase enable ??? unused */
 #define SPCR_OFFSET 0x110
 #define SPCR_TBEN_BIT (1 << (31 - 9))
@@ -159,7 +157,7 @@ typedef struct ResetData {
 } ResetData;
 
 static MemoryRegion *ccsr_space;
-static uint64_t      ccsr_addr = IMMR_BASE;
+static uint64_t      ccsr_addr;
 
 #if 0
 /* THE object */
@@ -368,7 +366,9 @@ static void reset_init(MemoryRegion *address_space,
     reset_reset(s);
 }
 
-static void sbc834x_init(QEMUMachineInitArgs *args)
+static void generic_init(MachineState *args,
+                         const target_ulong   immr_base,
+                         const uint32_t       cpu_freq)
 {
     PowerPCCPU   *cpu;
     CPUPPCState  *env = NULL;
@@ -413,7 +413,7 @@ static void sbc834x_init(QEMUMachineInitArgs *args)
 
     /* set time-base frequency to 66 Mhz */
     /* should be controlled by M66EN to switch between 33 and 66 */
-    cpu_ppc_tb_init(env, 660000000);
+    cpu_ppc_tb_init(env, cpu_freq);
 
     /* configure reset */
     reset_info = g_malloc0(sizeof(ResetData));
@@ -427,7 +427,7 @@ static void sbc834x_init(QEMUMachineInitArgs *args)
                            &error_abort);
     memory_region_add_subregion(get_system_memory(), 0x0, ram);
 
-    ccsr_addr = IMMR_BASE;
+    ccsr_addr = immr_base;
 
     /* Configuration, Control, and Status Registers */
     ccsr_space = g_new(MemoryRegion, 1);
@@ -497,7 +497,7 @@ static void sbc834x_init(QEMUMachineInitArgs *args)
     /* load kernel */
     dprintf("load %s\n", args->kernel_filename);
     kernel_size = load_elf(args->kernel_filename, NULL, NULL, &kernel_pentry,
-                            &kernel_lowaddr, NULL, 1, ELF_MACHINE, 0);
+                           &kernel_lowaddr, NULL, 1, PPC_ELF_MACHINE, 0, 0);
     if (kernel_size < 0) {
         eprintf("cannot load kernel '%s'", args->kernel_filename);
     }
@@ -589,3 +589,19 @@ static void sbc834x_generic_machine_init(MachineClass *mc)
 }
 
 DEFINE_MACHINE("wrsbc834x_vxworks", sbc834x_generic_machine_init)
+
+static void mpc8321e_init(MachineState *args)
+{
+    generic_init(args,
+                 0xf0000000 /* IMMR_BASE */,
+                 33250000 /* Freq */);
+}
+
+static void mpc8321e_generic_machine_init(MachineClass *mc)
+{
+    mc->desc     = "MPC8321e";
+    mc->max_cpus = MAX_CPUS;
+    mc->init     = mpc8321e_init;
+}
+
+DEFINE_MACHINE("MPC8321e", mpc8321e_generic_machine_init)
