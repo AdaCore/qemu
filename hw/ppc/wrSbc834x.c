@@ -34,8 +34,6 @@
 #define e300_RESET_VECTOR 0x00000100
 
 #define CPU_NAME "MPC83xx"
-#define BOARD_NAME "wrsbc834x_vxworks"
-#define BOARD_DESC "WindRiver SBC834x board"
 
 #define CPU_MODEL "MPC8349E"
 #define MAX_CPUS 1
@@ -122,8 +120,6 @@
 
 /* memory mapped registers (IMMR) */
 #define IMMR_SIZE 0x40000
-#define IMMR_BASE 0xff400000 /* TODO: address from device tree */
-#define IMMRBAR_DEFAULT IMMR_BASE
 /* timebase enable ??? unused */
 #define SPCR_OFFSET 0x110
 #define SPCR_TBEN_BIT (1 << (31 - 9))
@@ -159,7 +155,7 @@ typedef struct ResetData {
 } ResetData;
 
 static MemoryRegion *ccsr_space;
-static uint64_t      ccsr_addr = IMMR_BASE;
+static uint64_t      ccsr_addr;
 
 #if 0
 /* THE object */
@@ -368,7 +364,9 @@ static void reset_init(MemoryRegion *address_space,
     reset_reset(s);
 }
 
-static void sbc834x_init(QEMUMachineInitArgs *args)
+static void generic_init(MachineState *args,
+                         const target_ulong   immr_base,
+                         const uint32_t       cpu_freq)
 {
     PowerPCCPU   *cpu;
     CPUPPCState  *env = NULL;
@@ -413,7 +411,7 @@ static void sbc834x_init(QEMUMachineInitArgs *args)
 
     /* set time-base frequency to 66 Mhz */
     /* should be controlled by M66EN to switch between 33 and 66 */
-    cpu_ppc_tb_init(env, 660000000);
+    cpu_ppc_tb_init(env, cpu_freq);
 
     /* configure reset */
     reset_info = g_malloc0(sizeof(ResetData));
@@ -427,7 +425,7 @@ static void sbc834x_init(QEMUMachineInitArgs *args)
                            &error_abort);
     memory_region_add_subregion(get_system_memory(), 0x0, ram);
 
-    ccsr_addr = IMMR_BASE;
+    ccsr_addr = immr_base;
 
     /* Configuration, Control, and Status Registers */
     ccsr_space = g_new(MemoryRegion, 1);
@@ -571,17 +569,42 @@ static void sbc834x_init(QEMUMachineInitArgs *args)
     /* register_savevm(DEVICE, 0, VERSION, mpc83xx_save, mpc83xx_load, s); */
 }
 
+#define BOARD_NAME "wrsbc834x_vxworks"
+#define BOARD_DESC "WindRiver SBC834x board"
+
+static void sbc834x_init(MachineState *args)
+{
+    generic_init(args,
+                 0xff400000 /* IMMR_BASE */,
+                 660000000 /* Freq */);
+}
+
 static QEMUMachine sbc834x_machine = {
-    .name = BOARD_NAME,
-    .desc = BOARD_DESC,
+    .name = "wrsbc834x_vxworks",
+    .desc = "WindRiver SBC834x board",
     .init = sbc834x_init,
     .max_cpus = MAX_CPUS
 };
 
-static void sbc834x_machine_init(void)
+static void mpc8321e_init(MachineState *args)
 {
-    qemu_register_machine(&sbc834x_machine);
+    generic_init(args,
+                 0xf0000000 /* IMMR_BASE */,
+                 33250000 /* Freq */);
 }
 
-machine_init(sbc834x_machine_init);
+static QEMUMachine mpc8321e_machine = {
+    .name = "MPC8321e",
+    .desc = "MPC8321e",
+    .init = mpc8321e_init,
+    .max_cpus = MAX_CPUS
+};
+
+static void mpc83xx_machine_init(void)
+{
+    qemu_register_machine(&sbc834x_machine);
+    qemu_register_machine(&mpc8321e_machine);
+}
+
+machine_init(mpc83xx_machine_init);
 
