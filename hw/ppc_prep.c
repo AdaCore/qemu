@@ -40,6 +40,7 @@
 #include "arch_init.h"
 #include "exec-memory.h"
 #include "elf.h"
+#include "hostfs.h"
 
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
@@ -760,6 +761,9 @@ static void ppc_prep_init (ram_addr_t ram_size,
 
     /* Initialize audio subsystem */
     audio_init(isa_bus, pci_bus);
+
+    /* HostFS */
+    hostfs_create(0xA0000000, sysmem);
 
     /* Initialize plug-ins */
     plugin_init(i82378->state.i8259, 16);

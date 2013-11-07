@@ -33,6 +33,7 @@
 #include "elf.h"
 #include "trace.h"
 #include "exec-memory.h"
+#include "hostfs.h"
 
 #include "grlib.h"
 
@@ -212,6 +213,9 @@ static void leon3_generic_hw_init(ram_addr_t  ram_size,
     if (serial_hds[0]) {
         grlib_apbuart_create(0x80000100, serial_hds[0], cpu_irqs[3]);
     }
+
+    /* HostFS */
+    hostfs_create(0x80001000, get_system_memory());
 
     /* Initialize plug-ins */
     plugin_init(cpu_irqs, MAX_PILS);
