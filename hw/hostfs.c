@@ -1,7 +1,7 @@
 /*
  * QEMU HostFS
  *
- * Copyright (c) 2012 AdaCore
+ * Copyright (c) 2013 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -86,10 +86,12 @@ typedef struct hostfs {
 } hostfs;
 
 /* Syscall IDs */
-#define SYSCALL_OPEN  1
-#define SYSCALL_READ  2
-#define SYSCALL_WRITE 3
-#define SYSCALL_CLOSE 4
+#define SYSCALL_OPEN   1
+#define SYSCALL_READ   2
+#define SYSCALL_WRITE  3
+#define SYSCALL_CLOSE  4
+#define SYSCALL_UNLINK 5
+#define SYSCALL_LSEEK  6
 
 /* HostFS open flags */
 #define HOSTFS_O_RDONLY (1 << 0)
@@ -99,6 +101,7 @@ typedef struct hostfs {
 #define HOSTFS_O_APPEND (1 << 4)
 #define HOSTFS_O_TRUNC  (1 << 5)
 #define HOSTFS_O_BINARY (1 << 6)
+#define HOSTFS_O_EXCL   (1 << 7)
 
 static uint32_t open_flags(uint32_t hostfs_flags)
 {
@@ -121,6 +124,9 @@ static uint32_t open_flags(uint32_t hostfs_flags)
     }
     if (hostfs_flags & HOSTFS_O_TRUNC) {
         ret |= O_TRUNC;
+    }
+    if (hostfs_flags & HOSTFS_O_EXCL) {
+        ret |= O_EXCL;
     }
 #ifdef _WIN32
     if (hostfs_flags & HOSTFS_O_BINARY) {
@@ -199,6 +205,23 @@ static uint32_t do_syscall(hostfs *hfs)
         trace_hostfs_close(arg1, ret);
         return ret;
         break;
+    case SYSCALL_UNLINK:
+        addr = arg1;
+        plen = 1024; /* XXX: maximum length of filename string */
+
+        /* Convert guest buffer to host buffer */
+        buf = cpu_physical_memory_map(addr, &plen, false /* is_write */);
+        ret = unlink(buf);
+        cpu_physical_memory_unmap(buf, plen, false /* is_write */, plen);
+
+        trace_hostfs_unlink(arg1, ret);
+        return ret;
+        break;
+    case SYSCALL_LSEEK:
+        ret = lseek((int)arg1, (int)arg2, (int)arg3);
+        trace_hostfs_lseek((int)arg1, (int)arg2, (int)arg3, ret);
+        return ret;
+        break;
     }
 
     return 0;
@@ -261,7 +284,6 @@ hostfs_write(void *opaque, target_phys_addr_t addr, uint64_t value,
         hfs->regs[ARG4].value = 0;
         hfs->regs[ARG5].value = 0;
         break;
-
     default:
         /* Default handling */
         switch (reg->access) {
