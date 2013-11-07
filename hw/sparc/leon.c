@@ -34,6 +34,7 @@
 #include "exec/address-spaces.h"
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
+#include "hw/hostfs.h"
 
 /* Default system clock.  */
 #define CPU_CLK (50 * 1000 * 1000)
@@ -839,6 +840,9 @@ static void at697_hw_init(MachineState *args)
     if (serial_hds[1]) {
         leon_uart_init(serial_hds[1], &s->uart2, cpu_irqs[2]);
     }
+
+    /* HostFS */
+    hostfs_create(0x80001000, get_system_memory());
 
     /* Initialize plug-ins */
     plugin_init(cpu_irqs, MAX_PILS);

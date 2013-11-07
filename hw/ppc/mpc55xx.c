@@ -274,6 +274,9 @@ static void mpc5566_init(MachineState *args)
         reset_info->entry = elf_entry;
     }
 
+    /* HostFS */
+    hostfs_create(0xFFFA0000, get_system_memory());
+
     /* Initialize plug-ins */
     plugin_init(intc, 330);
     plugin_device_init();

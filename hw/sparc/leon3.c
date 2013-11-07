@@ -1,7 +1,7 @@
 /*
  * QEMU Leon3 System Emulator
  *
- * Copyright (c) 2010-2011 AdaCore
+ * Copyright (c) 2010-2013 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@
 #include "exec/address-spaces.h"
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
+#include "hw/hostfs.h"
 
 #include "hw/sparc/grlib.h"
 
@@ -216,6 +217,9 @@ static void leon3_generic_hw_init(MachineState *machine)
     if (serial_hds[0]) {
         grlib_apbuart_create(0x80000100, serial_hds[0], cpu_irqs[3]);
     }
+
+    /* HostFS */
+    hostfs_create(0x80001000, get_system_memory());
 
     /* Initialize plug-ins */
     plugin_init(cpu_irqs, MAX_PILS);
