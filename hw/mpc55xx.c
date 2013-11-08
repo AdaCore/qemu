@@ -1,7 +1,7 @@
 /*
  * Qemu PowerPC p2010rdb board emualtion
  *
- * Copyright (C) 2011 AdaCore
+ * Copyright (C) 2011-2013 AdaCore
  *
  * This file is derived from hw/ppce500_mpc8544ds.c,
  * the copyright for that material belongs to the original owners.
