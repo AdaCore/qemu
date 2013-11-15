@@ -303,11 +303,13 @@ typedef struct OpenPICState {
 static inline void IRQ_setbit(IRQQueue *q, int n_IRQ)
 {
     set_bit(n_IRQ, q->queue);
+    q->next = -1;
 }
 
 static inline void IRQ_resetbit(IRQQueue *q, int n_IRQ)
 {
     clear_bit(n_IRQ, q->queue);
+    q->next = -1;
 }
 
 static inline int IRQ_testbit(IRQQueue *q, int n_IRQ)
