@@ -265,11 +265,13 @@ typedef struct openpic_t {
 static inline void IRQ_setbit (IRQ_queue_t *q, int n_IRQ)
 {
     set_bit(q->queue, n_IRQ);
+    q->next = -1;
 }
 
 static inline void IRQ_resetbit (IRQ_queue_t *q, int n_IRQ)
 {
     reset_bit(q->queue, n_IRQ);
+    q->next = -1;
 }
 
 static inline int IRQ_testbit (IRQ_queue_t *q, int n_IRQ)
@@ -883,7 +885,6 @@ static void openpic_cpu_write_internal(void *opaque, target_phys_addr_t addr,
         DPRINTF("PEOI\n");
         s_IRQ = IRQ_get_next(opp, &dst->servicing);
         IRQ_resetbit(&dst->servicing, s_IRQ);
-        dst->servicing.next = -1;
         /* Set up next servicing IRQ */
         s_IRQ = IRQ_get_next(opp, &dst->servicing);
         /* Check queued interrupts. */
@@ -956,7 +957,6 @@ static uint32_t openpic_cpu_read_internal(void *opaque, target_phys_addr_t addr,
                 retval = IPVP_VECTOR(src->ipvp);
             }
             IRQ_resetbit(&dst->raised, n_IRQ);
-            dst->raised.next = -1;
             if (!test_bit(&src->ipvp, IPVP_SENSE)) {
                 /* edge-sensitive IRQ */
                 reset_bit(&src->ipvp, IPVP_ACTIVITY);
