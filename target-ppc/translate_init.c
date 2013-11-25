@@ -7394,6 +7394,7 @@ POWERPC_FAMILY(POWER8)(ObjectClass *oc, void *data)
     pcc->l1_dcache_size = 0x8000;
     pcc->l1_icache_size = 0x8000;
 }
+
 #endif /* defined (TARGET_PPC64) */
 
 
