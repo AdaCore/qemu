@@ -794,6 +794,8 @@
                     CPU_POWERPC_MPC8572,      POWERPC_SVR_8572,      e500v2)
     POWERPC_DEF_SVR("MPC8572E", "MPC8572E",
                     CPU_POWERPC_MPC8572E,     POWERPC_SVR_8572E,     e500v2)
+    POWERPC_DEF_SVR("p2010", "p2010",
+                    CPU_POWERPC_P2010,        POWERPC_SVR_P2010,     e500v2)
     /* e600 family                                                           */
     POWERPC_DEF("e600",          CPU_POWERPC_e600,                   e600,
                 "PowerPC e600 core")
