@@ -144,7 +144,10 @@ wait:
             }
 
             copy = (ret == 1);
+        } else {
+            copy = false;
         }
+
         trace_stream_one_iteration(s, sector_num, n, ret);
         if (copy) {
             if (s->common.speed) {
