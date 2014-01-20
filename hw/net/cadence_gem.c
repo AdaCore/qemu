@@ -26,6 +26,10 @@
 
 #include "hw/net/cadence_gem.h"
 #include "net/checksum.h"
+#include "exec/memory.h"
+#include "exec/address-spaces.h"
+#include "sysemu/dma.h"
+
 
 #ifdef CADENCE_GEM_ERR_DEBUG
 #define DB_PRINT(...) do { \
@@ -180,7 +184,7 @@
 #define GEM_PHYMNTNC_REG_SHIFT 18
 
 /* Marvell PHY definitions */
-#define BOARD_PHY_ADDRESS    23 /* PHY address we will emulate a device at */
+#define BOARD_PHY_ADDRESS    7 /* PHY address we will emulate a device at */
 
 #define PHY_REG_CONTROL      0
 #define PHY_REG_STATUS       1
@@ -410,19 +414,22 @@ static void phy_update_link(CadenceGEMState *s)
 static int gem_can_receive(NetClientState *nc)
 {
     CadenceGEMState *s;
+    unsigned desc[2];
 
     s = qemu_get_nic_opaque(nc);
 
-    /* Do nothing if receive is not enabled. */
-    if (!(s->regs[GEM_NWCTRL] & GEM_NWCTRL_RXENA)) {
+    /* read current descriptor */
+    if (!s->rx_desc_addr) {
         if (s->can_rx_state != 1) {
+            DB_PRINT("cant receive - no buffer descriptor\n");
             s->can_rx_state = 1;
-            DB_PRINT("can't receive - no enable\n");
         }
         return 0;
     }
 
-    if (rx_desc_get_ownership(s->rx_desc) == 1) {
+    dma_memory_read(&address_space_memory, s->rx_desc_addr,
+                    (uint8_t *)&desc[0], sizeof(desc));
+    if (rx_desc_get_ownership(desc) == 1) {
         if (s->can_rx_state != 2) {
             s->can_rx_state = 2;
             DB_PRINT("can't receive - busy buffer descriptor 0x%x\n",
@@ -431,10 +438,20 @@ static int gem_can_receive(NetClientState *nc)
         return 0;
     }
 
+    /* Do nothing if receive is not enabled. */
+    if (!(s->regs[GEM_NWCTRL] & GEM_NWCTRL_RXENA)) {
+        if (s->can_rx_state != 3) {
+            s->can_rx_state = 3;
+            DB_PRINT("can't receive - no enable\n");
+        }
+        return 0;
+    }
+
     if (s->can_rx_state != 0) {
         s->can_rx_state = 0;
         DB_PRINT("can receive 0x%x\n", s->rx_desc_addr);
     }
+
     return 1;
 }
 
