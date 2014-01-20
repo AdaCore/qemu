@@ -204,8 +204,18 @@ static void zynq_init(MachineState *machine)
     sysbus_create_simple("xlnx,ps7-usb", 0xE0002000, pic[53-IRQ_OFFSET]);
     sysbus_create_simple("xlnx,ps7-usb", 0xE0003000, pic[76-IRQ_OFFSET]);
 
+#if 0
     sysbus_create_simple("cadence_uart", 0xE0000000, pic[59-IRQ_OFFSET]);
     sysbus_create_simple("cadence_uart", 0xE0001000, pic[82-IRQ_OFFSET]);
+#endif
+
+    /* HACK: For VxWorks, only the second serial port seems to be used.  */
+    if (serial_hds[0] != NULL) {
+        sysbus_create_simple("cadence_uart", 0xE0001000, pic[82-IRQ_OFFSET]);
+    }
+    if (serial_hds[1] != NULL) {
+        sysbus_create_simple("cadence_uart", 0xE0000000, pic[59-IRQ_OFFSET]);
+    }
 
     sysbus_create_varargs("cadence_ttc", 0xF8001000,
             pic[42-IRQ_OFFSET], pic[43-IRQ_OFFSET], pic[44-IRQ_OFFSET], NULL);
