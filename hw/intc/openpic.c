@@ -356,9 +356,13 @@ static void openpic_update_irq(OpenPICState *opp, int n_IRQ)
     }
 
     if (src->destmask == 0) {
-        /* No target */
-        DPRINTF("%s: IRQ %d has no target", __func__, n_IRQ);
-        return;
+        if (opp->nb_cpus == 1) {
+            src->destmask = 1;
+        } else {
+            /* No target */
+            DPRINTF("%s: IRQ %d has no target\n", __func__, n_IRQ);
+            return;
+        }
     }
 
     if (src->destmask == (1 << src->last_cpu)) {
