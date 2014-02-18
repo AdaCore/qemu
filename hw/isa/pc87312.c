@@ -98,11 +98,19 @@ static const uint32_t uart_base[2][4] = {
 static inline uint32_t get_uart_iobase(PC87312State *s, int i)
 {
     int idx;
-    idx = (s->regs[REG_FAR] >> (2 * i + 2)) & 0x3;
+
+    /* This little hack will allow 4 UART in the 87312 */
+    /* idx = (s->regs[REG_FAR] >> (2 * i + 2)) & 0x3; */
+    idx = i;
+
     if (idx == 0) {
         return 0x3f8;
     } else if (idx == 1) {
         return 0x2f8;
+    } else if (idx == 2) {
+        return 0x3e8;
+    } else if (idx == 3) {
+        return 0x2e8;
     } else {
         return uart_base[idx & 1][(s->regs[REG_FAR] & FAR_UART_3_4) >> 6];
     }
@@ -157,7 +165,9 @@ static void pc87312_soft_reset(PC87312State *s)
 {
     static const uint8_t fer_init[] = {
         0x4f, 0x4f, 0x4f, 0x4f, 0x4f, 0x4f, 0x4b, 0x4b,
-        0x4b, 0x4b, 0x4b, 0x4b, 0x0f, 0x0f, 0x0f, 0x0f,
+        0x4b, 0x4b, 0x4b, 0x4b, 0x0f,
+        0x1f,                   /* Enable 4th UART */
+        0x0f, 0x0f,
         0x49, 0x49, 0x49, 0x49, 0x07, 0x07, 0x07, 0x07,
         0x47, 0x47, 0x47, 0x47, 0x47, 0x47, 0x08, 0x00,
     };
@@ -295,7 +305,7 @@ static void pc87312_realize(DeviceState *dev, Error **errp)
                                     get_parallel_irq(s));
     }
 
-    for (i = 0; i < 2; i++) {
+    for (i = 0; i < 4; i++) {
         if (is_uart_enabled(s, i)) {
             /* FIXME use a qdev chardev prop instead of serial_hds[] */
             chr = serial_hds[i];
