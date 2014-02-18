@@ -100,11 +100,19 @@ static uint16_t get_uart_iobase(ISASuperIODevice *sio, uint8_t i)
 {
     PC87312State *s = PC87312(sio);
     int idx;
-    idx = (s->regs[REG_FAR] >> (2 * i + 2)) & 0x3;
+
+    /* This little hack will allow 4 UART in the 87312 */
+    /* idx = (s->regs[REG_FAR] >> (2 * i + 2)) & 0x3; */
+    idx = i;
+
     if (idx == 0) {
         return 0x3f8;
     } else if (idx == 1) {
         return 0x2f8;
+    } else if (idx == 2) {
+        return 0x3e8;
+    } else if (idx == 3) {
+        return 0x2e8;
     } else {
         return uart_base[idx & 1][(s->regs[REG_FAR] & FAR_UART_3_4) >> 6];
     }
@@ -183,7 +191,9 @@ static void pc87312_soft_reset(PC87312State *s)
 {
     static const uint8_t fer_init[] = {
         0x4f, 0x4f, 0x4f, 0x4f, 0x4f, 0x4f, 0x4b, 0x4b,
-        0x4b, 0x4b, 0x4b, 0x4b, 0x0f, 0x0f, 0x0f, 0x0f,
+        0x4b, 0x4b, 0x4b, 0x4b, 0x0f,
+        0x1f,                   /* Enable 4th UART */
+        0x0f, 0x0f,
         0x49, 0x49, 0x49, 0x49, 0x07, 0x07, 0x07, 0x07,
         0x47, 0x47, 0x47, 0x47, 0x47, 0x47, 0x08, 0x00,
     };
@@ -348,7 +358,7 @@ static void pc87312_class_init(ObjectClass *klass, void *data)
         .get_irq    = get_parallel_irq,
     };
     sc->serial = (ISASuperIOFuncs){
-        .count = 2,
+        .count = 4,
         .is_enabled = is_uart_enabled,
         .get_iobase = get_uart_iobase,
         .get_irq    = get_uart_irq,
