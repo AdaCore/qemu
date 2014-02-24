@@ -1476,12 +1476,12 @@ static MachineClass *find_machine(const char *name)
     for (el = machines; el; el = el->next) {
         MachineClass *temp = el->data;
 
-        if (!strcmp(temp->name, name)) {
+        if (!strcasecmp(temp->name, name)) {
             mc = temp;
             break;
         }
         if (temp->alias &&
-            !strcmp(temp->alias, name)) {
+            !strcasecmp(temp->alias, name)) {
             mc = temp;
             break;
         }
