@@ -1615,12 +1615,12 @@ static MachineClass *find_machine(const char *name)
     for (el = machines; el; el = el->next) {
         MachineClass *temp = el->data;
 
-        if (!strcmp(temp->qemu_machine->name, name)) {
+        if (!strcasecmp(temp->qemu_machine->name, name)) {
             mc = temp;
             break;
         }
         if (temp->qemu_machine->alias &&
-            !strcmp(temp->qemu_machine->alias, name)) {
+            !strcasecmp(temp->qemu_machine->alias, name)) {
             mc = temp;
             break;
         }
