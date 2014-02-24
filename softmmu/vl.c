@@ -1156,7 +1156,8 @@ static MachineClass *find_machine(const char *name, GSList *machines)
     for (el = machines; el; el = el->next) {
         MachineClass *mc = el->data;
 
-        if (!strcmp(mc->name, name) || !g_strcmp0(mc->alias, name)) {
+        if (!strcasecmp(mc->name, name)
+        || (mc->alias && !strcasecmp(mc->alias, name))) {
             return mc;
         }
     }
