@@ -1604,10 +1604,12 @@ static QEMUMachine *find_machine(const char *name)
     QEMUMachine *m;
 
     for(m = first_machine; m != NULL; m = m->next) {
-        if (!strcmp(m->name, name))
+        if (!strcasecmp(m->name, name)) {
             return m;
-        if (m->alias && !strcmp(m->alias, name))
+        }
+        if (m->alias && !strcasecmp(m->alias, name)) {
             return m;
+        }
     }
     return NULL;
 }
