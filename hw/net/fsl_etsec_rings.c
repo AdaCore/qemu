@@ -278,7 +278,9 @@ static void process_tx_bd(eTSEC         *etsec,
 
 #if defined(HEX_DUMP)
             printf("eTSEC Send packet size:%d\n", etsec->tx_buffer_len);
-            qemu_hexdump(stderr, etsec->tx_buffer, etsec->tx_buffer_len);
+            qemu_hexdump((const char *)etsec->tx_buffer, stderr, "eTSEC Send",
+                         etsec->tx_buffer_len);
+
 #endif  /* ETSEC_RING_DEBUG */
 
             if (etsec->first_bd.flags & BD_TX_TOEUN) {
@@ -485,6 +487,11 @@ static void rx_init_frame(eTSEC *etsec, const uint8_t *buf, size_t size)
 void etsec_rx_ring_write(eTSEC *etsec, const uint8_t *buf, size_t size)
 {
     int ring_nbr = 0;           /* Always use ring0 (no filer) */
+
+#if defined(HEX_DUMP)
+    fprintf(stderr, "eTSEC receive size:%zu\n", size);
+    qemu_hexdump((const char *)buf, stderr, "eTSEC Receive", size);
+#endif
 
     if (etsec->rx_buffer_len != 0) {
         RING_DEBUG("%s: We can't receive now,"

@@ -33,7 +33,6 @@
 #include "hw/net/fsl_etsec.h"
 #include "hw/net/fsl_etsec_registers.h"
 
-/* #define HEX_DUMP */
 /* #define DEBUG_REGISTER */
 
 #ifdef DEBUG_REGISTER
@@ -355,10 +354,6 @@ etsec_receive(NetClientState *nc, const uint8_t *buf, size_t size)
 {
     eTSEC *etsec = qemu_get_nic_opaque(nc);
 
-#if defined(HEX_DUMP)
-    fprintf(stderr, "%s receive size:%d\n", etsec->nic->nc.name, size);
-    qemu_hexdump(stderr, buf, size);
-#endif
     etsec_rx_ring_write(etsec, buf, size);
     return size;
 }
