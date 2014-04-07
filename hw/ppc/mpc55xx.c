@@ -123,7 +123,6 @@ static void main_cpu_reset(void *opaque)
 
 static void siu_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
 {
-
     switch (addr & 0xfff) {
     case 0x10:
         if (val & 0xC0000000) {
@@ -192,7 +191,7 @@ static void mpc5566_init(QEMUMachineInitArgs *args)
     /* System integration unit */
     misc_io = g_malloc0(sizeof(*misc_io));
     memory_region_init_io(misc_io, NULL, &siu_ops, env, "System integration unit",
-                          0x10);
+                          0x20);
     memory_region_add_subregion(get_system_memory(), 0xC3F90000, misc_io);
 
     /* INTC */
