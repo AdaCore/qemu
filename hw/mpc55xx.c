@@ -192,7 +192,7 @@ static void mpc5566_init(ram_addr_t ram_size,
     uint64_t            elf_entry;
     uint64_t            elf_lowaddr;
     target_long         kernel_size = 0;
-    MemoryRegion       *ram, *misc_io;;
+    MemoryRegion       *ram, *misc_io, *rom;
     qemu_irq           *intc;
     ResetData          *reset_info;
 
@@ -227,6 +227,10 @@ static void mpc5566_init(ram_addr_t ram_size,
     ram = g_malloc0(sizeof(*ram));
     memory_region_init_ram(ram, "mpc5566.external_ram", 512 * 1024);
     memory_region_add_subregion(get_system_memory(), 0x20000000, ram);
+
+    rom = g_malloc0(sizeof(*ram));
+    memory_region_init_ram(rom, "mpc5566.rom", 3 * 1024 * 1024);
+    memory_region_add_subregion(get_system_memory(), 0x00000000, rom);
 
     /* System integration unit */
     misc_io = g_malloc0(sizeof(*misc_io));
@@ -267,6 +271,9 @@ static void mpc5566_init(ram_addr_t ram_size,
             exit(1);
         }
     }
+
+    /* Set read-only after loading executable */
+    memory_region_set_readonly(rom, true);
 
     /* If we're loading a kernel directly, we must load the device tree too. */
     if (kernel_filename) {
