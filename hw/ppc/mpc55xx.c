@@ -143,6 +143,37 @@ static const MemoryRegionOps siu_ops = {
     },
 };
 
+static void fmpll_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
+{
+    switch (addr & 0xf) {
+    default:
+        break;
+    }
+}
+
+static uint64_t fmpll_read(void *opaque, hwaddr addr, unsigned size)
+{
+
+    switch (addr & 0xf) {
+    case 0x4:
+        return 0xB;             /* Lock, CALDONE, CALPASS */
+        break;
+    default:
+        return 0;
+        break;
+    }
+}
+
+static const MemoryRegionOps fmpll_ops = {
+    .read  = fmpll_read,
+    .write = fmpll_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 4,
+        .max_access_size = 4,
+    },
+};
+
 static void mpc5566_init(QEMUMachineInitArgs *args)
 {
     PowerPCCPU   *cpu;
@@ -190,9 +221,14 @@ static void mpc5566_init(QEMUMachineInitArgs *args)
 
     /* System integration unit */
     misc_io = g_malloc0(sizeof(*misc_io));
-    memory_region_init_io(misc_io, NULL, &siu_ops, env, "System integration unit",
-                          0x20);
+    memory_region_init_io(misc_io, NULL, &siu_ops, env,
+                          "System integration unit", 0x20);
     memory_region_add_subregion(get_system_memory(), 0xC3F90000, misc_io);
+
+    /* Frequency Modulated Phase Locked Loop and System Clocks */
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, NULL, &fmpll_ops, env, "FMPLL", 0x8);
+    memory_region_add_subregion(get_system_memory(), 0xC3F80000, misc_io);
 
     /* INTC */
     intc = mpc55xx_intc_init(get_system_memory(), 0xFFF48000,
