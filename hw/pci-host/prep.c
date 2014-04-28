@@ -68,7 +68,7 @@ typedef struct PRePPCIState {
     int contiguous_map;
 } PREPPCIState;
 
-#define BIOS_SIZE (1024 * 1024)
+#define BIOS_SIZE (32 * 1024 * 1024)
 
 static inline uint32_t raven_pci_io_config(hwaddr addr)
 {
