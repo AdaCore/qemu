@@ -318,7 +318,7 @@ static int raven_init(PCIDevice *d)
                 if (bios_size > 0 && bios_size <= BIOS_SIZE) {
                     hwaddr bios_addr;
                     bios_size = (bios_size + 0xfff) & ~0xfff;
-                    bios_addr = (uint32_t)(-BIOS_SIZE);
+                    bios_addr = (uint32_t)(-bios_size);
                     bios_size = load_image_targphys(filename, bios_addr,
                                                     bios_size);
                 }
