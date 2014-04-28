@@ -68,7 +68,7 @@ typedef struct PRePPCIState {
     int contiguous_map;
 } PREPPCIState;
 
-#define BIOS_SIZE (1024 * 1024)
+#define BIOS_SIZE (32 * 1024 * 1024)
 
 static inline uint32_t raven_pci_io_config(hwaddr addr)
 {
@@ -307,7 +307,7 @@ static void raven_realize(PCIDevice *d, Error **errp)
     memory_region_add_subregion(get_system_memory(), (uint32_t)(-BIOS_SIZE),
                                 &s->bios);
     vmstate_register_ram_global(&s->bios);
-    if (s->bios_name) {
+    if (s->bios_name && !(s->bios_name[0] == '-' && s->bios_name[1] == '\0')) {
         filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, s->bios_name);
         if (filename) {
             if (s->elf_machine != EM_NONE) {
@@ -319,7 +319,7 @@ static void raven_realize(PCIDevice *d, Error **errp)
                 if (bios_size > 0 && bios_size <= BIOS_SIZE) {
                     hwaddr bios_addr;
                     bios_size = (bios_size + 0xfff) & ~0xfff;
-                    bios_addr = (uint32_t)(-BIOS_SIZE);
+                    bios_addr = (uint32_t)(-bios_size);
                     bios_size = load_image_targphys(filename, bios_addr,
                                                     bios_size);
                 }
