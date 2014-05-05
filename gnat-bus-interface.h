@@ -1,20 +1,48 @@
-#ifndef _QEMU_BUS_INTERFACE_H_
-#define _QEMU_BUS_INTERFACE_H_
+/****************************************************************************
+ *                                                                          *
+ *                    G N A T _ B U S _ I N T E R F A C E                   *
+ *                                                                          *
+ *                                  S p e c                                 *
+ *                                                                          *
+ *                     Copyright (C) 2011-2014, AdaCore                     *
+ *                                                                          *
+ * This program is free software;  you can redistribute it and/or modify it *
+ * under terms of  the GNU General Public License as  published by the Free *
+ * Softwareg Foundation;  either version 3,  or (at your option)  any later *
+ * version. This progran is distributed in the hope that it will be useful, *
+ * but  WITHOUT  ANY  WARRANTY;   without  even  the  implied  warranty  of *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                     *
+ *                                                                          *
+ * As a special exception under Section 7 of GPL version 3, you are granted *
+ * additional permissions  described in the GCC  Runtime Library Exception, *
+ * version 3.1, as published by the Free Software Foundation.               *
+ *                                                                          *
+ * You should have received a copy  of the GNU General Public License and a *
+ * copy of the  GCC Runtime Library Exception along  with this program; see *
+ * the  files  COPYING3  and  COPYING.RUNTIME  respectively.  If  not,  see *
+ * <http://www.gnu.org/licenses/>.                                          *
+ *                                                                          *
+ ****************************************************************************/
+
+#ifndef _GNAT_BUS_INTERFACE_H_
+#define _GNAT_BUS_INTERFACE_H_
 
 #include <stdint.h>
 
-#define GNATBUS_VERSION 1
+#define GNATBUS_VERSION 2
 
 /* Packet types */
 
-typedef enum GnatBusPacketType {
+#define PACKED __attribute__ ((packed))
+
+typedef enum PACKED GnatBusPacketType {
     GnatBus_Event = 0,
     GnatBus_Request,
     GnatBus_Response,
     MAX_PACKET_TYPE,
 } GnatBusPacketType;
 
-typedef enum GnatBusEventType {
+typedef enum PACKED GnatBusEventType {
     GnatBusEvent_Exit = 0,
     GnatBusEvent_SetIRQ,
     GnatBusEvent_RegisterEvent,
@@ -22,7 +50,7 @@ typedef enum GnatBusEventType {
     MAX_EVENT_TYPE,
 } GnatBusEventType;
 
-typedef enum GnatBusRequestType {
+typedef enum PACKED GnatBusRequestType {
     GnatBusRequest_Read = 0,
     GnatBusRequest_Write,
     GnatBusRequest_Register,
@@ -31,14 +59,14 @@ typedef enum GnatBusRequestType {
     GnatBusRequest_GetTime,
 } GnatBusRequestType;
 
-typedef enum GnatBusResponseType {
+typedef enum PACKED GnatBusResponseType {
     GnatBusResponse_Error = 0,
     GnatBusResponse_Data,
     GnatBusResponse_Time,
 } GnatBusResponseType;
 
 /* Base packet */
-typedef struct GnatBusPacket {
+typedef struct PACKED GnatBusPacket {
     uint32_t          size;
     GnatBusPacketType type;
 } GnatBusPacket;
@@ -52,12 +80,12 @@ do {                                                     \
 
 /* Event base packet */
 
-typedef struct GnatBusPacket_Event {
+typedef struct PACKED GnatBusPacket_Event {
     GnatBusPacket    parent;
     GnatBusEventType type;
 } GnatBusPacket_Event;
 
-typedef struct GnatBusPacket_SimpleEvent {
+typedef struct PACKED GnatBusPacket_SimpleEvent {
     GnatBusPacket_Event parent;
 } GnatBusPacket_SimpleEvent;
 
@@ -71,10 +99,10 @@ GnatBusPacket_Init((packet), GnatBus_Event, GnatBusEvent_Exit)
 
 /* Set IRQ */
 
-typedef struct GnatBusPacket_SetIRQ {
+typedef struct PACKED GnatBusPacket_SetIRQ {
     GnatBusPacket_Event parent;
-    uint8_t          line;
-    uint8_t          level;
+    uint8_t             line;
+    uint8_t             level;
 } GnatBusPacket_SetIRQ;
 
 #define GnatBusPacket_SetIRQ_Init(packet)                       \
@@ -82,7 +110,7 @@ GnatBusPacket_Init((packet), GnatBus_Event, GnatBusEvent_SetIRQ)
 
 /* Register Event */
 
-typedef struct GnatBusPacket_RegisterEvent {
+typedef struct PACKED GnatBusPacket_RegisterEvent {
     GnatBusPacket_Event parent;
     uint64_t            expire_time;
     uint64_t            event;
@@ -101,7 +129,7 @@ GnatBusPacket_Init((packet), GnatBus_Event, GnatBusEvent_TriggerEvent)
 
 /* Request/Response base packet */
 
-typedef struct GnatBusPacket_Request {
+typedef struct PACKED GnatBusPacket_Request {
     GnatBusPacket      parent;
     GnatBusRequestType type;
     uint32_t           id;
@@ -111,7 +139,7 @@ typedef struct GnatBusPacket_Request GnatBusPacket_Response;
 
 /* Simple requests (no specific fields in the request) */
 
-typedef struct GnatBusPacket_SimpleRequest {
+typedef struct PACKED GnatBusPacket_SimpleRequest {
     GnatBusPacket_Request parent;
 } GnatBusPacket_SimpleRequest;
 
@@ -130,7 +158,7 @@ GnatBusPacket_Init((packet), GnatBus_Request, GnatBusRequest_GetTime)
 
 /* Read request */
 
-typedef struct GnatBusPacket_Read {
+typedef struct PACKED GnatBusPacket_Read {
     GnatBusPacket_Request parent;
     uint64_t              address;
     uint32_t              length;
@@ -141,7 +169,7 @@ GnatBusPacket_Init((packet), GnatBus_Request, GnatBusRequest_Read)
 
 /* Write request */
 
-typedef struct GnatBusPacket_Write {
+typedef struct PACKED GnatBusPacket_Write {
     GnatBusPacket_Request parent;
     uint64_t              address;
     uint32_t              length;
@@ -157,7 +185,7 @@ GnatBusPacket_Init((packet), GnatBus_Request, GnatBusRequest_Write)
 #define DESC_LENGTH 256
 #define MAX_IOMEM   32
 
-typedef struct GnatBusPacket_Register {
+typedef struct PACKED GnatBusPacket_Register {
     GnatBusPacket_Request parent;
     uint32_t              bus_version;
     uint32_t              vendor_id;
@@ -166,7 +194,7 @@ typedef struct GnatBusPacket_Register {
     char                  desc[DESC_LENGTH];
 
     uint32_t nr_iomem;
-    struct QemuPlugin_IOMemory {
+    struct PACKED QemuPlugin_IOMemory {
         uint64_t base;
         uint64_t size;
     } iomem[MAX_IOMEM];
@@ -179,7 +207,7 @@ GnatBusPacket_Init((packet), GnatBus_Request, GnatBusRequest_Register)
 /* Responses */
 
 /* Error_code response */
-typedef struct GnatBusPacket_Error {
+typedef struct PACKED GnatBusPacket_Error {
     GnatBusPacket_Request parent;
     uint32_t              error_code;
 } GnatBusPacket_Error;
@@ -189,7 +217,7 @@ GnatBusPacket_Init((packet), GnatBus_Response, GnatBusResponse_Error)
 
 /* Data response */
 
-typedef struct GnatBusPacket_Data {
+typedef struct PACKED GnatBusPacket_Data {
     GnatBusPacket_Request parent;
     uint32_t              length;
     uint8_t               data[];
@@ -200,7 +228,7 @@ GnatBusPacket_Init((packet), GnatBus_Response, GnatBusResponse_Data)
 
 /* Time response */
 
-typedef struct GnatBusPacket_Time {
+typedef struct PACKED GnatBusPacket_Time {
     GnatBusPacket_Request parent;
     uint64_t              time;
 } GnatBusPacket_Time;
@@ -208,4 +236,4 @@ typedef struct GnatBusPacket_Time {
 #define GnatBusPacket_Time_Init(packet)                                 \
 GnatBusPacket_Init((packet), GnatBus_Response, GnatBusResponse_Time)
 
-#endif /* ! _QEMU_BUS_INTERFACE_H_ */
+#endif /* ! _GNAT_BUS_INTERFACE_H_ */
