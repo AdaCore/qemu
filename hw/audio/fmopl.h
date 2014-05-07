@@ -11,7 +11,7 @@
 #define OPL_OUTPUT_BIT 16
 
 /* compiler dependence */
-#ifndef OSD_CPU_H
+#if !defined(OSD_CPU_H) && !defined(_BASETSD_H_)
 #define OSD_CPU_H
 typedef unsigned char	UINT8;   /* unsigned  8bit */
 typedef unsigned short	UINT16;  /* unsigned 16bit */
