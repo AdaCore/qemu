@@ -174,7 +174,7 @@ static void read_map_file(char **poptarg)
                 exit(1);
             }
             if (my_endian != hdr.big_endian) {
-                ent.pc = bswap_32(ent.pc);
+                ent.pc = bswap32(ent.pc);
             }
             if (i > 0 && ent.pc < histmap_entries[i - 1]) {
                 fprintf(stderr, "unordered entry #%d in histmap file '%s'\n",
@@ -194,7 +194,7 @@ static void read_map_file(char **poptarg)
                 exit(1);
             }
             if (my_endian != hdr.big_endian) {
-                ent.pc = bswap_64(ent.pc);
+                ent.pc = bswap64(ent.pc);
             }
             if (i > 0 && ent.pc < histmap_entries[i - 1]) {
                 fprintf(stderr, "unordered entry #%d in histmap file '%s'\n",
