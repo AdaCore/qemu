@@ -74,7 +74,10 @@ expand-objs = $(strip $(sort $(filter %.o,$1)) \
 
 # If we have a CXX we might have some C++ objects, in which case we
 # must link with the C++ compiler, not the plain C compiler.
-LINKPROG = $(or $(CXX),$(CC))
+
+# make 3.80 doesn't support "$(or"
+# LINKPROG = $(or $(CXX),$(CC))
+LINKPROG = $(CXX)
 
 LINK = $(call quiet-command, $(LINKPROG) $(QEMU_LDFLAGS) $(QEMU_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ \
        $(call process-archive-undefs, $1) \
