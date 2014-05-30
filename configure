@@ -887,7 +887,7 @@ case "$cpu" in
            QEMU_CFLAGS="-m32 $QEMU_CFLAGS"
            LDFLAGS="-m32 $LDFLAGS"
            cc_i386='$(CC) -m32'
-           helper_cflags="-fomit-frame-pointer"
+           helper_cflags="-fomit-frame-pointer -maccumulate-outgoing-args"
            host_guest_base="yes"
            ;;
     x86_64)
