@@ -269,13 +269,16 @@ static int plugin_init_device(SysBusDevice *dev)
         pdev->io_region[i].pdev = pdev;
         pdev->io_region[i].base = pdev->info->iomem[i].base;
 
+        memory_region_transaction_begin();
         memory_region_init_io(&pdev->io_region[i].mr, OBJECT(pdev), &plugin_ops,
                               &pdev->io_region[i], pdev->info->name,
                               pdev->info->iomem[i].size);
 
-        memory_region_add_subregion(get_system_memory(),
-                                    pdev->info->iomem[i].base,
-                                    &pdev->io_region[i].mr);
+        memory_region_add_subregion_overlap(get_system_memory(),
+                                            pdev->info->iomem[i].base,
+                                            &pdev->io_region[i].mr, 1);
+        memory_region_transaction_commit();
+
     }
 
     return 0;

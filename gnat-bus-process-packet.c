@@ -135,12 +135,14 @@ static int gnatbus_init_device(SysBusDevice *dev)
         qbdev->io_region[i].qbdev = qbdev;
         qbdev->io_region[i].base  = qbdev->info.iomem[i].base;
 
+        memory_region_transaction_begin();
         memory_region_init_io(&qbdev->io_region[i].mr, OBJECT(pdev),
                               &gnatbus_io_ops, &qbdev->io_region[i],
                               qbdev->info.name, qbdev->info.iomem[i].size);
-        memory_region_add_subregion(get_system_memory(),
-                                    qbdev->info.iomem[i].base,
-                                    &qbdev->io_region[i].mr);
+        memory_region_add_subregion_overlap(get_system_memory(),
+                                            qbdev->info.iomem[i].base,
+                                            &qbdev->io_region[i].mr, 1);
+        memory_region_transaction_commit();
     }
 
     return 0;
