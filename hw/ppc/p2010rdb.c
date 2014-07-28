@@ -128,9 +128,6 @@ typedef struct fsl_e500_config {
 
     int serial_irq;
 
-    int espi_irq;
-    int i2c_irq;
-
     int cfi01_flash;
 
     int etsec_irq_err[MAX_ETSEC_CONTROLLERS];
@@ -1074,12 +1071,10 @@ static fsl_e500_config p2010rdb_vxworks_config = {
     .ccsr_init_addr = 0xf3000000,
     .cpu_model      = "p2010",
     .freq           = 700000000UL >> 3,
-    .serial_irq     = 12 + 26,
-    .espi_irq       = 12 + 43,
-    .i2c_irq        = 12 + 27,
-    .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
-    .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
-    .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+    .serial_irq     = 16 + 26,
+    .etsec_irq_err  = {16 + 18, 16 + 24, 16 + 17},
+    .etsec_irq_tx   = {16 + 13, 16 + 19, 16 + 15},
+    .etsec_irq_rx   = {16 + 14, 16 + 20, 16 + 16},
     .cfi01_flash    = FALSE,
 };
 
@@ -1098,12 +1093,10 @@ static fsl_e500_config p2010rdb_config = {
     .ccsr_init_addr = 0xff700000,
     .cpu_model      = "p2010",
     .freq           = 700000000UL >> 3,
-    .serial_irq     = 12 + 26,
-    .espi_irq       = 12 + 43,
-    .i2c_irq        = 12 + 27,
-    .etsec_irq_err  = {12 + 18, 12 + 24, 12 + 17},
-    .etsec_irq_tx   = {12 + 13, 12 + 19, 12 + 15},
-    .etsec_irq_rx   = {12 + 14, 12 + 20, 12 + 16},
+    .serial_irq     = 16 + 26,
+    .etsec_irq_err  = {16 + 18, 16 + 24, 16 + 17},
+    .etsec_irq_tx   = {16 + 13, 16 + 19, 16 + 15},
+    .etsec_irq_rx   = {16 + 14, 16 + 20, 16 + 16},
     .cfi01_flash    = FALSE,
 };
 
@@ -1123,8 +1116,6 @@ static fsl_e500_config wrsbc8548_vxworks_config = {
     .cpu_model      = "p2010",
     .freq           = 700000000UL >> 3,
     .serial_irq     = 16 + 26,
-    .espi_irq       = 16 + 43,
-    .i2c_irq        = 16 + 27,
     .etsec_irq_err  = {16 + 18, 16 + 24, 16 + 17},
     .etsec_irq_tx   = {16 + 13, 16 + 19, 16 + 15},
     .etsec_irq_rx   = {16 + 14, 16 + 20, 16 + 16},
@@ -1147,8 +1138,6 @@ static fsl_e500_config wrsbc8548_vx653_config = {
     .cpu_model      = "p2010",
     .freq           = 700000000UL >> 3,
     .serial_irq     = 16 + 26,
-    .espi_irq       = 16 + 43,
-    .i2c_irq        = 16 + 27,
     .etsec_irq_err  = {16 + 18, 16 + 24, 16 + 17},
     .etsec_irq_tx   = {16 + 13, 16 + 19, 16 + 15},
     .etsec_irq_rx   = {16 + 14, 16 + 20, 16 + 16},
@@ -1171,8 +1160,6 @@ static fsl_e500_config wrsbc8548_config = {
     .cpu_model      = "p2010",
     .freq           = 700000000UL >> 3,
     .serial_irq     = 16 + 26,
-    .espi_irq       = 16 + 43,
-    .i2c_irq        = 16 + 27,
     .etsec_irq_err  = {16 + 18, 16 + 24, 16 + 17},
     .etsec_irq_tx   = {16 + 13, 16 + 19, 16 + 15},
     .etsec_irq_rx   = {16 + 14, 16 + 20, 16 + 16},
