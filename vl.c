@@ -3040,6 +3040,10 @@ int main(int argc, char **argv, char **envp)
     const char *trace_events = NULL;
     const char *trace_file = NULL;
 
+#ifndef _WIN32
+    signal(SIGTTOU, SIG_IGN);
+#endif
+
     atexit(qemu_run_exit_notifiers);
     error_set_progname(argv[0]);
     qemu_init_exec_dir(argv[0]);
