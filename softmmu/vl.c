@@ -2949,6 +2949,10 @@ void qemu_init(int argc, char **argv, char **envp)
 
     qemu_mutex_lock_iothread();
 
+#ifndef _WIN32
+    signal(SIGTTOU, SIG_IGN);
+#endif
+
     atexit(qemu_run_exit_notifiers);
     qemu_init_exec_dir(argv[0]);
 
