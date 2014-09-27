@@ -345,6 +345,12 @@ static void grlib_gptimer_reset(DeviceState *d)
         ptimer_set_count(timer->ptimer, 0);
         ptimer_set_freq(timer->ptimer, unit->freq_hz);
     }
+    unit->reload = 39;
+    grlib_gptimer_set_scaler(unit, 39);
+    unit->timers[0].counter = 0;
+    unit->timers[0].reload = -2;
+    unit->timers[0].config = 3;
+    grlib_gptimer_enable(&unit->timers[0]);
 }
 
 static void grlib_gptimer_realize(DeviceState *dev, Error **errp)

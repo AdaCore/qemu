@@ -67,6 +67,11 @@ static void main_cpu_reset(void *opaque)
     env->pc     = s->entry;
     env->npc    = s->entry + 4;
     env->regbase[6] = s->sp;
+    if (env->pc) {	/* enable traps and FPU if running a RAM image */
+        env->psret = 1;
+        env->psref = 1;
+        env->wim = 2;
+    }
 }
 
 void leon3_irq_ack(void *irq_manager, int intno)
