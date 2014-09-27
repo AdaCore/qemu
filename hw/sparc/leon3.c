@@ -207,6 +207,12 @@ static void leon3_generic_hw_init(MachineState *machine)
         }
     }
 
+    /* Allocate AHB PNP */
+    grlib_ahbpnp_create(0xFFFFF000);
+
+    /* Allocate APB PNP */
+    grlib_apbpnp_create(0x800FF000);
+
     /* Allocate timers */
     grlib_gptimer_create(0x80000300, 2, CPU_CLK, cpu_irqs, 6);
 
