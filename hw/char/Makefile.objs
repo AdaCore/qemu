@@ -20,6 +20,7 @@ obj-$(CONFIG_STM32F2XX_USART) += stm32f2xx_usart.o
 common-obj-$(CONFIG_ETRAXFS) += etraxfs_ser.o
 common-obj-$(CONFIG_ISA_DEBUG) += debugcon.o
 common-obj-$(CONFIG_GRLIB) += grlib_apbuart.o
+common-obj-$(CONFIG_GRLIB) += grlib_ambapnp.o
 common-obj-$(CONFIG_IMX) += imx_serial.o
 common-obj-$(CONFIG_LM32) += lm32_juart.o
 common-obj-$(CONFIG_LM32) += lm32_uart.o
