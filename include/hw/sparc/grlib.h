@@ -117,4 +117,36 @@ DeviceState *grlib_apbuart_create(hwaddr  base,
     return dev;
 }
 
+/* APB PNP */
+
+static inline
+DeviceState *grlib_apbpnp_create(hwaddr  base)
+{
+    DeviceState *dev;
+
+    dev = qdev_create(NULL, "grlib,apbpnp");
+
+    qdev_init_nofail(dev);
+
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, base);
+
+    return dev;
+}
+
+/* AHB PNP */
+
+static inline
+DeviceState *grlib_ahbpnp_create(hwaddr  base)
+{
+    DeviceState *dev;
+
+    dev = qdev_create(NULL, "grlib,ahbpnp");
+
+    qdev_init_nofail(dev);
+
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, base);
+
+    return dev;
+}
+
 #endif /* GRLIB_H */
