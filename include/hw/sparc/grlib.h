@@ -123,4 +123,26 @@ DeviceState *grlib_apbuart_create(hwaddr  base,
     return dev;
 }
 
+
+/* AMBA PNP */
+
+#define TYPE_GRLIB_AMBA_PNP "grlib,ambapnp"
+
+static inline
+DeviceState *grlib_ambapnp_create(hwaddr ahbpnp_base, hwaddr apbpnp_base)
+{
+    DeviceState *dev;
+
+    dev = qdev_create(NULL, TYPE_GRLIB_AMBA_PNP);
+
+    if (qdev_init(dev)) {
+        return NULL;
+    }
+
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, ahbpnp_base);
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 1, apbpnp_base);
+
+    return dev;
+}
+
 #endif /* ! _GRLIB_H_ */

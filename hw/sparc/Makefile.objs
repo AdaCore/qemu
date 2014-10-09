@@ -1,1 +1,2 @@
 obj-y += sun4m.o leon3.o
+obj-$(CONFIG_GRLIB) += grlib_ambapnp.o
