@@ -38,42 +38,24 @@ typedef struct AMBAPNP {
 
 /* APB PNP */
 
+static uint32_t apbppmem[32*2];    /* 32-entry APB PP AREA */
+static int apbppindex;
+
+int grlib_apbpp_add(uint32_t id, uint32_t addr)
+{
+    apbppmem[apbppindex++] = id;
+    apbppmem[apbppindex++] = addr;
+    if(apbppindex >= (32*2)) apbppindex = 0; /* prevent overflow of area */
+    return(apbppindex);
+}
+
 static uint64_t grlib_apbpnp_read(void *opaque, hwaddr addr,
                                    unsigned size)
 {
     uint64_t read_data;
-    addr &= 0xfff;
+    addr &= 0xff;
+    read_data = apbppmem[addr>>2];
 
-    /* Unit registers */
-    switch (addr & 0xffc) {
-    case 0x00:
-        read_data = 0x0400f000; /* Memory controller */
-        break;
-    case 0x04:
-        read_data = 0x0000fff1;
-        break;
-    case 0x08:
-        read_data = 0x0100c023; /* APBUART */
-        break;
-    case 0x0C:
-        read_data = 0x0010fff1;
-        break;
-    case 0x10:
-        read_data = 0x0100d040; /* IRQMP */
-        break;
-    case 0x14:
-        read_data = 0x0020fff1;
-        break;
-    case 0x18:
-        read_data = 0x01011006; /* GPTIMER */
-        break;
-    case 0x1C:
-        read_data = 0x0030fff1;
-        break;
-
-    default:
-        read_data = 0;
-    }
     if (size == 1) {
         read_data >>= (24 - (addr & 3) * 8);
         read_data &= 0x0ff;
@@ -88,31 +70,44 @@ static const MemoryRegionOps grlib_apbpnp_ops = {
 
 /* AHB PNP */
 
+static uint32_t ahbppmem[128*8];    /* 128-entry AHB PP AREA */
+static int ahbmppindex;
+static int ahbsppindex = 64*8;
+
+int grlib_ahbmpp_add(uint32_t id)
+{
+    ahbppmem[ahbmppindex] = id;
+    ahbmppindex += 8;
+    if(ahbmppindex >= (64*8)) ahbmppindex = 0; /* prevent overflow of area */
+    return(ahbmppindex);
+}
+
+int grlib_ahbspp_add(uint32_t id, uint32_t addr1, uint32_t addr2,
+                     uint32_t addr3, uint32_t addr4)
+{
+    ahbppmem[ahbsppindex] = id;
+    ahbsppindex += 4;
+    ahbppmem[ahbsppindex++] = addr1;
+    ahbppmem[ahbsppindex++] = addr2;
+    ahbppmem[ahbsppindex++] = addr3;
+    ahbppmem[ahbsppindex++] = addr4;
+    if(ahbsppindex >= (128*8)) ahbsppindex = 64*8; /* prevent overflow of area */
+    return(ahbsppindex);
+}
+
 static uint64_t grlib_ahbpnp_read(void *opaque, hwaddr addr,
                                    unsigned size)
 {
-    addr &= 0xffc;
+    uint64_t read_data;
 
-    /* Unit registers */
-    switch (addr) {
-    case 0:
-        return 0x01003000;      /* LEON3 */
-    case 0x800:
-        return 0x0400f000;      /* Memory controller  */
-    case 0x810:
-        return 0x0003e002;
-    case 0x814:
-        return 0x2000e002;
-    case 0x818:
-        return 0x4003c002;
-    case 0x820:
-        return 0x01006000;      /* APB bridge @ 0x80000000 */
-    case 0x830:
-        return 0x8000fff2;
+    addr &= 0xfff;
+    read_data = ahbppmem[addr>>2];
 
-    default:
-        return 0;
+    if (size == 1) {
+        read_data >>= (24 - (addr & 3) * 8);
+        read_data &= 0x0ff;
     }
+    return read_data;
 }
 
 static const MemoryRegionOps grlib_ahbpnp_ops = {

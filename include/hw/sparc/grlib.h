@@ -32,6 +32,33 @@
  * http://www.gaisler.com/products/grlib/grip.pdf
  */
 
+/* Definitions for AMBA PNP */
+
+/* Vendors */
+#define VENDOR_GAISLER    1
+#define VENDOR_PENDER     2
+#define VENDOR_ESA        4
+#define VENDOR_DLR       10
+
+/* Devices */
+#define GAISLER_LEON3    0x003
+#define GAISLER_APBMST   0x006
+#define GAISLER_APBUART  0x00C
+#define GAISLER_IRQMP    0x00D
+#define GAISLER_GPTIMER  0x011
+#define ESA_MCTRL        0x00F
+
+/* How to build entries in the plug&play area */
+#define GRLIB_PP_ID(v, d, x, i) ((v & 0xff) << 24) | ((d & 0x3ff) << 12) |\
+                                ((x & 0x1f) << 5) | (i & 0x1f)
+#define GRLIB_PP_AHBADDR(a, m, p, c, t) (a & 0xfff00000) | ((m & 0xfff) << 4) |\
+                         ((p & 1) << 17) | ((c & 1) << 16) | (t & 0x3)
+#define GRLIB_PP_APBADDR(a, m) ((a & 0xfff00)<< 12) | ((m & 0xfff) << 4) | 1
+
+int grlib_apbpp_add(uint32_t id, uint32_t addr);
+int grlib_ahbmpp_add(uint32_t id);
+int grlib_ahbspp_add(uint32_t id, uint32_t addr1, uint32_t addr2,
+                     uint32_t addr3, uint32_t addr4);
 /* IRQMP */
 
 typedef void (*set_pil_in_fn) (void *opaque, uint32_t pil_in);
@@ -67,6 +94,9 @@ DeviceState *grlib_irqmp_create(hwaddr   base,
                                    dev,
                                    nr_irqs);
 
+    grlib_apbpp_add(GRLIB_PP_ID(VENDOR_GAISLER, GAISLER_IRQMP, 2, 0),
+                    GRLIB_PP_APBADDR(base, 0xFFF));
+
     return dev;
 }
 
@@ -97,6 +127,9 @@ DeviceState *grlib_gptimer_create(hwaddr  base,
         sysbus_connect_irq(SYS_BUS_DEVICE(dev), i, cpu_irqs[base_irq + i]);
     }
 
+    grlib_apbpp_add(GRLIB_PP_ID(VENDOR_GAISLER, GAISLER_GPTIMER, 0, base_irq),
+                    GRLIB_PP_APBADDR(base, 0xFFF));
+    
     return dev;
 }
 
@@ -105,7 +138,8 @@ DeviceState *grlib_gptimer_create(hwaddr  base,
 static inline
 DeviceState *grlib_apbuart_create(hwaddr  base,
                                   CharDriverState    *serial,
-                                  qemu_irq            irq)
+                                  qemu_irq           *cpu_irqs,
+                                  int                 base_irq)
 {
     DeviceState *dev;
 
@@ -118,8 +152,11 @@ DeviceState *grlib_apbuart_create(hwaddr  base,
 
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, base);
 
-    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, irq);
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, cpu_irqs[base_irq]);
 
+    grlib_apbpp_add(GRLIB_PP_ID(VENDOR_GAISLER, GAISLER_APBUART, 1, base_irq),
+                    GRLIB_PP_APBADDR(base, 0xFFF));
+    
     return dev;
 }
 
@@ -142,6 +179,20 @@ DeviceState *grlib_ambapnp_create(hwaddr ahbpnp_base, hwaddr apbpnp_base)
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, ahbpnp_base);
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 1, apbpnp_base);
 
+    /* Add PP records for Leon3, APB bridge and memory controller
+       as this is not done elsewhere */
+
+    grlib_ahbspp_add(GRLIB_PP_ID(VENDOR_GAISLER, GAISLER_APBMST, 0, 0),
+                     GRLIB_PP_AHBADDR(0x80000000, 0xFFF, 0, 0, 2),
+                     0, 0, 0);
+    grlib_apbpp_add(GRLIB_PP_ID(VENDOR_ESA, ESA_MCTRL, 1, 0),
+                    GRLIB_PP_APBADDR(0x80000000, 0xFFF));
+    grlib_ahbmpp_add(GRLIB_PP_ID(VENDOR_GAISLER, GAISLER_LEON3, 0, 0));
+    grlib_ahbspp_add(GRLIB_PP_ID(VENDOR_ESA, ESA_MCTRL, 1, 0),
+                     GRLIB_PP_AHBADDR(0x00000000, 0xE00, 1, 1, 2),
+                     GRLIB_PP_AHBADDR(0x20000000, 0xE00, 0, 0, 2),
+                     GRLIB_PP_AHBADDR(0x40000000, 0xC00, 1, 1, 2),
+                     0);
     return dev;
 }
 
