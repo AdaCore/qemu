@@ -153,8 +153,9 @@ static inline int gnatbus_process_register(GnatBus_Device         *qbdev,
 {
     /* printf("GnatBus: Received Register request from: '%s'\n", reg->name); */
 
-    DeviceState          *qdev;
-    GnatBus_SysBusDevice *pdev;
+    DeviceState              *qdev;
+    GnatBus_SysBusDevice     *pdev;
+    GnatBusPacket_Endianness  end;
 
     trace_gnatbus_process_register(reg->name);
 
@@ -176,7 +177,20 @@ static inline int gnatbus_process_register(GnatBus_Device         *qbdev,
 
     qbdev->start_ok = 1;
     QLIST_INSERT_HEAD(&qbdev->master->devices_list, qbdev, list);
-    gnatbus_resp_error(qbdev, reg->parent.id, 0);
+
+    /* gnatbus_resp_error(qbdev, reg->parent.id, 0); */
+
+    GnatBusPacket_Endianness_Init(&end);
+
+    end.parent.id  = reg->parent.id;
+#if defined(TARGET_WORDS_BIGENDIAN)
+    end.endianness = GnatBusEndianness_BigEndian;
+#else
+    end.endianness = GnatBusEndianness_LittelEndian;
+#endif
+
+    gnatbus_send(qbdev, (uint8_t *)&end, sizeof(end));
+
     return 0;
 }
 

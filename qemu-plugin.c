@@ -336,7 +336,7 @@ static uint32_t plugin_dma_write(void          *src,
 
 static uint32_t plugin_dma_read(void          *dest,
                                 target_addr_t  addr,
-                                uint32_t       size)
+                                uint32_t size)
 {
     cpu_physical_memory_read(addr, dest, size);
     return QP_NOERROR;
@@ -443,6 +443,15 @@ static QemuPLugin_InitFunction plugin_load_init_func(const char *plugin_name,
 #endif
 }
 
+static uint32_t target_endianness(void)
+{
+#if defined(TARGET_WORDS_BIGENDIAN)
+    return GnatBusEndianness_BigEndian;
+#else
+    return GnatBusEndianness_LittelEndian;
+#endif
+}
+
 
 void plugin_init(qemu_irq *cpu_irqs, int nr_irq)
 {
@@ -466,14 +475,15 @@ void plugin_init(qemu_irq *cpu_irqs, int nr_irq)
     g_plugin->cpu_irqs = cpu_irqs;
 
     /* Initialize emulator-side callbacks */
-    g_plugin->emulator_interface.version       = QEMU_PLUGIN_INTERFACE_VERSION;
-    g_plugin->emulator_interface.get_time      = plugin_get_time;
-    g_plugin->emulator_interface.add_event     = plugin_add_event;
-    g_plugin->emulator_interface.remove_event  = plugin_remove_event;
-    g_plugin->emulator_interface.set_irq       = plugin_set_irq;
-    g_plugin->emulator_interface.dma_read      = plugin_dma_read;
-    g_plugin->emulator_interface.dma_write     = plugin_dma_write;
-    g_plugin->emulator_interface.attach_device = attach_device;
+    g_plugin->emulator_interface.version        = QEMU_PLUGIN_INTERFACE_VERSION;
+    g_plugin->emulator_interface.get_time          = plugin_get_time;
+    g_plugin->emulator_interface.add_event         = plugin_add_event;
+    g_plugin->emulator_interface.remove_event      = plugin_remove_event;
+    g_plugin->emulator_interface.set_irq           = plugin_set_irq;
+    g_plugin->emulator_interface.dma_read          = plugin_dma_read;
+    g_plugin->emulator_interface.dma_write         = plugin_dma_write;
+    g_plugin->emulator_interface.attach_device     = attach_device;
+    g_plugin->emulator_interface.target_endianness = target_endianness;
 
     /* Initialize devices list */
     QLIST_INIT(&g_plugin->devices_list);

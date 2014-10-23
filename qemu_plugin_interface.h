@@ -1,3 +1,29 @@
+/****************************************************************************
+ *                                                                          *
+ *                 Q E M U _ P L U G I N _ I N T E R F A C E                *
+ *                                                                          *
+ *                                  S p e c                                 *
+ *                                                                          *
+ *                     Copyright (C) 2012-2014, AdaCore                     *
+ *                                                                          *
+ * This program is free software;  you can redistribute it and/or modify it *
+ * under terms of  the GNU General Public License as  published by the Free *
+ * Softwareg Foundation;  either version 3,  or (at your option)  any later *
+ * version. This progran is distributed in the hope that it will be useful, *
+ * but  WITHOUT  ANY  WARRANTY;   without  even  the  implied  warranty  of *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                     *
+ *                                                                          *
+ * As a special exception under Section 7 of GPL version 3, you are granted *
+ * additional permissions  described in the GCC  Runtime Library Exception, *
+ * version 3.1, as published by the Free Software Foundation.               *
+ *                                                                          *
+ * You should have received a copy  of the GNU General Public License and a *
+ * copy of the  GCC Runtime Library Exception along  with this program; see *
+ * the  files  COPYING3  and  COPYING.RUNTIME  respectively.  If  not,  see *
+ * <http://www.gnu.org/licenses/>.                                          *
+ *                                                                          *
+ ****************************************************************************/
+
 #ifndef _QEMU_PLUGIN_INTERFACE_H_
 #define _QEMU_PLUGIN_INTERFACE_H_
 
@@ -6,7 +32,7 @@
 
 typedef uint32_t target_addr_t;
 
-#define QEMU_PLUGIN_INTERFACE_VERSION   (2)
+#define QEMU_PLUGIN_INTERFACE_VERSION   (3)
 
 #define QP_ERROR   (-1)
 #define QP_NOERROR ( 0)
@@ -98,6 +124,8 @@ struct QemuPlugin_Emulator
 
     uint32_t (*attach_device)(QemuPlugin_DeviceInfo *dev);
 
+    uint32_t (*target_endianness)(void);
+
     uint32_t version;
 };
 
@@ -108,6 +136,11 @@ typedef enum QemuPlugin_State {
     QPS_ERROR,
     QPS_STOPED,
 } QemuPlugin_State;
+
+
+#define GnatBusEndianness_Unknown       0
+#define GnatBusEndianness_BigEndian     1
+#define GnatBusEndianness_LittelEndian  2
 
 typedef void       (*QemuPLugin_InitFunction)(QemuPlugin_Emulator *emu,
                                               const char *args);

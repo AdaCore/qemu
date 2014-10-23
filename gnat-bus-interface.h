@@ -29,7 +29,7 @@
 
 #include <stdint.h>
 
-#define GNATBUS_VERSION 2
+#define GNATBUS_VERSION 3
 
 /* Packet types */
 
@@ -63,6 +63,7 @@ typedef enum PACKED GnatBusResponseType {
     GnatBusResponse_Error = 0,
     GnatBusResponse_Data,
     GnatBusResponse_Time,
+    GnatBusResponse_Endianness,
 } GnatBusResponseType;
 
 /* Base packet */
@@ -218,9 +219,9 @@ GnatBusPacket_Init((packet), GnatBus_Response, GnatBusResponse_Error)
 /* Data response */
 
 typedef struct PACKED GnatBusPacket_Data {
-    GnatBusPacket_Request parent;
-    uint32_t              length;
-    uint8_t               data[];
+    GnatBusPacket_Response parent;
+    uint32_t               length;
+    uint8_t                data[];
 } GnatBusPacket_Data;
 
 #define GnatBusPacket_Data_Init(packet)                                 \
@@ -229,11 +230,27 @@ GnatBusPacket_Init((packet), GnatBus_Response, GnatBusResponse_Data)
 /* Time response */
 
 typedef struct PACKED GnatBusPacket_Time {
-    GnatBusPacket_Request parent;
-    uint64_t              time;
+    GnatBusPacket_Response parent;
+    uint64_t               time;
 } GnatBusPacket_Time;
 
 #define GnatBusPacket_Time_Init(packet)                                 \
 GnatBusPacket_Init((packet), GnatBus_Response, GnatBusResponse_Time)
+
+/* Endianness response */
+
+typedef enum PACKED GnatBusEndiannessType {
+    GnatBusEndianness_Unknown      = 0,
+    GnatBusEndianness_BigEndian    = 1,
+    GnatBusEndianness_LittelEndian = 2,
+} GnatBusEndiannessType;
+
+typedef struct PACKED GnatBusPacket_Endianness {
+    GnatBusPacket_Response parent;
+    GnatBusEndiannessType  endianness;
+} GnatBusPacket_Endianness;
+
+#define GnatBusPacket_Endianness_Init(packet)                           \
+GnatBusPacket_Init((packet), GnatBus_Response, GnatBusResponse_Endianness)
 
 #endif /* ! _GNAT_BUS_INTERFACE_H_ */
