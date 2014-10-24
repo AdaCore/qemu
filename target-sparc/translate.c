@@ -328,7 +328,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num,
         /* jump to another page: currently not optimized */
         tcg_gen_movi_tl(cpu_pc, pc);
         tcg_gen_movi_tl(cpu_npc, npc);
-        tcg_gen_exit_tb(((tcg_target_long)tb + tb_num) & TB_EXIT_NOPATCH);
+        tcg_gen_exit_tb(((uintptr_t)tb + tb_num) | TB_EXIT_NOPATCH);
     }
 }
 
@@ -1038,11 +1038,11 @@ static inline void save_npc_and_exit(DisasContext *dc, TCGv cond)
         tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, l1);
 
         tcg_gen_movi_tl(cpu_npc, dc->jump_pc[0]);
-        tcg_gen_exit_tb((long)dc->tb + 4);
+        tcg_gen_exit_tb((uintptr_t)dc->tb | TB_EXIT_IDX0 | TB_EXIT_NOPATCH);
 
         gen_set_label(l1);
         tcg_gen_movi_tl(cpu_npc, dc->jump_pc[1]);
-        tcg_gen_exit_tb((long)dc->tb + 4 + 1);
+        tcg_gen_exit_tb((uintptr_t)dc->tb | TB_EXIT_IDX1 | TB_EXIT_NOPATCH);
 
         dc->npc = DYNAMIC_PC;
     } else if (dc->npc != DYNAMIC_PC) {
