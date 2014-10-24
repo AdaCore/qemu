@@ -789,8 +789,16 @@ static void trace_before_exec(TranslationBlock *tb)
 /* TB is the tb we jumped to, LAST_TB (if not null) is the last executed tb.  */
 static void trace_after_exec(unsigned long next_tb)
 {
-    TranslationBlock *last_tb = (TranslationBlock *)(next_tb & ~7);
-    int br = next_tb & 3;
+    TranslationBlock *last_tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
+    int exit_val = next_tb & TB_EXIT_MASK;
+    int br = exit_val & (TB_EXIT_IDX1 | TB_EXIT_IDX0);
+
+    if (exit_val == TB_EXIT_ICOUNT_EXPIRED || exit_val == TB_EXIT_REQUESTED) {
+        /* Those two values mean that the TB was not executed, see tcg.h for
+         * details.
+         */
+        return;
+    }
 
 #ifdef DEBUG_TRACE
     printf("... to " TARGET_FMT_lx " (" TARGET_FMT_lx ")",
