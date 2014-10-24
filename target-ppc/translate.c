@@ -3779,7 +3779,7 @@ static inline void gen_exit_tb(DisasContext *ctx, int n)
             gen_debug_exception(ctx);
         }
     }
-    tcg_gen_exit_tb((long)(tb + n) | TB_EXIT_NOPATCH);
+    tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH | n);
 }
 
 static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
