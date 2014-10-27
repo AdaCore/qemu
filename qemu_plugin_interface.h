@@ -32,7 +32,7 @@
 
 typedef uint32_t target_addr_t;
 
-#define QEMU_PLUGIN_INTERFACE_VERSION   (3)
+#define QEMU_PLUGIN_INTERFACE_VERSION   (4)
 
 #define QP_ERROR   (-1)
 #define QP_NOERROR ( 0)
@@ -59,6 +59,12 @@ typedef void exit_fn(void *opaque);
 #define DESC_LENGTH 256
 #define MAX_IOMEM   32
 
+typedef enum DeviceEndianness {
+    DeviceEndianness_NativeEndian = 0,
+    DeviceEndianness_BigEndian    = 1,
+    DeviceEndianness_LittleEndian = 2,
+} DeviceEndianness;
+
 typedef struct QemuPlugin_DeviceInfo
 {
     uint32_t version;
@@ -78,6 +84,8 @@ typedef struct QemuPlugin_DeviceInfo
     reset_fn *pdevice_reset;
     init_fn  *pdevice_init;
     exit_fn  *pdevice_exit;
+
+    DeviceEndianness device_endianness;
 
     uint32_t nr_iomem;
     struct QemuPlugin_IOMemory
@@ -137,10 +145,11 @@ typedef enum QemuPlugin_State {
     QPS_STOPED,
 } QemuPlugin_State;
 
-
-#define GnatBusEndianness_Unknown       0
-#define GnatBusEndianness_BigEndian     1
-#define GnatBusEndianness_LittelEndian  2
+typedef enum TargetEndianness {
+    TargetEndianness_Unknown      = 0,
+    TargetEndianness_BigEndian    = 1,
+    TargetEndianness_LittleEndian = 2,
+} TargetEndianness;
 
 typedef void       (*QemuPLugin_InitFunction)(QemuPlugin_Emulator *emu,
                                               const char *args);

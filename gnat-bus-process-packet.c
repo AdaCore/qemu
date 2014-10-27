@@ -129,7 +129,16 @@ static int gnatbus_init_device(SysBusDevice *dev)
     GnatBus_Device       *qbdev = pdev->qbdev;
     int                   i;
 
+    /* Copy default io ops */
+    memcpy(&qbdev->io_ops, &gnatbus_io_ops, sizeof(MemoryRegionOps));
 
+    if (qbdev->info.endianness == DeviceEndianness_BigEndian) {
+        qbdev->io_ops.endianness = DEVICE_BIG_ENDIAN;
+    } else if (qbdev->info.endianness == DeviceEndianness_LittleEndian) {
+        qbdev->io_ops.endianness = DEVICE_LITTLE_ENDIAN;
+    } else {
+        qbdev->io_ops.endianness = DEVICE_NATIVE_ENDIAN;
+    }
 
     for (i = 0; i < qbdev->info.nr_iomem; i++) {
         qbdev->io_region[i].qbdev = qbdev;
@@ -137,7 +146,7 @@ static int gnatbus_init_device(SysBusDevice *dev)
 
         memory_region_transaction_begin();
         memory_region_init_io(&qbdev->io_region[i].mr, OBJECT(pdev),
-                              &gnatbus_io_ops, &qbdev->io_region[i],
+                              &qbdev->io_ops, &qbdev->io_region[i],
                               qbdev->info.name, qbdev->info.iomem[i].size);
         memory_region_add_subregion_overlap(get_system_memory(),
                                             qbdev->info.iomem[i].base,
@@ -184,9 +193,9 @@ static inline int gnatbus_process_register(GnatBus_Device         *qbdev,
 
     end.parent.id  = reg->parent.id;
 #if defined(TARGET_WORDS_BIGENDIAN)
-    end.endianness = GnatBusEndianness_BigEndian;
+    end.endianness = TargetEndianness_BigEndian;
 #else
-    end.endianness = GnatBusEndianness_LittelEndian;
+    end.endianness = TargetEndianness_LittelEndian;
 #endif
 
     gnatbus_send(qbdev, (uint8_t *)&end, sizeof(end));
