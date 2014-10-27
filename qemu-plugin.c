@@ -29,6 +29,8 @@ typedef struct QemuPlugin_IORegion {
 struct QemuPlugin_SysBusDevice {
     SysBusDevice busdev;
 
+    MemoryRegionOps io_ops;
+
     QemuPlugin_DeviceInfo *info;
 
     QemuPlugin_IORegion io_region[MAX_IOMEM];
@@ -264,15 +266,27 @@ static int plugin_init_device(SysBusDevice *dev)
     QemuPlugin_SysBusDevice *pdev = QEMU_PLUGIN_DEVICE(dev);
     int i;
 
+    /* Copy default io ops */
+    memcpy(&pdev->io_ops, &plugin_ops, sizeof(MemoryRegionOps));
+
     for (i = 0; i < pdev->info->nr_iomem; i++) {
+
+        if (pdev->info->device_endianness == DeviceEndianness_BigEndian) {
+            pdev->io_ops.endianness = DEVICE_BIG_ENDIAN;
+        } else if (pdev->info->device_endianness ==
+                   DeviceEndianness_LittleEndian) {
+            pdev->io_ops.endianness = DEVICE_LITTLE_ENDIAN;
+        } else {
+            pdev->io_ops.endianness = DEVICE_NATIVE_ENDIAN;
+        }
 
         pdev->io_region[i].pdev = pdev;
         pdev->io_region[i].base = pdev->info->iomem[i].base;
 
         memory_region_transaction_begin();
-        memory_region_init_io(&pdev->io_region[i].mr, OBJECT(pdev), &plugin_ops,
-                              &pdev->io_region[i], pdev->info->name,
-                              pdev->info->iomem[i].size);
+        memory_region_init_io(&pdev->io_region[i].mr, OBJECT(pdev),
+                              &pdev->io_ops, &pdev->io_region[i],
+                              pdev->info->name, pdev->info->iomem[i].size);
 
         memory_region_add_subregion_overlap(get_system_memory(),
                                             pdev->info->iomem[i].base,
@@ -446,9 +460,9 @@ static QemuPLugin_InitFunction plugin_load_init_func(const char *plugin_name,
 static uint32_t target_endianness(void)
 {
 #if defined(TARGET_WORDS_BIGENDIAN)
-    return GnatBusEndianness_BigEndian;
+    return TargetEndianness_BigEndian;
 #else
-    return GnatBusEndianness_LittelEndian;
+    return TargetEndianness_LittelEndian;
 #endif
 }
 
