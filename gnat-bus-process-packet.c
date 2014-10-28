@@ -1,6 +1,7 @@
 #include "qemu/timer.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
+#include "sysemu/cpus.h"
 
 #include "gnat-bus.h"
 #include "trace.h"
@@ -54,6 +55,12 @@ static inline int gnatbus_process_event(GnatBus_Device      *qbdev,
 
     case GnatBusEvent_RegisterEvent:
         return gnatbus_process_registerevent(qbdev, (GnatBusPacket_RegisterEvent *)event);
+        break;
+
+    case GnatBusEvent_Shutdown:
+        pause_all_vcpus();
+        qemu_system_shutdown_request();
+        return 0;
         break;
 
     default:
@@ -195,7 +202,7 @@ static inline int gnatbus_process_register(GnatBus_Device         *qbdev,
 #if defined(TARGET_WORDS_BIGENDIAN)
     end.endianness = TargetEndianness_BigEndian;
 #else
-    end.endianness = TargetEndianness_LittelEndian;
+    end.endianness = TargetEndianness_LittleEndian;
 #endif
 
     gnatbus_send(qbdev, (uint8_t *)&end, sizeof(end));

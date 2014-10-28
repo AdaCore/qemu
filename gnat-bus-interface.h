@@ -29,7 +29,7 @@
 
 #include <stdint.h>
 
-#define GNATBUS_VERSION 4
+#define GNATBUS_VERSION 5
 
 /* Packet types */
 
@@ -47,6 +47,7 @@ typedef enum PACKED GnatBusEventType {
     GnatBusEvent_SetIRQ,
     GnatBusEvent_RegisterEvent,
     GnatBusEvent_TriggerEvent,
+    GnatBusEvent_Shutdown,
     MAX_EVENT_TYPE,
 } GnatBusEventType;
 
@@ -109,6 +110,10 @@ typedef GnatBusPacket_SimpleEvent GnatBusPacket_Exit;
 #define GnatBusPacket_Exit_Init(packet)                         \
 GnatBusPacket_Init((packet), GnatBus_Event, GnatBusEvent_Exit)
 
+typedef GnatBusPacket_SimpleEvent GnatBusPacket_Shutdown;
+
+#define GnatBusPacket_Shutdown_Init(packet)                             \
+GnatBusPacket_Init((packet), GnatBus_Event, GnatBusEvent_Shutdown)
 
 /* Set IRQ */
 
