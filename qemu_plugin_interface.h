@@ -32,7 +32,7 @@
 
 typedef uint32_t target_addr_t;
 
-#define QEMU_PLUGIN_INTERFACE_VERSION   (4)
+#define QEMU_PLUGIN_INTERFACE_VERSION   (5)
 
 #define QP_ERROR   (-1)
 #define QP_NOERROR ( 0)
@@ -133,6 +133,8 @@ struct QemuPlugin_Emulator
     uint32_t (*attach_device)(QemuPlugin_DeviceInfo *dev);
 
     uint32_t (*target_endianness)(void);
+
+    uint32_t (*shutdown_request)(void);
 
     uint32_t version;
 };

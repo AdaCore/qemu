@@ -7,6 +7,7 @@
 #include "qemu-common.h"
 #include "qemu/option.h"
 #include "sysemu/sysemu.h"
+#include "sysemu/cpus.h"
 #include "hw/sysbus.h"
 #include "qemu-plugin.h"
 #include "exec/memory.h"
@@ -462,10 +463,16 @@ static uint32_t target_endianness(void)
 #if defined(TARGET_WORDS_BIGENDIAN)
     return TargetEndianness_BigEndian;
 #else
-    return TargetEndianness_LittelEndian;
+    return TargetEndianness_LittleEndian;
 #endif
 }
 
+static uint32_t shutdown_request(void)
+{
+    pause_all_vcpus();
+    qemu_system_shutdown_request();
+    return 0;
+}
 
 void plugin_init(qemu_irq *cpu_irqs, int nr_irq)
 {
@@ -498,6 +505,7 @@ void plugin_init(qemu_irq *cpu_irqs, int nr_irq)
     g_plugin->emulator_interface.dma_write         = plugin_dma_write;
     g_plugin->emulator_interface.attach_device     = attach_device;
     g_plugin->emulator_interface.target_endianness = target_endianness;
+    g_plugin->emulator_interface.shutdown_request  = shutdown_request;
 
     /* Initialize devices list */
     QLIST_INIT(&g_plugin->devices_list);
