@@ -80,6 +80,8 @@ struct A9GTimerState {
 
     QEMUTimer *timer;
 
+    uint32_t freq;
+
     uint64_t counter; /* current timer value */
 
     uint64_t ref_counter;
