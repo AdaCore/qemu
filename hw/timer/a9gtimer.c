@@ -55,7 +55,8 @@ static inline uint64_t a9_gtimer_get_conv(A9GTimerState *s)
     uint64_t prescale = extract32(s->control, R_CONTROL_PRESCALER_SHIFT,
                                   R_CONTROL_PRESCALER_LEN);
 
-    return (prescale + 1) * 10;
+    return (prescale + 1) *
+        (10.0 * ((float)s->freq / (float)NANOSECONDS_PER_SECOND));
 }
 
 static A9GTimerUpdate a9_gtimer_get_update(A9GTimerState *s)
@@ -335,6 +336,7 @@ static const VMStateDescription vmstate_a9_gtimer = {
         VMSTATE_UINT64(counter, A9GTimerState),
         VMSTATE_UINT64(ref_counter, A9GTimerState),
         VMSTATE_UINT64(cpu_ref_time, A9GTimerState),
+        VMSTATE_UINT32(freq, A9GTimerState),
         VMSTATE_STRUCT_VARRAY_UINT32(per_cpu, A9GTimerState, num_cpu,
                                      1, vmstate_a9_gtimer_per_cpu,
                                      A9GTimerPerCPU),
@@ -344,6 +346,7 @@ static const VMStateDescription vmstate_a9_gtimer = {
 
 static Property a9_gtimer_properties[] = {
     DEFINE_PROP_UINT32("num-cpu", A9GTimerState, num_cpu, 0),
+    DEFINE_PROP_UINT32("freq", A9GTimerState, freq, 333333333),
     DEFINE_PROP_END_OF_LIST()
 };
 

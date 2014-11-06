@@ -89,6 +89,7 @@ static void a9mp_priv_realize(DeviceState *dev, Error **errp)
 
     gtimerdev = DEVICE(&s->gtimer);
     qdev_prop_set_uint32(gtimerdev, "num-cpu", s->num_cpu);
+    qdev_prop_set_uint32(gtimerdev, "freq", 333333333);
     object_property_set_bool(OBJECT(&s->gtimer), true, "realized", &err);
     if (err != NULL) {
         error_propagate(errp, err);
