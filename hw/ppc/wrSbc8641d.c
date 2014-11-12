@@ -274,6 +274,7 @@ static void main_cpu_reset(void *opaque)
     cpu_reset(cs);
     env->nip = s->entry;
     cs->halted = 0;
+    cpu->env.spr[SPR_MSSCR0] |= (0 << 5);
 }
 
 static void secondary_cpu_reset(void *opaque)
@@ -287,6 +288,7 @@ static void secondary_cpu_reset(void *opaque)
        implementing non-kernel boot. */
     cs->halted = 1;
     cs->exception_index = EXCP_HLT;
+    cpu->env.spr[SPR_MSSCR0] |= (1 << 5);
 }
 
 static uint64_t read_pixis(void *opaque, hwaddr addr, unsigned size)
@@ -356,7 +358,7 @@ static qemu_irq *init_mpic(MemoryRegion *ccsr, qemu_irq **irqs)
 
     dev = qdev_create(NULL, TYPE_OPENPIC);
     qdev_prop_set_uint32(dev, "model", OPENPIC_MODEL_FSL_MPIC_20);
-    qdev_prop_set_uint32(dev, "nb_cpus", 1);
+    qdev_prop_set_uint32(dev, "nb_cpus", smp_cpus);
 
     qdev_init_nofail(dev);
     s = SYS_BUS_DEVICE(dev);
@@ -407,8 +409,6 @@ static void wrsbc8641d_init(QEMUMachineInitArgs *args)
             exit(1);
         }
 
-        /* Set the processor ID */
-        ppc_cpus[i]->env.spr[SPR_MSSCR0] |= (i << 5);
         if (ppc_cpus[i]->env.flags & POWERPC_FLAG_RTC_CLK) {
             /* POWER / PowerPC 601 RTC clock frequency is 7.8125 MHz */
             cpu_ppc_tb_init(&ppc_cpus[i]->env, 7812500UL);
@@ -538,7 +538,6 @@ static void wrsbc8641d_init(QEMUMachineInitArgs *args)
 
         switch (PPC_INPUT((&ppc_cpus[i]->env))) {
             case PPC_FLAGS_INPUT_6xx:
-                openpic_irqs[i] = openpic_irqs[0] + (i * OPENPIC_OUTPUT_NB);
                 openpic_irqs[i][OPENPIC_OUTPUT_INT] =
                     ((qemu_irq *)ppc_cpus[i]->env.irq_inputs)[PPC6xx_INPUT_INT];
                 openpic_irqs[i][OPENPIC_OUTPUT_CINT] =
