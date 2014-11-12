@@ -406,6 +406,7 @@ static void nvic_writel(nvic_state *s, uint32_t offset, uint32_t value)
                       "NVIC: fault status registers unimplemented\n");
         break;
     case 0xd88: /* Coprocessor Access Control Register */
+        cpu = ARM_CPU(current_cpu);
         cpu->env.cp15.c15_cpar = value & 0x00F0FFFF;
         break;
     case 0xf00: /* Software Triggered Interrupt Register */
@@ -417,9 +418,11 @@ static void nvic_writel(nvic_state *s, uint32_t offset, uint32_t value)
         }
     /* Cortex-M4F Floating Point system registers */
     case 0xF34: /* FP Context Control Register */
+        cpu = ARM_CPU(current_cpu);
         cpu->env.v7m.fpccr = value & 0xC00003FF;
         break;
     case 0xF38: /* FP Context Address Register */
+        cpu = ARM_CPU(current_cpu);
         cpu->env.v7m.fpcar = value & 0x00000007;
         break;
     default:
