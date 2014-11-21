@@ -1218,8 +1218,10 @@ static int gdb_handle_packet(GDBState *s, const char *line_buf)
 
 void gdb_set_stop_cpu(CPUState *cpu)
 {
-    gdbserver_state->c_cpu = cpu;
-    gdbserver_state->g_cpu = cpu;
+    if (gdbserver_state != NULL) {
+        gdbserver_state->c_cpu = cpu;
+        gdbserver_state->g_cpu = cpu;
+    }
 }
 
 #ifndef CONFIG_USER_ONLY
