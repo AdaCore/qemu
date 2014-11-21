@@ -254,25 +254,26 @@ struct sparc_def_t {
     uint32_t maxtl;
 };
 
-#define CPU_FEATURE_FLOAT        (1 << 0)
-#define CPU_FEATURE_FLOAT128     (1 << 1)
-#define CPU_FEATURE_SWAP         (1 << 2)
-#define CPU_FEATURE_MUL          (1 << 3)
-#define CPU_FEATURE_DIV          (1 << 4)
-#define CPU_FEATURE_FLUSH        (1 << 5)
-#define CPU_FEATURE_FSQRT        (1 << 6)
-#define CPU_FEATURE_FMUL         (1 << 7)
-#define CPU_FEATURE_VIS1         (1 << 8)
-#define CPU_FEATURE_VIS2         (1 << 9)
-#define CPU_FEATURE_FSMULD       (1 << 10)
-#define CPU_FEATURE_HYPV         (1 << 11)
-#define CPU_FEATURE_CMT          (1 << 12)
-#define CPU_FEATURE_GL           (1 << 13)
-#define CPU_FEATURE_TA0_SHUTDOWN (1 << 14) /* Shutdown on "ta 0x0" */
-#define CPU_FEATURE_ASR17        (1 << 15)
-#define CPU_FEATURE_CACHE_CTRL   (1 << 16)
-#define CPU_FEATURE_POWERDOWN    (1 << 17)
-#define CPU_FEATURE_CASA         (1 << 18)
+#define CPU_FEATURE_FLOAT          (1 << 0)
+#define CPU_FEATURE_FLOAT128       (1 << 1)
+#define CPU_FEATURE_SWAP           (1 << 2)
+#define CPU_FEATURE_MUL            (1 << 3)
+#define CPU_FEATURE_DIV            (1 << 4)
+#define CPU_FEATURE_FLUSH          (1 << 5)
+#define CPU_FEATURE_FSQRT          (1 << 6)
+#define CPU_FEATURE_FMUL           (1 << 7)
+#define CPU_FEATURE_VIS1           (1 << 8)
+#define CPU_FEATURE_VIS2           (1 << 9)
+#define CPU_FEATURE_FSMULD         (1 << 10)
+#define CPU_FEATURE_HYPV           (1 << 11)
+#define CPU_FEATURE_CMT            (1 << 12)
+#define CPU_FEATURE_GL             (1 << 13)
+#define CPU_FEATURE_TA0_SHUTDOWN   (1 << 14) /* Shutdown on "ta 0x0" */
+#define CPU_FEATURE_ASR17          (1 << 15)
+#define CPU_FEATURE_CACHE_CTRL     (1 << 16)
+#define CPU_FEATURE_POWERDOWN      (1 << 17)
+#define CPU_FEATURE_CASA           (1 << 18)
+#define CPU_FEATURE_TA1_BREAKPOINT (1 << 19) /* Breakpoint on "ta 0x1" */
 
 #ifndef TARGET_SPARC64
 #define CPU_DEFAULT_FEATURES (CPU_FEATURE_FLOAT | CPU_FEATURE_SWAP |  \

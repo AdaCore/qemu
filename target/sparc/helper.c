@@ -37,6 +37,15 @@ void helper_raise_exception(CPUSPARCState *env, int tt)
     CPUState *cs = CPU(sparc_env_get_cpu(env));
 
     cs->exception_index = tt;
+
+#if !defined(CONFIG_USER_ONLY)
+    if (tt == (TT_TRAP + 1) &&
+        env->def.features & CPU_FEATURE_TA1_BREAKPOINT) {
+        /* GDB Breakpoint signal here */
+        cs->exception_index = EXCP_DEBUG;
+    }
+#endif
+
     cpu_loop_exit(cs);
 }
 
