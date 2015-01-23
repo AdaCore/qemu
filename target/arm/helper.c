@@ -17,6 +17,7 @@
 #include "qemu/host-utils.h"
 #include "qemu/main-loop.h"
 #include "qemu/timer.h"
+#include "chardev/char-fe.h"
 #include "qemu/bitops.h"
 #include "qemu/crc32c.h"
 #include "qemu/qemu-print.h"
@@ -28,6 +29,7 @@
 #include "sysemu/cpu-timers.h"
 #include "sysemu/kvm.h"
 #include "sysemu/tcg.h"
+#include "sysemu/sysemu.h"
 #include "qemu/range.h"
 #include "qapi/qapi-commands-machine-target.h"
 #include "qapi/error.h"
@@ -1889,6 +1891,20 @@ static CPAccessResult access_aa32_tid1(CPUARMState *env, const ARMCPRegInfo *ri,
     }
 
     return CP_ACCESS_OK;
+}
+
+static void dbgdtr_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                            uint64_t value)
+{
+    if (serial_hd(0) != NULL) {
+        qemu_chr_fe_write(serial_hd(0)->be, (uint8_t *)&value, 1);
+    }
+}
+
+static uint64_t dbgdtr_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    /* Read not implemented */
+    return 0;
 }
 
 static const ARMCPRegInfo v7_cp_reginfo[] = {
@@ -6074,6 +6090,10 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
     { .name = "DBGDSAR", .cp = 14, .crn = 2, .crm = 0, .opc1 = 0, .opc2 = 0,
       .access = PL0_R, .accessfn = access_tdra,
       .type = ARM_CP_CONST, .resetvalue = 0 },
+    { .name = "DBGDTR", .cp = 14, .crn = 0, .crm = 5, .opc1 = 0, .opc2 = 0,
+      .access = PL0_RW, .resetvalue = 0,
+      .writefn = dbgdtr_write,
+      .readfn = dbgdtr_read },
     /* Monitor debug system control register; the 32-bit alias is DBGDSCRext. */
     { .name = "MDSCR_EL1", .state = ARM_CP_STATE_BOTH,
       .cp = 14, .opc0 = 2, .opc1 = 0, .crn = 0, .crm = 2, .opc2 = 2,
