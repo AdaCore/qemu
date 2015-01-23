@@ -720,6 +720,19 @@ static uint64_t isr_read(CPUARMState *env, const ARMCPRegInfo *ri)
     return ret;
 }
 
+static void dbgdtr_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                            uint64_t value)
+{
+    /* Just put debug data on stdio */
+    printf("%c", (char)value);
+}
+
+static uint64_t dbgdtr_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    /* Read not implemented */
+    return 0;
+}
+
 static const ARMCPRegInfo v7_cp_reginfo[] = {
     /* DBGDRAR, DBGDSAR: always RAZ since we don't implement memory mapped
      * debug components
@@ -730,6 +743,11 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
       .access = PL0_R, .type = ARM_CP_CONST, .resetvalue = 0 },
     { .name = "DBGDSCR", .cp = 14, .crn = 0, .crm = 1, .opc1 = 0, .opc2 = 0,
       .access = PL0_R, .type = ARM_CP_CONST, .resetvalue = 0 },
+    { .name = "DBGDTR", .cp = 14, .crn = 0, .crm = 5, .opc1 = 0, .opc2 = 0,
+      .access = PL0_RW, .resetvalue = 0,
+      .writefn = dbgdtr_write,
+      .readfn = dbgdtr_read,
+    },
     /* the old v6 WFI, UNPREDICTABLE in v7 but we choose to NOP */
     { .name = "NOP", .cp = 15, .crn = 7, .crm = 0, .opc1 = 0, .opc2 = 4,
       .access = PL1_W, .type = ARM_CP_NOP },
