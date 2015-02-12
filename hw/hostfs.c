@@ -90,12 +90,13 @@ typedef struct hostfs {
     OBJECT_CHECK(hostfs, (obj), TYPE_HOSTFS_DEVICE)
 
 /* Syscall IDs */
-#define SYSCALL_OPEN   1
-#define SYSCALL_READ   2
-#define SYSCALL_WRITE  3
-#define SYSCALL_CLOSE  4
-#define SYSCALL_UNLINK 5
-#define SYSCALL_LSEEK  6
+#define SYSCALL_OPEN     1
+#define SYSCALL_READ     2
+#define SYSCALL_WRITE    3
+#define SYSCALL_CLOSE    4
+#define SYSCALL_UNLINK   5
+#define SYSCALL_LSEEK    6
+#define SYSCALL_SHUTDOWN 7
 
 /* HostFS open flags */
 #define HOSTFS_O_RDONLY (1 << 0)
@@ -224,6 +225,10 @@ static uint32_t do_syscall(hostfs *hfs)
     case SYSCALL_LSEEK:
         ret = lseek((int)arg1, (int)arg2, (int)arg3);
         trace_hostfs_lseek((int)arg1, (int)arg2, (int)arg3, ret);
+        return ret;
+        break;
+    case SYSCALL_SHUTDOWN:
+        qemu_system_shutdown_request();
         return ret;
         break;
     }
