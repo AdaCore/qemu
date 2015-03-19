@@ -2929,8 +2929,12 @@ static void rlimit_timer_tick(void *opaque)
         "print $pc",
         "x/16i $pc - 32",
         "info roms",
-        "info mtree",
-        "info tlb",
+
+        /* mtree and tlb are creating too much output and may cause freezes in
+         * excross.
+         */
+        /* "info mtree", */
+        /* "info tlb", */
         NULL,
     };
 
@@ -2941,7 +2945,7 @@ static void rlimit_timer_tick(void *opaque)
                                            false /* has_cpu_index */,
                                            0 /*cpu_index */,
                                            errp);
-        fprintf(stderr, "===============\n%s\n===============\n%s\n",
+        fprintf(stderr, "===== %s\n%s\n",
                 cmds[i], retval);
     }
 
