@@ -184,11 +184,15 @@ static uint32_t nvic_readl(nvic_state *s, uint32_t offset)
                However the counter is not reloaded until the next clock
                tick.  This is a hack to return zero during the first tick.  */
 
-            /* Hack disabled: This doesn't work with the way we use the timer in
-             * Ravenscar run-time.
+            /* The amount of time when the counter is at zero is so small that
+             * we consider it impossible to read the flag at 1 and also read
+             * counter at zero. So we change the hack to return the reload value
+             * during this period.
              */
-            /* if (val > s->systick.reload) */
-            /*     val = 0; */
+
+            if (val > s->systick.reload) {
+                val = s->systick.reload;
+            }
 
             return val;
         }
