@@ -1358,7 +1358,7 @@ static void stm32_init(QEMUMachineInitArgs *args)
 
     system_clock_scale = 6;
     flash_size = 1024; /* 1024K */
-    sram_size = 112; /* 112K */
+    sram_size = 192; /* 192K */
     pic = armv7m_init(address_space_mem,
                       flash_size, sram_size, kernel_filename, cpu_model);
 
