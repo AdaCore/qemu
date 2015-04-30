@@ -1377,7 +1377,7 @@ static int raw_create(const char *filename, QemuOpts *opts, Error **errp)
         error_setg_errno(errp, -result, "Could not create file");
     } else {
         if (nocow) {
-#ifdef __linux__
+#if defined(__linux__) && defined(FS_IOC_GETFLAGS)
             /* Set NOCOW flag to solve performance issue on fs like btrfs.
              * This is an optimisation. The FS_IOC_SETFLAGS ioctl return value
              * will be ignored since any failure of this operation should not
