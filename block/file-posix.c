@@ -2278,7 +2278,7 @@ raw_co_create(BlockdevCreateOptions *options, Error **errp)
     }
 
     if (file_opts->nocow) {
-#ifdef __linux__
+#if defined(__linux__)  && defined(FS_IOC_GETFLAGS)
         /* Set NOCOW flag to solve performance issue on fs like btrfs.
          * This is an optimisation. The FS_IOC_SETFLAGS ioctl return value
          * will be ignored since any failure of this operation should not
