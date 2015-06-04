@@ -3961,13 +3961,14 @@ static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
     TranslationBlock *tb;
 
     tb = s->tb;
+
     if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(n);
         gen_set_pc_im(s, dest);
-        tcg_gen_exit_tb((uintptr_t)tb + n);
+        tcg_gen_exit_tb((uintptr_t)tb | n);
     } else {
         gen_set_pc_im(s, dest);
-        tcg_gen_exit_tb(0);
+        tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH | n);
     }
 }
 
@@ -11488,7 +11489,7 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
         case DISAS_JUMP:
         case DISAS_UPDATE:
             /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(0);
+            tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH);
             break;
         case DISAS_TB_JUMP:
             /* nothing more to generate */
@@ -11498,7 +11499,7 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(0);
+            tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH);
             break;
         case DISAS_WFE:
             gen_helper_wfe(cpu_env);

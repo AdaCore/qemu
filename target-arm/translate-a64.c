@@ -256,7 +256,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
     if (use_goto_tb(s, n, dest)) {
         tcg_gen_goto_tb(n);
         gen_a64_set_pc_im(dest);
-        tcg_gen_exit_tb((intptr_t)tb + n);
+        tcg_gen_exit_tb((intptr_t)tb | TB_EXIT_NOPATCH | n);
         s->is_jmp = DISAS_TB_JUMP;
     } else {
         gen_a64_set_pc_im(dest);
@@ -265,7 +265,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
         } else if (s->singlestep_enabled) {
             gen_exception_internal(EXCP_DEBUG);
         } else {
-            tcg_gen_exit_tb(0);
+            tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH | n);
             s->is_jmp = DISAS_TB_JUMP;
         }
     }
@@ -11077,7 +11077,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
             /* fall through */
         case DISAS_JUMP:
             /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(0);
+            tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH);
             break;
         case DISAS_TB_JUMP:
         case DISAS_EXC:
@@ -11100,7 +11100,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(0);
+            tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH);
             break;
         }
     }
