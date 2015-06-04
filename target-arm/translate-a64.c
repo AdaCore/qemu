@@ -220,7 +220,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
         if (s->singlestep_enabled) {
             gen_exception(EXCP_DEBUG);
         }
-        tcg_gen_exit_tb(0);
+        tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH | n);
         s->is_jmp = DISAS_JUMP;
     }
 }
@@ -10406,7 +10406,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
             /* fall through */
         case DISAS_JUMP:
             /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(0);
+            tcg_gen_exit_tb((uintptr_t)tb | TB_EXIT_NOPATCH);
             break;
         case DISAS_TB_JUMP:
         case DISAS_EXC:
