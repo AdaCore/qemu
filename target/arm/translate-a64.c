@@ -39,6 +39,8 @@
 #include "translate-a64.h"
 #include "qemu/atomic128.h"
 
+#include "qemu-traces.h"
+
 static TCGv_i64 cpu_X[32];
 static TCGv_i64 cpu_pc;
 
@@ -466,7 +468,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
     if (use_goto_tb(s, n, dest)) {
         tcg_gen_goto_tb(n);
         gen_a64_set_pc_im(dest);
-        tcg_gen_exit_tb(tb, n);
+        tcg_gen_exit_tb(tb, TB_EXIT_NOPATCH | n);
         s->base.is_jmp = DISAS_NORETURN;
     } else {
         gen_a64_set_pc_im(dest);
@@ -475,7 +477,11 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
         } else if (s->base.singlestep_enabled) {
             gen_exception_internal(EXCP_DEBUG);
         } else {
-            tcg_gen_lookup_and_goto_ptr();
+            if (tracefile_enabled) {
+                tcg_gen_exit_tb(tb, TB_EXIT_NOPATCH | n);
+            } else {
+                tcg_gen_lookup_and_goto_ptr();
+            }
             s->base.is_jmp = DISAS_NORETURN;
         }
     }
@@ -14491,7 +14497,11 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             tcg_gen_exit_tb(NULL, 0);
             break;
         case DISAS_JUMP:
-            tcg_gen_lookup_and_goto_ptr();
+            if (!tracefile_enabled) {
+                tcg_gen_lookup_and_goto_ptr();
+            } else {
+                tcg_gen_exit_tb(dc->base.tb, TB_EXIT_NOPATCH);
+            }
             break;
         case DISAS_NORETURN:
         case DISAS_SWI:
@@ -14517,7 +14527,7 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(NULL, 0);
+            tcg_gen_exit_tb(dc->base.tb, TB_EXIT_NOPATCH);
             break;
         }
         }
