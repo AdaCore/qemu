@@ -472,7 +472,7 @@ static void wrsbc8641d_init(MachineState *args)
         }
     }
     if (bios_size < 0 || bios_size > BIOS_SIZE) {
-        hw_error("qemu: could not load PPC PREP bios '%s'\n", bios_name);
+        hw_error("qemu: could not load bios for wrsbc8641d '%s'\n", bios_name);
     }
     if (filename) {
         g_free(filename);
