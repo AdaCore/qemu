@@ -453,6 +453,8 @@ DEF_HELPER_2(xvrspim, void, env, i32)
 DEF_HELPER_2(xvrspip, void, env, i32)
 DEF_HELPER_2(xvrspiz, void, env, i32)
 
+DEF_HELPER_2(store_spefscr, void, env, i32)
+
 DEF_HELPER_2(efscfsi, i32, env, i32)
 DEF_HELPER_2(efscfui, i32, env, i32)
 DEF_HELPER_2(efscfuf, i32, env, i32)
