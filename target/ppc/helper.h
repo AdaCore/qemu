@@ -515,6 +515,8 @@ DEF_HELPER_4(xxextractuw, void, env, vsr, vsr, i32)
 DEF_HELPER_4(xxinsertw, void, env, vsr, vsr, i32)
 DEF_HELPER_3(xvxsigsp, void, env, vsr, vsr)
 
+DEF_HELPER_2(store_spefscr, void, env, tl)
+
 DEF_HELPER_2(efscfsi, i32, env, i32)
 DEF_HELPER_2(efscfui, i32, env, i32)
 DEF_HELPER_2(efscfuf, i32, env, i32)
