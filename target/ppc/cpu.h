@@ -932,6 +932,34 @@ enum {
 /* We don't support EGS and ELPID */
 #define EPID_MASK (EPID_EPID | EPID_EAS | EPID_EPR)
 
+/* SPE floating point status and control register. */
+#define SPEFSCR_SOVH	31
+#define SPEFSCR_OVH	30
+#define SPEFSCR_FGH	29
+#define SPEFSCR_FXH	28
+#define SPEFSCR_FINVH	27
+#define SPEFSCR_FDBZH	26
+#define SPEFSCR_FUNFH	25
+#define SPEFSCR_FOVFH	24
+#define SPEFSCR_FINXS	21
+#define SPEFSCR_FINVS	20
+#define SPEFSCR_FDBZS	19
+#define SPEFSCR_FUNFS	18
+#define SPEFSCR_FOVFS	17
+#define SPEFSCR_SOV	15
+#define SPEFSCR_OV	14
+#define SPEFSCR_FG	13
+#define SPEFSCR_FX	12
+#define SPEFSCR_FINV	11
+#define SPEFSCR_FDBZ	10
+#define SPEFSCR_FUNF	9
+#define SPEFSCR_FOVF	8
+#define SPEFSCR_FINXE	7
+#define SPEFSCR_FINVE	6
+#define SPEFSCR_FDBZE	5
+#define SPEFSCR_FUNFE	4
+#define SPEFSCR_FOVFE	3
+
 /*****************************************************************************/
 /* Server and Embedded Processor Control */
 

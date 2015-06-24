@@ -570,10 +570,7 @@ static void spr_read_spefscr(DisasContext *ctx, int gprn, int sprn)
 
 static void spr_write_spefscr(DisasContext *ctx, int sprn, int gprn)
 {
-    TCGv_i32 t0 = tcg_temp_new_i32();
-    tcg_gen_trunc_tl_i32(t0, cpu_gpr[gprn]);
-    tcg_gen_st_i32(t0, cpu_env, offsetof(CPUPPCState, spe_fscr));
-    tcg_temp_free_i32(t0);
+    gen_helper_store_spefscr(cpu_env, cpu_gpr[gprn]);
 }
 
 #if !defined(CONFIG_USER_ONLY)

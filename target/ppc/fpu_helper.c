@@ -1168,6 +1168,66 @@ void helper_fcmpo(CPUPPCState *env, uint64_t arg1, uint64_t arg2,
     }
 }
 
+#define SPE_PMIN32 0x00800000
+#define SPE_PMAX32 0x7f7fffff
+#define SPE_PZERO64 0x0ULL
+#define SPE_NZERO64 0x8000000000000000ULL
+#define SPE_PMIN64  0x0010000000000000ULL
+#define SPE_NMIN64  0x8010000000000000ULL
+#define SPE_PMAX64  0x7fefffffffffffffULL
+#define SPE_NMAX64  0xffefffffffffffffULL
+
+void helper_store_spefscr(CPUPPCState *env, target_ulong val)
+{
+  unsigned rnd;
+
+  env->spe_fscr = val;
+
+  /* For SPE, vec_status is used for fp emul.
+     Set rounding mode.  */
+  switch (val & 3)
+    {
+    case 0:
+      rnd = float_round_nearest_even;
+      break;
+    case 1:
+      rnd = float_round_to_zero;
+      break;
+    case 2:
+      rnd = float_round_up;
+      break;
+    case 3:
+    default:
+      rnd = float_round_down;
+      break;
+    }
+  set_float_rounding_mode (rnd, &env->vec_status);
+}
+
+static int float32_is_not_normal(float32 a)
+{
+  return float32_is_infinity(a)
+    || float32_is_any_nan(a)
+    || (float32_is_zero_or_denormal (a) && !float32_is_zero(a));
+}
+
+static int float64_is_not_normal(float64 a)
+{
+  return float64_is_infinity(a)
+    || float64_is_any_nan(a)
+    || (float64_is_zero_or_denormal (a) && !float64_is_zero(a));
+}
+
+static void spe_float_excp(CPUPPCState *env, unsigned exc)
+{
+    env->spe_fscr &= 0xc03e80ff;
+    env->spe_fscr |= exc;
+    env->spe_fscr |= ((exc >> 7) | (exc << 9)) & 0x001e0000;
+
+    if ((((exc >> 6) | (exc >> 22)) & 0x7c) & env->spe_fscr)
+	helper_raise_exception_err(env, POWERPC_EXCP_EFPDI, 0);
+}
+
 /* Single-precision floating-point conversions */
 static inline uint32_t efscfsi(CPUPPCState *env, uint32_t val)
 {
@@ -1381,12 +1441,43 @@ static inline uint32_t efsmul(CPUPPCState *env, uint32_t op1, uint32_t op2)
 
 static inline uint32_t efsdiv(CPUPPCState *env, uint32_t op1, uint32_t op2)
 {
-    CPU_FloatU u1, u2;
+    CPU_FloatU u1, u2, res;
+    unsigned exc;
 
     u1.l = op1;
     u2.l = op2;
-    u1.f = float32_div(u1.f, u2.f, &env->vec_status);
-    return u1.l;
+
+    /* Clear exception flags before new operation */
+    set_float_exception_flags(0, &env->vec_status);
+
+    res.f = float32_div(u1.f, u2.f, &env->vec_status);
+
+    if ((get_float_exception_flags(&env->vec_status) & float_flag_overflow)
+	|| float32_is_zero_or_denormal(u2.f)
+	|| ((float32_is_infinity(u1.f) || float32_is_any_nan(u1.f))
+	    && !float32_is_not_normal(u2.f))) {
+	res.l = SPE_PMAX32
+	    | ((float32_is_neg(u1.f) ^ float32_is_neg(u2.f)) << 31);
+    }
+    else if ((get_float_exception_flags(&env->vec_status)
+	      & float_flag_underflow)
+	     || (float32_is_infinity(u2.f) || float32_is_any_nan(u2.f))) {
+	res.l = 0 | ((float32_is_neg(u1.f) ^ float32_is_neg(u2.f)) << 31);
+    }
+
+    exc = 0;
+    if (unlikely(float32_is_not_normal(u1.f)
+		 || float32_is_not_normal(u2.f)))
+	exc |= (1 << SPEFSCR_FINV);
+    if (get_float_exception_flags(&env->vec_status) & float_flag_overflow)
+	exc |= (1 << SPEFSCR_FOVF);
+    if (get_float_exception_flags(&env->vec_status) & float_flag_underflow)
+	exc |= (1 << SPEFSCR_FUNF);
+    if (float32_is_zero(u2.f))
+	exc |= (1 << SPEFSCR_FDBZ);
+    if (exc)
+	spe_float_excp(env, exc);
+    return res.l;
 }
 
 #define HELPER_SPE_SINGLE_ARITH(name)                                   \
@@ -1732,12 +1823,42 @@ uint64_t helper_efdmul(CPUPPCState *env, uint64_t op1, uint64_t op2)
 
 uint64_t helper_efddiv(CPUPPCState *env, uint64_t op1, uint64_t op2)
 {
-    CPU_DoubleU u1, u2;
+    CPU_DoubleU u1, u2, res;
+    unsigned exc;
 
     u1.ll = op1;
     u2.ll = op2;
-    u1.d = float64_div(u1.d, u2.d, &env->vec_status);
-    return u1.ll;
+
+    /* Clear exception flags before new operation */
+    set_float_exception_flags(0, &env->vec_status);
+
+    res.d = float64_div(u1.d, u2.d, &env->vec_status);
+
+    if ((get_float_exception_flags(&env->vec_status) & float_flag_underflow)
+	|| float64_is_infinity(u2.d) || float64_is_any_nan(u2.d))
+	res.ll = (float64_is_neg(u1.d) != float64_is_neg(u2.d)) ?
+	    SPE_NZERO64 : SPE_PZERO64;
+    else if ((get_float_exception_flags(&env->vec_status)
+	      & float_flag_overflow)
+	     || float64_is_zero_or_denormal(u2.d)
+	     || (float64_is_infinity(u1.d) || float64_is_any_nan(u1.d)))
+	res.ll = (float64_is_neg(u1.d) != float64_is_neg(u2.d)) ?
+	    SPE_NMAX64 : SPE_PMAX64;
+
+    exc = 0;
+    if (unlikely(float64_is_not_normal(u1.d)
+		 || float64_is_not_normal(u2.d)))
+	exc |= (1 << SPEFSCR_FINV);
+    if (get_float_exception_flags(&env->vec_status) & float_flag_overflow)
+	exc |= (1 << SPEFSCR_FOVF);
+    if (get_float_exception_flags(&env->vec_status) & float_flag_underflow)
+	exc |= (1 << SPEFSCR_FUNF);
+    if (float64_is_zero(u2.d))
+	exc |= (1 << SPEFSCR_FDBZ);
+    if (exc)
+	spe_float_excp(env, exc);
+
+    return res.ll;
 }
 
 /* Double precision floating point helpers */
