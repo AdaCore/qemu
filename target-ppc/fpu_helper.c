@@ -1198,10 +1198,7 @@ static void spe_float_excp(CPUPPCState *env, unsigned exc)
     env->spe_fscr |= exc;
     env->spe_fscr |= ((exc >> 7) | (exc << 9)) & 0x001e0000;
 
-    if (exc & ((0x1001 << SPEFSCR_FINV)
-	       | (0x1001 << SPEFSCR_FUNF)
-	       | (0x1001 << SPEFSCR_FOVF)
-	       | (0x1001 << SPEFSCR_FDBZ)))
+    if ((((exc >> 6) | (exc >> 22)) & 0x7c) & env->spe_fscr)
 	helper_raise_exception_err(env, POWERPC_EXCP_EFPDI, 0);
 }
 
@@ -1823,7 +1820,7 @@ uint64_t helper_efddiv(CPUPPCState *env, uint64_t op1, uint64_t op2)
 	exc |= (1 << SPEFSCR_FOVF);
     if (get_float_exception_flags(&env->vec_status) & float_flag_underflow)
 	exc |= (1 << SPEFSCR_FUNF);
-    if (float32_is_zero(u2.d))
+    if (float64_is_zero(u2.d))
 	exc |= (1 << SPEFSCR_FDBZ);
     if (exc)
 	spe_float_excp(env, exc);
