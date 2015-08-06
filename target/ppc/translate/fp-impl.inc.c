@@ -38,6 +38,8 @@ static void gen_f##name(DisasContext *ctx)                                    \
         gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
         return;                                                               \
     }                                                                         \
+    /* NIP cannot be restored if the memory exception comes from an helper */ \
+    gen_update_nip(ctx, ctx->base.pc_next - 4);                               \
     gen_reset_fpstatus();                                                     \
     gen_helper_f##op(cpu_fpr[rD(ctx->opcode)], cpu_env,                       \
                      cpu_fpr[rA(ctx->opcode)],                                \
@@ -65,6 +67,8 @@ static void gen_f##name(DisasContext *ctx)                                    \
         gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
         return;                                                               \
     }                                                                         \
+    /* NIP cannot be restored if the memory exception comes from an helper */ \
+    gen_update_nip(ctx, ctx->base.pc_next - 4);                               \
     gen_reset_fpstatus();                                                     \
     gen_helper_f##op(cpu_fpr[rD(ctx->opcode)], cpu_env,                       \
                      cpu_fpr[rA(ctx->opcode)],                                \
