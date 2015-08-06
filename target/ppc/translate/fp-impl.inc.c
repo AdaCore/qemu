@@ -46,6 +46,8 @@ static void gen_f##name(DisasContext *ctx)                                    \
     t1 = tcg_temp_new_i64();                                                  \
     t2 = tcg_temp_new_i64();                                                  \
     t3 = tcg_temp_new_i64();                                                  \
+    /* NIP cannot be restored if the memory exception comes from an helper */ \
+    gen_update_nip(ctx, ctx->base.pc_next - 4);                               \
     gen_reset_fpstatus();                                                     \
     get_fpr(t0, rA(ctx->opcode));                                             \
     get_fpr(t1, rC(ctx->opcode));                                             \
@@ -84,6 +86,8 @@ static void gen_f##name(DisasContext *ctx)                                    \
     t0 = tcg_temp_new_i64();                                                  \
     t1 = tcg_temp_new_i64();                                                  \
     t2 = tcg_temp_new_i64();                                                  \
+    /* NIP cannot be restored if the memory exception comes from an helper */ \
+    gen_update_nip(ctx, ctx->base.pc_next - 4);                               \
     gen_reset_fpstatus();                                                     \
     get_fpr(t0, rA(ctx->opcode));                                             \
     get_fpr(t1, rB(ctx->opcode));                                             \
