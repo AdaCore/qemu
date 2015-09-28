@@ -219,7 +219,7 @@ static void leon3_generic_hw_init(MachineState *machine)
     grlib_apbpnp_create(0x800FF000);
 
     /* Allocate timers */
-    grlib_gptimer_create(0x80000300, 2, CPU_CLK, cpu_irqs, 6);
+    grlib_gptimer_create(0x80000300, 4, CPU_CLK, cpu_irqs, 6);
 
     /* Allocate uart */
     if (serial_hd(0)) {
