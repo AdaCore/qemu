@@ -134,8 +134,12 @@ static void write_mcm(void *opaque, hwaddr addr, uint64_t value, unsigned size)
     case 0x010:
         DPRINTF("%s: Writing to MCM PCR <= 0x%08x\n", __func__, value);
         if (value & (1 << 25)) {
-            DPRINTF("%s: Enabling Core 1\n", __func__);
-            cs->halted = 0;
+            if (cs != NULL) {
+                DPRINTF("%s: Enabling Core 1\n", __func__);
+                cs->halted = 0;
+            } else {
+                DPRINTF("%s: Core 1 is not installed on the board\n", __func__);
+            }
         }
         break;
     default:
@@ -150,8 +154,8 @@ static uint64_t read_mcm(void *opaque, hwaddr addr, unsigned size)
 
     switch (addr & 0xFFF) {
     case 0x010:
-        ret = (!CPU(ppc_cpus[0])->halted << 24) |
-              (!CPU(ppc_cpus[1])->halted << 25);
+        ret = (!(ppc_cpus[0] != NULL ? CPU(ppc_cpus[0])->halted : 0) << 24) |
+              (!(ppc_cpus[1] != NULL ? CPU(ppc_cpus[1])->halted : 0) << 25);
         break;
     default:
         DPRINTF("%s: Reading from unassigned : 0x%08x\n", __func__, addr +
@@ -520,7 +524,9 @@ static void wrsbc8641d_init(MachineState *args)
             cpu_physical_memory_write(PARAMS_ADDR, args->kernel_cmdline,
                                       strlen (args->kernel_cmdline) + 1);
         } else {
-            stb_phys(CPU(ppc_cpus[1])->as, PARAMS_ADDR, 0);
+            if (ppc_cpus[1] != NULL) {
+                stb_phys(CPU(ppc_cpus[1])->as, PARAMS_ADDR, 0);
+            }
         }
 
         /* Set read-only after writing command line */
