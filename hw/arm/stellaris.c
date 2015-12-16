@@ -1355,6 +1355,7 @@ static void stm32_init(MachineState *args)
     const char   *cpu_model         = args->cpu_model;
     const char   *kernel_filename   = args->kernel_filename;
     MemoryRegion *address_space_mem = get_system_memory();
+    MemoryRegion *ccm = g_new(MemoryRegion, 1);
     qemu_irq     *pic;
     int           sram_size;
     int           flash_size;
@@ -1365,6 +1366,10 @@ static void stm32_init(MachineState *args)
     sram_size = 192; /* 192K */
     pic = armv7m_init(address_space_mem,
                       flash_size, sram_size, kernel_filename, cpu_model);
+
+    memory_region_init_ram(ccm, NULL, "stm32f4.ccm", 64 * 1024);
+    vmstate_register_ram_global(ccm);
+    memory_region_add_subregion(address_space_mem, 0x10000000, ccm);
 
     dev = qdev_create(NULL, "stm32_PWR");
     qdev_init_nofail(dev);
