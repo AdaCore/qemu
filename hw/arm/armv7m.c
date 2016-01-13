@@ -13,6 +13,9 @@
 #include "elf.h"
 #include "sysemu/qtest.h"
 #include "qemu/error-report.h"
+#include "hw/hostfs.h"
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 /* Bitbanded IO.  Each word corresponds to a single bit.  */
 
@@ -265,6 +268,18 @@ qemu_irq *armv7m_init(MemoryRegion *address_space_mem,
     memory_region_add_subregion(address_space_mem, 0xfffff000, hack);
 
     qemu_register_reset(armv7m_reset, cpu);
+
+    /* HostFS */
+    hostfs_create(0x80001000, address_space_mem);
+
+    /* Initialize plug-ins */
+    plugin_init(pic, 128);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(pic, 128);
+    gnatbus_device_init();
+
     return pic;
 }
 
