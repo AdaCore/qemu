@@ -32,6 +32,7 @@
 #include "exec/address-spaces.h"
 #include "gnat-bus.h"
 #include "qemu-plugin.h"
+#include "hw/hostfs.h"
 
 /* #define DEBUG_TMS */
 
@@ -244,6 +245,8 @@ static void tms570_init(MachineState *args)
     gnatbus_master_init(pic, 64);
     gnatbus_device_init();
 
+    /* HostFS */
+    hostfs_create(0x80001000, sysmem);
 
     tms570_binfo.ram_size = ram_size;
     tms570_binfo.kernel_filename = args->kernel_filename;
