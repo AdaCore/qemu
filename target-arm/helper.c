@@ -5,6 +5,7 @@
 #include "qemu/host-utils.h"
 #include "sysemu/arch_init.h"
 #include "sysemu/sysemu.h"
+#include "sysemu/char.h"
 #include "qemu/bitops.h"
 #include "qemu/crc32c.h"
 #include "exec/cpu_ldst.h"
@@ -723,8 +724,9 @@ static uint64_t isr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 static void dbgdtr_write(CPUARMState *env, const ARMCPRegInfo *ri,
                             uint64_t value)
 {
-    /* Just put debug data on stdio */
-    printf("%c", (char)value);
+    if (serial_hds[0] != NULL) {
+        qemu_chr_fe_write(serial_hds[0], (uint8_t *)&value, 1);
+    }
 }
 
 static uint64_t dbgdtr_read(CPUARMState *env, const ARMCPRegInfo *ri)
