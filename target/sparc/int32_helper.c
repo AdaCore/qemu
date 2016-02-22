@@ -132,7 +132,7 @@ void sparc_cpu_do_interrupt(CPUState *cs)
 #if !defined(CONFIG_USER_ONLY)
     /* IRQ acknowledgment */
     if ((intno & ~15) == TT_EXTINT && env->qemu_irq_ack != NULL) {
-        env->qemu_irq_ack(env, env->irq_manager, intno);
+        env->qemu_irq_ack(env, intno);
     }
 #endif
 }
@@ -167,9 +167,9 @@ static void leon3_cache_control_int(CPUSPARCState *env)
     }
 }
 
-void leon3_irq_manager(CPUSPARCState *env, void *irq_manager, int intno)
+void leon3_irq_manager(CPUSPARCState *env, int intno)
 {
-    leon3_irq_ack(irq_manager, intno);
+    leon3_irq_ack(env, intno);
     leon3_cache_control_int(env);
 }
 #endif

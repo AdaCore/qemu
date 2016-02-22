@@ -57,8 +57,10 @@ typedef struct IRQMP {
 
     MemoryRegion iomem;
 
+    unsigned nr_cpus;
     void *set_pil_in;
-    void *set_pil_in_opaque;
+    void *start_cpu;
+    void *opaque;
 
     IRQMPState *state;
 } IRQMP;
@@ -67,6 +69,7 @@ struct IRQMPState {
     uint32_t level;
     uint32_t pending;
     uint32_t clear;
+    uint32_t mpstatus;
     uint32_t broadcast;
 
     uint32_t mask[IRQMP_MAX_CPU];
@@ -78,44 +81,43 @@ struct IRQMPState {
 
 static void grlib_irqmp_check_irqs(IRQMPState *state)
 {
-    uint32_t      pend   = 0;
-    uint32_t      level0 = 0;
-    uint32_t      level1 = 0;
     set_pil_in_fn set_pil_in;
+    int           i;
 
     assert(state != NULL);
     assert(state->parent != NULL);
 
-    /* IRQ for CPU 0 (no SMP support) */
-    pend = (state->pending | state->force[0])
-        & state->mask[0];
-
-    level0 = pend & ~state->level;
-    level1 = pend &  state->level;
-
-    trace_grlib_irqmp_check_irqs(state->pending, state->force[0],
-                                 state->mask[0], level1, level0);
-
     set_pil_in = (set_pil_in_fn)state->parent->set_pil_in;
 
-    /* Trigger level1 interrupt first and level0 if there is no level1 */
-    if (level1 != 0) {
-        set_pil_in(state->parent->set_pil_in_opaque, level1);
-    } else {
-        set_pil_in(state->parent->set_pil_in_opaque, level0);
+    for (i = 0; i < state->parent->nr_cpus; i++) {
+	uint32_t      pend   = 0;
+	uint32_t      level0 = 0;
+	uint32_t      level1 = 0;
+
+	/* IRQ for CPU i. */
+	pend = (state->pending | state->force[i]) & state->mask[i];
+
+	level0 = pend & ~state->level;
+	level1 = pend &  state->level;
+
+	trace_grlib_irqmp_check_irqs(state->pending, state->force[i],
+				     state->mask[i], level1, level0);
+
+	/* Trigger level1 interrupt first and level0 if there is no level1 */
+	set_pil_in(state->parent->opaque, i, level1 != 0 ? level1 : level0);
     }
 }
 
-static void grlib_irqmp_ack_mask(IRQMPState *state, uint32_t mask)
+static void grlib_irqmp_ack_mask(IRQMPState *state, int cpu, uint32_t mask)
 {
     /* Clear registers */
     state->pending  &= ~mask;
-    state->force[0] &= ~mask; /* Only CPU 0 (No SMP support) */
+    state->force[cpu] &= ~mask; /* Only CPU 0 (No SMP support) */
 
     grlib_irqmp_check_irqs(state);
 }
 
-void grlib_irqmp_ack(DeviceState *dev, int intno)
+void grlib_irqmp_ack(DeviceState *dev, int cpu, int intno)
 {
     IRQMP        *irqmp = GRLIB_IRQMP(dev);
     IRQMPState   *state;
@@ -129,7 +131,7 @@ void grlib_irqmp_ack(DeviceState *dev, int intno)
 
     trace_grlib_irqmp_ack(intno);
 
-    grlib_irqmp_ack_mask(state, mask);
+    grlib_irqmp_ack_mask(state, cpu, mask);
 }
 
 void grlib_irqmp_set_irq(void *opaque, int irq, int level)
@@ -184,9 +186,11 @@ static uint64_t grlib_irqmp_read(void *opaque, hwaddr addr,
         return state->force[0];
 
     case CLEAR_OFFSET:
-    case MP_STATUS_OFFSET:
         /* Always read as 0 */
         return 0;
+
+    case MP_STATUS_OFFSET:
+	return state->mpstatus;
 
     case BROADCAST_OFFSET:
         return state->broadcast;
@@ -228,6 +232,7 @@ static void grlib_irqmp_write(void *opaque, hwaddr addr,
 {
     IRQMP      *irqmp = opaque;
     IRQMPState *state;
+    int         i;
 
     assert(irqmp != NULL);
     state = irqmp->state;
@@ -260,7 +265,14 @@ static void grlib_irqmp_write(void *opaque, hwaddr addr,
         return;
 
     case MP_STATUS_OFFSET:
-        /* Read Only (no SMP support) */
+	value &= 0xffff;
+	for (i = 0; i < irqmp->nr_cpus; i++) {
+	    if ((value >> i) & 1) {
+		start_cpu_fn start_cpu = (start_cpu_fn)irqmp->start_cpu;
+		start_cpu (irqmp->opaque, i);
+		state->mpstatus &= ~(1 << i);
+	    }
+	}
         return;
 
     case BROADCAST_OFFSET:
@@ -327,6 +339,8 @@ static void grlib_irqmp_reset(DeviceState *d)
 
     memset(irqmp->state, 0, sizeof *irqmp->state);
     irqmp->state->parent = irqmp;
+    irqmp->state->mpstatus = ((irqmp->nr_cpus - 1) << 28)
+	| ((1 << irqmp->nr_cpus) - 2);
 }
 
 static void grlib_irqmp_init(Object *obj)
@@ -347,14 +361,16 @@ static void grlib_irqmp_realize(DeviceState *dev, Error **errp)
     IRQMP *irqmp = GRLIB_IRQMP(dev);
 
         /* Check parameters */
-    if (irqmp->set_pil_in == NULL) {
+    if (irqmp->set_pil_in == NULL || irqmp->nr_cpus > IRQMP_MAX_CPU) {
         error_setg(errp, "set_pil_in cannot be NULL.");
     }
 }
 
 static Property grlib_irqmp_properties[] = {
+    DEFINE_PROP_UINT32("nr-cpus", IRQMP, nr_cpus, 1),
     DEFINE_PROP_PTR("set_pil_in", IRQMP, set_pil_in),
-    DEFINE_PROP_PTR("set_pil_in_opaque", IRQMP, set_pil_in_opaque),
+    DEFINE_PROP_PTR("start_cpu", IRQMP, start_cpu),
+    DEFINE_PROP_PTR("opaque", IRQMP, opaque),
     DEFINE_PROP_END_OF_LIST(),
 };
 

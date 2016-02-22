@@ -530,11 +530,14 @@ struct CPUSPARCState {
 #endif
     sparc_def_t def;
 
+#if !defined(TARGET_SPARC64)
+    unsigned cpu_id;
     void *irq_manager;
-    void (*qemu_irq_ack)(CPUSPARCState *env, void *irq_manager, int intno);
+    void (*qemu_irq_ack)(CPUSPARCState *env, int intno);
 
     /* Leon3 cache control */
     uint32_t cache_control;
+#endif
 };
 
 /**
@@ -614,13 +617,13 @@ int cpu_cwp_dec(CPUSPARCState *env1, int cwp);
 void cpu_set_cwp(CPUSPARCState *env1, int new_cwp);
 
 /* int_helper.c */
-void leon3_irq_manager(CPUSPARCState *env, void *irq_manager, int intno);
+void leon3_irq_manager(CPUSPARCState *env, int intno);
 
 /* sun4m.c, sun4u.c */
 void cpu_check_irqs(CPUSPARCState *env);
 
 /* leon3.c */
-void leon3_irq_ack(void *irq_manager, int intno);
+void leon3_irq_ack(CPUSPARCState *env, int intno);
 
 #if defined (TARGET_SPARC64)
 
