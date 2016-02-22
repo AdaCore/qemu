@@ -3,6 +3,7 @@ DEF_HELPER_1(rett, void, env)
 DEF_HELPER_2(wrpsr, void, env, tl)
 DEF_HELPER_1(rdpsr, tl, env)
 DEF_HELPER_1(power_down, void, env)
+DEF_HELPER_1(rdasr17, tl, env)
 #else
 DEF_HELPER_2(wrpil, void, env, tl)
 DEF_HELPER_2(wrpstate, void, env, tl)
