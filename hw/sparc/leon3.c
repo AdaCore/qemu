@@ -48,43 +48,55 @@
 #define PROM_FILENAME        "u-boot.bin"
 
 #define MAX_PILS 16
+#define MAX_CPUs 4
 
-typedef struct ResetData {
-    SPARCCPU *cpu;
+typedef struct BoardData BoardData;
+
+struct BoardData {
+    SPARCCPU *cpu[MAX_CPUs];
     uint32_t  entry;            /* save kernel entry in case of reset */
-    target_ulong sp;            /* initial stack pointer */
-} ResetData;
 
-static void main_cpu_reset(void *opaque)
+    DeviceState *irqmp;
+    target_long reset_sp[MAX_CPUs]; 	/* initial stack pointer */
+};
+
+static void leon3_cpu_reset(void *opaque)
 {
-    ResetData *s   = (ResetData *)opaque;
-    CPUState *cpu = CPU(s->cpu);
-    CPUSPARCState  *env = &s->cpu->env;
+    SPARCCPU *sc = (SPARCCPU *)opaque;
+    CPUState *cpu = CPU(sc);
+    CPUSPARCState  *env = &sc->env;
+    BoardData      *b = (BoardData *)env->irq_manager;
 
     cpu_reset(cpu);
 
-    cpu->halted = 0;
-    env->pc     = s->entry;
-    env->npc    = s->entry + 4;
-    env->regbase[6] = s->sp;
-    if (env->pc) {	/* enable traps and FPU if running a RAM image */
+    cpu->halted = env->cpu_id != 0;
+    env->pc     = b->entry;
+    env->npc    = b->entry + 4;
+    env->regbase[6] = b->reset_sp[env->cpu_id];
+    if (env->pc && env->cpu_id == 0) {
+	/* enable traps and FPU if running a RAM image */
         env->psret = 1;
         env->psref = 1;
         env->wim = 2;
     }
 }
 
-void leon3_irq_ack(void *irq_manager, int intno)
+void leon3_irq_ack(CPUSPARCState *env, int intno)
 {
-    grlib_irqmp_ack((DeviceState *)irq_manager, intno);
+    BoardData *board = env->irq_manager;
+    grlib_irqmp_ack(board->irqmp, env->cpu_id, intno);
 }
 
-static void leon3_set_pil_in(void *opaque, uint32_t pil_in)
+static void leon3_set_pil_in(void *opaque, int cpuid, uint32_t pil_in)
 {
-    CPUSPARCState *env = (CPUSPARCState *)opaque;
-    CPUState *cs;
+    BoardData     *board = (BoardData *)opaque;
+    SPARCCPU      *sc = board->cpu[cpuid];
+    CPUSPARCState *env = &sc->env;
 
-    assert(env != NULL);
+    if (sc == NULL) {
+	/* CPU is not present. */
+	return;
+    }
 
     env->pil_in = pil_in;
 
@@ -98,53 +110,66 @@ static void leon3_set_pil_in(void *opaque, uint32_t pil_in)
 
                 env->interrupt_index = TT_EXTINT | i;
                 if (old_interrupt != env->interrupt_index) {
-                    cs = CPU(sparc_env_get_cpu(env));
                     trace_leon3_set_irq(i);
-                    cpu_interrupt(cs, CPU_INTERRUPT_HARD);
+                    cpu_interrupt(CPU(sc), CPU_INTERRUPT_HARD);
                 }
                 break;
             }
         }
     } else if (!env->pil_in && (env->interrupt_index & ~15) == TT_EXTINT) {
-        cs = CPU(sparc_env_get_cpu(env));
         trace_leon3_reset_irq(env->interrupt_index & 15);
         env->interrupt_index = 0;
-        cpu_reset_interrupt(cs, CPU_INTERRUPT_HARD);
+        cpu_reset_interrupt(CPU(sc), CPU_INTERRUPT_HARD);
     }
+}
+
+static void leon3_start_cpu(void *opaque, int cpuid)
+{
+    BoardData *board = (BoardData *)opaque;
+    CPUState  *cs = CPU(board->cpu[cpuid]);
+
+    cs->halted = 0;
 }
 
 static void leon3_generic_hw_init(MachineState *machine)
 {
     ram_addr_t ram_size = machine->ram_size;
     const char *kernel_filename = machine->kernel_filename;
+    BoardData *b;
     SPARCCPU *cpu;
-    CPUSPARCState   *env;
     MemoryRegion *address_space_mem = get_system_memory();
     MemoryRegion *ram = g_new(MemoryRegion, 1);
     MemoryRegion *prom = g_new(MemoryRegion, 1);
     int         ret;
+    int         i;
     char       *filename;
     qemu_irq   *cpu_irqs = NULL;
     int         bios_size;
     int         prom_size;
-    ResetData  *reset_info;
 
     /* Init CPU */
-    cpu = SPARC_CPU(cpu_create(machine->cpu_type));
-    env = &cpu->env;
+    b = g_new(BoardData, 1);
 
-    cpu_sparc_set_id(env, 0);
+    for (i = 0; i < smp_cpus; i++) {
+        cpu = SPARC_CPU(cpu_create(machine->cpu_type));
+	if (cpu == NULL) {
+	    fprintf(stderr, "qemu: Unable to find Sparc CPU definition\n");
+	    exit(1);
+	}
+	b->cpu[i] = cpu;
 
-    /* Reset data */
-    reset_info        = g_malloc0(sizeof(ResetData));
-    reset_info->cpu   = cpu;
-    reset_info->sp    = 0x40000000 + ram_size;
-    qemu_register_reset(main_cpu_reset, reset_info);
+	cpu_sparc_set_id(&cpu->env, i);
+	cpu->env.irq_manager = b;
+	cpu->env.qemu_irq_ack = leon3_irq_manager;
+
+	b->reset_sp[i] = 0x40000000 + ram_size - (0x4000 * i);
+
+        qemu_register_reset(leon3_cpu_reset, cpu);
+    }
 
     /* Allocate IRQ manager */
-    grlib_irqmp_create(0x80000200, env, &cpu_irqs, MAX_PILS, &leon3_set_pil_in);
-
-    env->qemu_irq_ack = leon3_irq_manager;
+    b->irqmp = grlib_irqmp_create(0x80000200, smp_cpus, &cpu_irqs, MAX_PILS,
+				  leon3_set_pil_in, leon3_start_cpu, b);
 
     /* Allocate RAM */
     if (ram_size > 1 * GiB) {
@@ -206,9 +231,7 @@ static void leon3_generic_hw_init(MachineState *machine)
         }
         if (bios_size <= 0) {
             /* If there is no bios/monitor, start the application.  */
-            env->pc = entry;
-            env->npc = entry + 4;
-            reset_info->entry = entry;
+            b->entry = entry;
         }
     }
 
@@ -239,6 +262,7 @@ static void leon3_generic_machine_init(MachineClass *mc)
     mc->desc = "Leon-3 generic";
     mc->init = leon3_generic_hw_init;
     mc->default_cpu_type = SPARC_CPU_TYPE_NAME("LEON3");
+    mc->max_cpus = MAX_CPUs;
 }
 
 DEFINE_MACHINE("leon3_generic", leon3_generic_machine_init)

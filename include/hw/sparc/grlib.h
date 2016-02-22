@@ -34,36 +34,37 @@
 
 /* IRQMP */
 
-typedef void (*set_pil_in_fn) (void *opaque, uint32_t pil_in);
+typedef void (*set_pil_in_fn) (void *opaque, int cpu, uint32_t pil_in);
+typedef void (*start_cpu_fn) (void *opaque, int cpu);
 
 void grlib_irqmp_set_irq(void *opaque, int irq, int level);
 
-void grlib_irqmp_ack(DeviceState *dev, int intno);
+void grlib_irqmp_ack(DeviceState *dev, int cpu, int intno);
 
 static inline
 DeviceState *grlib_irqmp_create(hwaddr   base,
-                                CPUSPARCState            *env,
+				unsigned             nr_cpus,
                                 qemu_irq           **cpu_irqs,
                                 uint32_t             nr_irqs,
-                                set_pil_in_fn        set_pil_in)
+                                set_pil_in_fn        set_pil_in,
+				start_cpu_fn         start_cpu,
+				void                *opaque)
 {
     DeviceState *dev;
 
     assert(cpu_irqs != NULL);
 
     dev = qdev_create(NULL, "grlib,irqmp");
+    qdev_prop_set_uint32(dev, "nr-cpus", nr_cpus);
     qdev_prop_set_ptr(dev, "set_pil_in", set_pil_in);
-    qdev_prop_set_ptr(dev, "set_pil_in_opaque", env);
+    qdev_prop_set_ptr(dev, "start_cpu", start_cpu);
+    qdev_prop_set_ptr(dev, "opaque", opaque);
 
     qdev_init_nofail(dev);
 
-    env->irq_manager = dev;
-
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, base);
 
-    *cpu_irqs = qemu_allocate_irqs(grlib_irqmp_set_irq,
-                                   dev,
-                                   nr_irqs);
+    *cpu_irqs = qemu_allocate_irqs(grlib_irqmp_set_irq, dev, nr_irqs);
 
     return dev;
 }

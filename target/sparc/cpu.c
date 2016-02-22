@@ -197,6 +197,7 @@ void cpu_sparc_set_id(CPUSPARCState *env, unsigned int cpu)
 {
 #if !defined(TARGET_SPARC64)
     env->mxccregs[7] = ((cpu + 8) & 0xf) << 24;
+    env->cpu_id = cpu;
 #endif
 }
 

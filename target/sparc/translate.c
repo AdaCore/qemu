@@ -3374,10 +3374,9 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn)
                                        microSPARC II */
                     /* Read Asr17 */
                     if (rs1 == 0x11 && dc->def->features & CPU_FEATURE_ASR17) {
-                        TCGv t = gen_dest_gpr(dc, rd);
                         /* Read Asr17 for a Leon3 monoprocessor */
-                        tcg_gen_movi_tl(t, (1 << 8) | (dc->def->nwindows - 1));
-                        gen_store_gpr(dc, rd, t);
+			gen_helper_rdasr17(cpu_dst, cpu_env);
+                        gen_store_gpr(dc, rd, cpu_dst);
                         break;
                     }
 #endif
