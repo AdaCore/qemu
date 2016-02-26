@@ -69,7 +69,8 @@ static void leon3_cpu_reset(void *opaque)
     env->pc     = b->entry;
     env->npc    = b->entry + 4;
     env->regbase[6] = b->reset_sp[env->cpu_id];
-    if (env->pc) {	/* enable traps and FPU if running a RAM image */
+    if (env->pc && env->cpu_id == 0) {
+	/* enable traps and FPU if running a RAM image */
         env->psret = 1;
         env->psref = 1;
         env->wim = 2;
