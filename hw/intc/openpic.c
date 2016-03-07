@@ -588,8 +588,14 @@ static void openpic_gbl_write(void *opaque, hwaddr addr, uint64_t val,
     case 0x1020: /* GCR */
         openpic_gcr_write(opp, val);
         break;
-    case 0x1080: /* VIR */
+    case 0x1080: /* CTPR */
+        opp->dst[0].ctpr = val & 0x0000000F;
+        for (idx = 0; idx < opp->max_irq; idx++) {
+            openpic_update_irq(opp, idx);
+        }
         break;
+    /* case 0x1080: /\* VIR *\/ */
+    /*     break; */
     case 0x1090: /* PIR */
         for (idx = 0; idx < opp->nb_cpus; idx++) {
             if ((val & (1 << idx)) && !(opp->pir & (1 << idx))) {
@@ -604,8 +610,10 @@ static void openpic_gbl_write(void *opaque, hwaddr addr, uint64_t val,
         }
         opp->pir = val;
         break;
-    case 0x10A0: /* IPI_IVPR */
     case 0x10B0:
+        openpic_cpu_write_internal(opp, addr, val, get_current_cpu());
+        break;
+    case 0x10A0: /* IPI_IVPR */
     case 0x10C0:
     case 0x10D0:
         {
@@ -655,6 +663,9 @@ static uint64_t openpic_gbl_read(void *opaque, hwaddr addr, unsigned len)
     case 0x80:
     case 0x90:
     case 0xA0:
+        DPRINTF("%s: IACK\n", __func__);
+        retval = openpic_cpu_read_internal(opp, addr, get_current_cpu());
+        break;
     case 0xB0:
         retval = openpic_cpu_read_internal(opp, addr, get_current_cpu());
         break;
@@ -1006,6 +1017,10 @@ static void openpic_cpu_write_internal(void *opaque, hwaddr addr,
             qemu_irq_raise(dst->irqs[OPENPIC_OUTPUT_INT]);
         }
 
+        for (idx = 0; idx < opp->max_irq; idx++) {
+            openpic_update_irq(opp, idx);
+        }
+
         break;
     case 0x90: /* WHOAMI */
         /* Read-only register */
@@ -1133,6 +1148,15 @@ static uint32_t openpic_cpu_read_internal(void *opaque, hwaddr addr,
     case 0xB0: /* EOI */
         retval = 0;
         break;
+#if OPENPIC_MAX_IPI > 0
+    case 0x40: /* IDE */
+    case 0x50:
+        DPRINTF("%s: IDE\n", __func__);
+        idx = (addr - 0x40) >> 4;
+        retval = read_IRQreg_idr(opp, opp->irq_ipi0 + idx);
+
+        break;
+#endif
     default:
         break;
     }

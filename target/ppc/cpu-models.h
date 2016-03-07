@@ -216,6 +216,7 @@ enum {
 #define CPU_POWERPC_MPC8568E         CPU_POWERPC_e500v2_v22
 #define CPU_POWERPC_MPC8572          CPU_POWERPC_e500v2_v30
 #define CPU_POWERPC_MPC8572E         CPU_POWERPC_e500v2_v30
+#define CPU_POWERPC_P2010            CPU_POWERPC_e500v2_v30
     /* e600 family */
     /* e600 cores */
     CPU_POWERPC_e600               = 0x80040010,
@@ -492,6 +493,7 @@ enum {
     POWERPC_SVR_8568E              = 0x807D0011 | POWERPC_SVR_E500,
     POWERPC_SVR_8572               = 0x80E00010 | POWERPC_SVR_E500,
     POWERPC_SVR_8572E              = 0x80E80010 | POWERPC_SVR_E500,
+    POWERPC_SVR_P2010              = 0x80E30020 | POWERPC_SVR_E500,
     POWERPC_SVR_8610               = 0x80A00011,
     POWERPC_SVR_8641               = 0x80900021,
     POWERPC_SVR_8641D              = 0x80900121,
