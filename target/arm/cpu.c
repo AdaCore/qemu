@@ -290,6 +290,14 @@ static void arm_cpu_reset(CPUState *s)
         /* Load the initial SP and PC from offset 0 and 4 in the vector table */
         vecbase = env->v7m.vecbase[env->v7m.secure];
         rom = rom_ptr(vecbase, 8);
+
+        if (!rom) {
+            /* HACK: Give a chance to load from 0x08000000 if the ROM was not
+             *       found.
+             */
+            rom = rom_ptr(0x08000000, 8);
+        }
+
         if (rom) {
             /* Address zero is covered by ROM which hasn't yet been
              * copied into physical memory.
