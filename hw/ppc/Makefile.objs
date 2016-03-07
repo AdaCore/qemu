@@ -28,5 +28,6 @@ obj-$(CONFIG_MAC_NEWWORLD) += mac_newworld.o
 # e500
 obj-$(CONFIG_E500) += e500.o mpc8544ds.o e500plat.o
 obj-$(CONFIG_E500) += mpc8544_guts.o ppce500_spin.o
+obj-$(CONFIG_E500) += p2010rdb.o
 # PowerPC 440 Xilinx ML507 reference board.
 obj-$(CONFIG_VIRTEX) += virtex_ml507.o
