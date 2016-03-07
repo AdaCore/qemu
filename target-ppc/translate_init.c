@@ -8290,6 +8290,7 @@ POWERPC_FAMILY(POWER8)(ObjectClass *oc, void *data)
     pcc->l1_icache_size = 0x8000;
     pcc->interrupts_big_endian = ppc_cpu_interrupts_big_endian_lpcr;
 }
+
 #endif /* defined (TARGET_PPC64) */
 
 
