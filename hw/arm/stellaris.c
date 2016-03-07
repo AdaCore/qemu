@@ -9,6 +9,7 @@
 
 #include "qemu/osdep.h"
 #include "qapi/error.h"
+#include "sysemu/sysemu.h"
 #include "hw/sysbus.h"
 #include "hw/ssi/ssi.h"
 #include "hw/arm/arm.h"
@@ -953,7 +954,7 @@ static void stellaris_adc_fifo_write(stellaris_adc_state *s, int n,
 {
     int head;
 
-    /* TODO: Real hardware has limited size FIFOs.  We have a full 16 entry 
+    /* TODO: Real hardware has limited size FIFOs.  We have a full 16 entry
        FIFO fir each sequencer.  */
     head = (s->fifo[n].state >> 4) & 0xf;
     if (s->fifo[n].state & STELLARIS_ADC_FIFO_FULL) {
@@ -1401,6 +1402,59 @@ static const TypeInfo lm3s811evb_type = {
     .class_init = lm3s811evb_class_init,
 };
 
+static void stm32_init(MachineState *args)
+{
+    const char   *cpu_model         = args->cpu_model;
+    const char   *kernel_filename   = args->kernel_filename;
+    MemoryRegion *system_memory = get_system_memory();
+    MemoryRegion *sram = g_new(MemoryRegion, 1);
+    MemoryRegion *flash = g_new(MemoryRegion, 1);
+    MemoryRegion *flash_mirror = g_new(MemoryRegion, 1);
+    MemoryRegion *ccm = g_new(MemoryRegion, 1);
+    DeviceState  *nvic;
+
+    int           sram_size;
+    int           flash_size;
+    DeviceState  *dev;
+
+    system_clock_scale = 6;
+    flash_size = 1024 * 1024; /* 1024K */
+    sram_size = 192 * 1024; /* 192K */
+
+    /* Flash programming is done via the SCU, so pretend it is ROM.  */
+    memory_region_init_ram(flash, NULL, "stm32f4.flash", flash_size,
+                           &error_abort);
+    vmstate_register_ram_global(flash);
+    memory_region_set_readonly(flash, true);
+    memory_region_add_subregion(system_memory, 0, flash);
+
+    memory_region_init_alias(flash_mirror, NULL, "stm32f4.flash_mirror",
+                             flash, 0, flash_size);
+    memory_region_add_subregion(system_memory, 0x08000000, flash_mirror);
+
+    memory_region_init_ram(sram, NULL, "stm32f4.sram", sram_size,
+                           &error_abort);
+    vmstate_register_ram_global(sram);
+    memory_region_add_subregion(system_memory, 0x20000000, sram);
+
+    memory_region_init_ram(ccm, NULL, "stm32f4.ccm", 64 * 1024,
+                           &error_abort);
+    vmstate_register_ram_global(ccm);
+    memory_region_add_subregion(system_memory, 0x10000000, ccm);
+
+    nvic = armv7m_init(system_memory,
+                       flash_size, 128, kernel_filename, cpu_model);
+
+    /* UART */
+    if (serial_hds[0]) {
+        dev = qdev_create(NULL, "stm32_UART");
+        qdev_prop_set_chr(dev, "chrdev", serial_hds[0]);
+        qdev_init_nofail(dev);
+        sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0x40011000);
+        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, qdev_get_gpio_in(nvic, 7));
+    }
+}
+
 static void lm3s6965evb_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -1415,10 +1469,25 @@ static const TypeInfo lm3s6965evb_type = {
     .class_init = lm3s6965evb_class_init,
 };
 
+static void stm32_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+
+    mc->desc = "stm32";
+    mc->init = stm32_init;
+}
+
+static const TypeInfo stm32_type = {
+    .name = MACHINE_TYPE_NAME("stm32"),
+    .parent = TYPE_MACHINE,
+    .class_init = stm32_class_init,
+};
+
 static void stellaris_machine_init(void)
 {
     type_register_static(&lm3s811evb_type);
     type_register_static(&lm3s6965evb_type);
+    type_register_static(&stm32_type);
 }
 
 type_init(stellaris_machine_init)

@@ -17,6 +17,9 @@
 #include "elf.h"
 #include "sysemu/qtest.h"
 #include "qemu/error-report.h"
+#include "hw/hostfs.h"
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 /* Bitbanded IO.  Each word corresponds to a single bit.  */
 
@@ -176,6 +179,8 @@ DeviceState *armv7m_init(MemoryRegion *system_memory, int mem_size, int num_irq,
     ARMCPU *cpu;
     CPUARMState *env;
     DeviceState *nvic;
+    qemu_irq *pic = g_new(qemu_irq, num_irq);
+    int i;
     int image_size;
     uint64_t entry;
     uint64_t lowaddr;
@@ -233,6 +238,23 @@ DeviceState *armv7m_init(MemoryRegion *system_memory, int mem_size, int num_irq,
     memory_region_add_subregion(system_memory, 0xfffff000, hack);
 
     qemu_register_reset(armv7m_reset, cpu);
+
+    /* HostFS */
+    hostfs_create(0x80001000, system_memory);
+
+
+    for (i = 0; i < num_irq; i++) {
+        pic[i] = qdev_get_gpio_in(nvic, i);
+    }
+
+    /* Initialize plug-ins */
+    plugin_init(pic, 128);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(pic, 128);
+    gnatbus_device_init();
+
     return nvic;
 }
 
