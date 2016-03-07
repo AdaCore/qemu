@@ -1286,6 +1286,7 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
 
     MemoryRegion *sram = g_new(MemoryRegion, 1);
     MemoryRegion *flash = g_new(MemoryRegion, 1);
+    MemoryRegion *flash_mirror = g_new(MemoryRegion, 1);
     MemoryRegion *system_memory = get_system_memory();
 
     flash_size = (((board->dc0 & 0xffff) + 1) << 1) * 1024;
@@ -1296,6 +1297,9 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
                            &error_fatal);
     memory_region_set_readonly(flash, true);
     memory_region_add_subregion(system_memory, 0, flash);
+
+    memory_region_init_alias(flash_mirror, NULL, "stellaris.flash_mirror",
+                             flash, 0, flash_size);
 
     memory_region_init_ram(sram, NULL, "stellaris.sram", sram_size,
                            &error_fatal);
