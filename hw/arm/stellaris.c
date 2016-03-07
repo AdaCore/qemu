@@ -7,6 +7,7 @@
  * This code is licensed under the GPL.
  */
 
+#include "sysemu/sysemu.h"
 #include "hw/sysbus.h"
 #include "hw/ssi.h"
 #include "hw/arm/arm.h"
@@ -1366,6 +1367,66 @@ static void lm3s6965evb_init(MachineState *machine)
     stellaris_init(kernel_filename, cpu_model, &stellaris_boards[1]);
 }
 
+static void stm32_init(MachineState *args)
+{
+
+    const char   *cpu_model         = args->cpu_model;
+    const char   *kernel_filename   = args->kernel_filename;
+    MemoryRegion *system_memory = get_system_memory();
+    MemoryRegion *sram = g_new(MemoryRegion, 1);
+    MemoryRegion *flash = g_new(MemoryRegion, 1);
+    MemoryRegion *flash_mirror = g_new(MemoryRegion, 1);
+    MemoryRegion *ccm = g_new(MemoryRegion, 1);
+    qemu_irq     *pic;
+    int           sram_size;
+    int           flash_size;
+    DeviceState  *dev;
+
+    system_clock_scale = 6;
+    flash_size = 1024 * 1024; /* 1024K */
+    sram_size = 192 * 1024; /* 192K */
+
+    /* Flash programming is done via the SCU, so pretend it is ROM.  */
+    memory_region_init_ram(flash, NULL, "stm32f4.flash", flash_size,
+                           &error_abort);
+    vmstate_register_ram_global(flash);
+    memory_region_set_readonly(flash, true);
+    memory_region_add_subregion(system_memory, 0, flash);
+
+    memory_region_init_alias(flash_mirror, NULL, "stm32f4.flash_mirror",
+                             flash, 0, flash_size);
+    memory_region_add_subregion(system_memory, 0x08000000, flash_mirror);
+
+    memory_region_init_ram(sram, NULL, "stm32f4.sram", sram_size,
+                           &error_abort);
+    vmstate_register_ram_global(sram);
+    memory_region_add_subregion(system_memory, 0x20000000, sram);
+
+    memory_region_init_ram(ccm, NULL, "stm32f4.ccm", 64 * 1024,
+                           &error_abort);
+    vmstate_register_ram_global(ccm);
+    memory_region_add_subregion(system_memory, 0x10000000, ccm);
+
+    pic = armv7m_init(system_memory,
+                      flash_size, 128, kernel_filename, cpu_model);
+
+    /* UART */
+    if (serial_hds[0]) {
+        dev = qdev_create(NULL, "stm32_UART");
+        qdev_prop_set_chr(dev, "chrdev", serial_hds[0]);
+        qdev_init_nofail(dev);
+        sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0x40011000);
+        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, pic[7]);
+    }
+}
+
+static QEMUMachine stm32_machine = {
+    .name = "stm32",
+    .desc = "stm32",
+    .init = stm32_init,
+};
+
+
 static QEMUMachine lm3s811evb_machine = {
     .name = "lm3s811evb",
     .desc = "Stellaris LM3S811EVB",
@@ -1382,6 +1443,7 @@ static void stellaris_machine_init(void)
 {
     qemu_register_machine(&lm3s811evb_machine);
     qemu_register_machine(&lm3s6965evb_machine);
+    qemu_register_machine(&stm32_machine);
 }
 
 machine_init(stellaris_machine_init);
