@@ -1410,6 +1410,15 @@ static void stm32_init(MachineState *args)
     pic = armv7m_init(system_memory,
                       flash_size, 128, kernel_filename, cpu_model);
 
+
+    dev = qdev_create(NULL, "stm32_PWR");
+    qdev_init_nofail(dev);
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0x40007000);
+
+    dev = qdev_create(NULL, "stm32_RCC");
+    qdev_init_nofail(dev);
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0x40023800);
+
     /* UART */
     if (serial_hds[0]) {
         dev = qdev_create(NULL, "stm32_UART");
