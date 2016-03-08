@@ -123,5 +123,8 @@ config ARMSSE_MHU
 config MUSCA
     bool
 
+config STM32
+    bool
+
 config TMS570
     bool
