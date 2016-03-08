@@ -525,5 +525,8 @@ config ARMSSE
     select SSE_COUNTER
     select SSE_TIMER
 
+config STM32
+    bool
+
 config TMS570
     bool
