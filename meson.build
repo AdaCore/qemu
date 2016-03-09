@@ -2976,6 +2976,7 @@ if have_system
     'ebpf',
     'hw/9pfs',
     'hw/acpi',
+    'hw/adacore',
     'hw/adc',
     'hw/alpha',
     'hw/arm',
