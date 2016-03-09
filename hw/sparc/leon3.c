@@ -1,7 +1,7 @@
 /*
  * QEMU Leon3 System Emulator
  *
- * Copyright (c) 2010-2011 AdaCore
+ * Copyright (c) 2010-2018 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,8 @@
 #include "elf.h"
 #include "trace.h"
 #include "exec/address-spaces.h"
+#include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
 
 #include "hw/sparc/grlib.h"
 
@@ -212,6 +214,13 @@ static void leon3_generic_hw_init(MachineState *machine)
     if (serial_hd(0)) {
         grlib_apbuart_create(0x80000100, serial_hd(0), cpu_irqs[3]);
     }
+
+    /* HostFS */
+    hostfs_create(0x80001000, get_system_memory());
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(cpu_irqs, MAX_PILS);
+    gnatbus_device_init();
 }
 
 static void leon3_generic_machine_init(MachineClass *mc)
