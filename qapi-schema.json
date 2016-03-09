@@ -2898,7 +2898,8 @@
 #
 # Since: 1.4
 ##
-{ 'struct': 'ChardevHostdev', 'data': { 'device' : 'str' } }
+{ 'struct': 'ChardevHostdev', 'data': { 'device' : 'str',
+                                      '*server'  : 'bool' } }
 
 ##
 # @ChardevSocket:

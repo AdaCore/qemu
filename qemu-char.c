@@ -854,10 +854,10 @@ static GSourceFuncs io_watch_poll_funcs = {
 };
 
 /* Can only be used for read */
-static guint io_add_watch_poll(GIOChannel *channel,
-                               IOCanReadHandler *fd_can_read,
-                               GIOFunc fd_read,
-                               gpointer user_data)
+guint io_add_watch_poll(GIOChannel *channel,
+                        IOCanReadHandler *fd_can_read,
+                        GIOFunc fd_read,
+                        gpointer user_data)
 {
     IOWatchPoll *iwp;
     int tag;
@@ -874,7 +874,7 @@ static guint io_add_watch_poll(GIOChannel *channel,
     return tag;
 }
 
-static void io_remove_watch_poll(guint tag)
+void io_remove_watch_poll(guint tag)
 {
     GSource *source;
     IOWatchPoll *iwp;
@@ -1834,17 +1834,6 @@ static CharDriverState *qemu_chr_open_pp_fd(int fd)
 #else /* _WIN32 */
 
 typedef struct {
-    int max_size;
-    HANDLE hcom, hrecv, hsend;
-    OVERLAPPED orecv;
-    BOOL fpipe;
-    DWORD len;
-
-    /* Protected by the CharDriverState chr_write_lock.  */
-    OVERLAPPED osend;
-} WinCharState;
-
-typedef struct {
     HANDLE  hStdIn;
     HANDLE  hInputReadyEvent;
     HANDLE  hInputDoneEvent;
@@ -2142,10 +2131,78 @@ static int win_chr_pipe_init(CharDriverState *chr, const char *filename)
     return -1;
 }
 
+static int win_chr_pipe_client_init(CharDriverState *chr, const char *filename)
+{
+    WinCharState *s = chr->opaque;
+    BOOL   fSuccess = FALSE;
+    DWORD  dwMode;
+    char openname[256];
+
+    s->fpipe = TRUE;
+
+    s->hsend = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (!s->hsend) {
+        fprintf(stderr, "Failed CreateEvent\n");
+        goto fail;
+    }
+    s->hrecv = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (!s->hrecv) {
+        fprintf(stderr, "Failed CreateEvent\n");
+        goto fail;
+    }
+    snprintf(openname, sizeof(openname), "\\\\.\\pipe\\%s", filename);
+    s->hcom = CreateFile(
+        openname,               /* pipe name */
+        GENERIC_READ |          /* read and write access */
+        GENERIC_WRITE,
+        0,                      /* no sharing */
+        NULL,                   /* default security attributes */
+        OPEN_EXISTING,          /* opens existing pipe */
+        0,                      /* default attributes */
+        NULL);                  /* no template file */
+
+    /* Break if the pipe handle is valid. */
+
+    if (s->hcom == INVALID_HANDLE_VALUE) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            fprintf(stderr, "Failed CreateFile '%s' (FILE_NOT_FOUND)\n",
+                    openname);
+        } else {
+            fprintf(stderr, "Failed CreateFile '%s' (%lu)\n", openname,
+                    GetLastError());
+        }
+        s->hcom = NULL;
+        goto fail;
+    }
+
+    /* The pipe connected; change to message-read mode. */
+
+    dwMode = PIPE_READMODE_MESSAGE;
+    fSuccess = SetNamedPipeHandleState(
+        s->hcom,                /* pipe handle */
+        &dwMode,                /* new pipe mode */
+        NULL,                   /* don't set maximum bytes */
+        NULL);                  /* don't set maximum time */
+
+    if (!fSuccess) {
+        printf("SetNamedPipeHandleState failed. GLE=%d\n", GetLastError());
+        s->hcom = NULL;
+        goto fail;
+    }
+
+    qemu_add_polling_cb(win_chr_pipe_poll, chr);
+    return 0;
+
+ fail:
+    win_chr_close(chr);
+    return -1;
+}
+
 
 static CharDriverState *qemu_chr_open_pipe(ChardevHostdev *opts)
 {
     const char *filename = opts->device;
+    const int is_server  = opts->server;
     CharDriverState *chr;
     WinCharState *s;
 
@@ -2155,10 +2212,18 @@ static CharDriverState *qemu_chr_open_pipe(ChardevHostdev *opts)
     chr->chr_write = win_chr_write;
     chr->chr_close = win_chr_close;
 
-    if (win_chr_pipe_init(chr, filename) < 0) {
-        g_free(s);
-        g_free(chr);
-        return NULL;
+    if (is_server) {
+        if (win_chr_pipe_init(chr, filename) < 0) {
+            g_free(s);
+            g_free(chr);
+            return NULL;
+        }
+    } else {
+        if (win_chr_pipe_client_init(chr, filename) < 0) {
+            g_free(s);
+            g_free(chr);
+            return NULL;
+        }
     }
     return chr;
 }
@@ -2506,30 +2571,6 @@ static CharDriverState *qemu_chr_open_udp_fd(int fd)
 /***********************************************************/
 /* TCP Net console */
 
-typedef struct {
-
-    GIOChannel *chan, *listen_chan;
-    guint listen_tag;
-    int fd, listen_fd;
-    int connected;
-    int max_size;
-    int do_telnetopt;
-    int do_nodelay;
-    int is_unix;
-    int *read_msgfds;
-    int read_msgfds_num;
-    int *write_msgfds;
-    int write_msgfds_num;
-
-    SocketAddress *addr;
-    bool is_listen;
-    bool is_telnet;
-
-    guint reconnect_timer;
-    int64_t reconnect_time;
-    bool connect_err_reported;
-} TCPCharDriver;
-
 static gboolean socket_reconnect_timeout(gpointer opaque);
 
 static void qemu_chr_socket_restart_timer(CharDriverState *chr)
@@ -2621,7 +2662,7 @@ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
     }
 }
 
-static int tcp_chr_read_poll(void *opaque)
+int tcp_chr_read_poll(void *opaque)
 {
     CharDriverState *chr = opaque;
     TCPCharDriver *s = chr->opaque;
@@ -2775,7 +2816,7 @@ static void unix_process_msgfd(CharDriverState *chr, struct msghdr *msg)
     }
 }
 
-static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
 {
     TCPCharDriver *s = chr->opaque;
     struct msghdr msg = { NULL, };
@@ -2809,7 +2850,7 @@ static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
     return ret;
 }
 #else
-static ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len)
 {
     TCPCharDriver *s = chr->opaque;
     ssize_t ret;
@@ -2850,7 +2891,7 @@ static void tcp_chr_disconnect(CharDriverState *chr)
     }
 }
 
-static gboolean tcp_chr_read(GIOChannel *chan, GIOCondition cond, void *opaque)
+gboolean tcp_chr_read(GIOChannel *chan, GIOCondition cond, void *opaque)
 {
     CharDriverState *chr = opaque;
     TCPCharDriver *s = chr->opaque;
@@ -3374,6 +3415,20 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename)
         qemu_opt_set(opts, "path", p, &error_abort);
         return opts;
     }
+    if (strstart(filename, "pipe:", &p)) {
+        qemu_opt_set(opts, "backend", "pipe", &error_abort);
+        qemu_opt_set(opts, "path", p, &error_abort);
+        qemu_opt_set_bool(opts, "server", TRUE, &error_abort);
+        return opts;
+    }
+#ifdef _WIN32
+    if (strstart(filename, "pipe_client:", &p)) {
+        qemu_opt_set(opts, "backend", "pipe");
+        qemu_opt_set(opts, "path", p);
+        qemu_opt_set_bool(opts, "server", FALSE);
+        return opts;
+    }
+#endif
     if (strstart(filename, "tcp:", &p) ||
         strstart(filename, "telnet:", &p)) {
         if (sscanf(p, "%64[^:]:%32[^,]%n", host, port, &pos) < 2) {
@@ -3502,6 +3557,7 @@ static void qemu_chr_parse_pipe(QemuOpts *opts, ChardevBackend *backend,
     }
     backend->pipe = g_new0(ChardevHostdev, 1);
     backend->pipe->device = g_strdup(device);
+    backend->pipe->server = qemu_opt_get_bool(opts, "server", 1);
 }
 
 static void qemu_chr_parse_ringbuf(QemuOpts *opts, ChardevBackend *backend,
@@ -3759,8 +3815,11 @@ CharDriverState *qemu_chr_new(const char *label, const char *filename, void (*in
     }
 
     opts = qemu_chr_parse_compat(label, filename);
-    if (!opts)
+    if (!opts) {
+        fprintf(stderr, "chardev:  qemu_chr_parse_compat error \"%s\"\n",
+                filename);
         return NULL;
+    }
 
     chr = qemu_chr_new_from_opts(opts, init, &err);
     if (err) {

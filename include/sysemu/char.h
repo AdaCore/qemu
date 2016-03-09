@@ -368,4 +368,54 @@ typedef CharDriverState *(VcHandler)(ChardevVC *vc);
 
 void register_vc_handler(VcHandler *handler);
 CharDriverState *vc_init(ChardevVC *vc);
+
+/* async I/O support */
+
+void io_remove_watch_poll(guint tag);
+guint io_add_watch_poll(GIOChannel *channel,
+                        IOCanReadHandler *fd_can_read,
+                        GIOFunc fd_read,
+                        gpointer user_data);
+
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len);
+gboolean tcp_chr_read(GIOChannel *chan, GIOCondition cond, void *opaque);
+int tcp_chr_read_poll(void *opaque);
+
+typedef struct {
+
+    GIOChannel *chan, *listen_chan;
+    guint listen_tag;
+    int fd, listen_fd;
+    int connected;
+    int max_size;
+    int do_telnetopt;
+    int do_nodelay;
+    int is_unix;
+    int *read_msgfds;
+    int read_msgfds_num;
+    int *write_msgfds;
+    int write_msgfds_num;
+
+    SocketAddress *addr;
+    bool is_listen;
+    bool is_telnet;
+
+    guint reconnect_timer;
+    int64_t reconnect_time;
+    bool connect_err_reported;
+} TCPCharDriver;
+
+#ifdef _WIN32
+typedef struct {
+    int max_size;
+    HANDLE hcom, hrecv, hsend;
+    OVERLAPPED orecv;
+    BOOL fpipe;
+    DWORD len;
+
+    /* Protected by the CharDriverState chr_write_lock.  */
+    OVERLAPPED osend;
+} WinCharState;
+#endif
+
 #endif

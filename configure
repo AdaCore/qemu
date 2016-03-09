@@ -693,6 +693,7 @@ Haiku)
   vhost_net="yes"
   vhost_scsi="yes"
   QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$(pwd)/linux-headers $QEMU_INCLUDES"
+  LIBS="$LIBS -ldl"
 ;;
 esac
 
@@ -730,7 +731,14 @@ if test "$mingw32" = "yes" ; then
   datadir="\${prefix}"
   qemu_docdir="\${prefix}"
   bindir="\${prefix}"
+  includedir="\${prefix}"
   sysconfdir="\${prefix}"
+#  mandir="\${prefix}/share/man"
+#  datadir="\${prefix}/share/qemu"
+#  qemu_docdir="\${prefix}/share/doc/qemu"
+#  bindir="\${prefix}/bin"
+#  includedir="\${prefix}/include/qemu"
+#  sysconfdir="\${prefix}/etc"
   local_statedir=
   confsuffix=""
   libs_qga="-lws2_32 -lwinmm -lpowrprof -liphlpapi $libs_qga"
@@ -819,6 +827,8 @@ for opt do
   --with-confsuffix=*) confsuffix="$optarg"
   ;;
   --docdir=*) qemu_docdir="$optarg"
+  ;;
+  --includedir=*) includedir="$optarg"
   ;;
   --sysconfdir=*) sysconfdir="$optarg"
   ;;
@@ -1279,6 +1289,7 @@ Advanced options (experts only):
   --sysconfdir=PATH        install config in PATH$confsuffix
   --localstatedir=PATH     install local state in PATH (set at runtime on win32)
   --with-confsuffix=SUFFIX suffix for QEMU data inside datadir/libdir/sysconfdir [$confsuffix]
+  --includedir=PATH        install plug-in interface in PATH
   --enable-debug           enable common debug build options
   --disable-strip          disable stripping binaries
   --disable-werror         disable compilation abort on warning

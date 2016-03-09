@@ -123,6 +123,9 @@ int main(int argc, char **argv)
 #include "exec/semihost.h"
 #include "crypto/init.h"
 
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
+
 #define MAX_VIRTIO_CONSOLES 1
 #define MAX_SCLP_CONSOLES 1
 
@@ -3975,6 +3978,12 @@ int main(int argc, char **argv, char **envp)
                     fprintf(stderr, "open %s: %s\n", optarg, strerror(errno));
                     exit(1);
                 }
+                break;
+            case QEMU_OPTION_plugin:
+                plugin_save_optargs(optarg);
+                break;
+            case QEMU_OPTION_gnatbus:
+                gnatbus_save_optargs(optarg);
                 break;
             default:
                 os_parse_cmd_args(popt->index, optarg);

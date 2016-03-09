@@ -449,6 +449,8 @@ endif
 	for d in $(TARGET_DIRS); do \
 	$(MAKE) $(SUBDIR_MAKEFLAGS) TARGET_DIR=$$d/ -C $$d $@ || exit 1 ; \
         done
+	$(INSTALL_DIR) "$(DESTDIR)$(includedir)"
+	$(INSTALL_DATA) $(SRC_PATH)/qemu_plugin_interface.h "$(DESTDIR)$(includedir)"
 
 # various test targets
 test speed: all

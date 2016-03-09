@@ -3573,6 +3573,24 @@ to the RNG daemon.
 ETEXI
 
 
+DEF("plug-in", HAS_ARG, QEMU_OPTION_plugin, \
+    "-plug-ins plugin1=opt1,plugin2=opt2...\n"
+    "                Load Qemu plug-ins.\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -plug-ins plugin1=opt1,plugin2=opt2...
+Load Qemu plug-ins.
+ETEXI
+
+DEF("gnatbus", HAS_ARG, QEMU_OPTION_gnatbus, \
+    "-gnatbus device_host:device_port[,device_host:device_port]\n"
+    "                Connect GnatBus Devices.\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -gnatbus socket:device_host:device_port
+Connect a GnatBus Device
+ETEXI
+
 HXCOMM This is the last statement. Insert new options before this line!
 STEXI
 @end table
