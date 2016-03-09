@@ -5038,4 +5038,13 @@ SRST
     Timeout to connect GNATBus devices.
 ERST
 
+DEF("host-cpu-affinity", HAS_ARG, QEMU_OPTION_host_cpu_affinity, \
+    "-host-cpu-affinity mask(hexadecimal)\n"
+    "                Set CPU affinity mask for Qemu process.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-host-cpu-affinity mask(hexadecimal)``
+    Set CPU affinity mask for Qemu process.
+ERST
+
 HXCOMM This is the last statement. Insert new options before this line!
