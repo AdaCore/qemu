@@ -3838,7 +3838,7 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
                 gen_debug_exception(ctx);
             }
         }
-        tcg_gen_exit_tb(0);
+        tcg_gen_exit_tb((long)tb + TB_EXIT_NOPATCH + n);
     }
 }
 
@@ -3948,7 +3948,7 @@ static inline void gen_bcond(DisasContext *ctx, int type)
         } else {
             tcg_gen_andi_tl(cpu_nip, target, ~3);
         }
-        tcg_gen_exit_tb(0);
+        tcg_gen_exit_tb((long)ctx->tb + TB_EXIT_NOPATCH);
         gen_set_label(l1);
         gen_update_nip(ctx, ctx->nip);
         tcg_gen_exit_tb(0);

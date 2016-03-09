@@ -125,6 +125,7 @@ int main(int argc, char **argv)
 
 #include "qemu-plugin.h"
 #include "gnat-bus.h"
+#include "qemu-traces.h"
 
 #define MAX_VIRTIO_CONSOLES 1
 #define MAX_SCLP_CONSOLES 1
@@ -3984,6 +3985,9 @@ int main(int argc, char **argv, char **envp)
                 break;
             case QEMU_OPTION_gnatbus:
                 gnatbus_save_optargs(optarg);
+                break;
+            case QEMU_OPTION_exec_trace:
+                trace_init(optarg);
                 break;
             default:
                 os_parse_cmd_args(popt->index, optarg);

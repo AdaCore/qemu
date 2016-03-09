@@ -28,6 +28,13 @@
 #include "exec/memory-internal.h"
 #include "qemu/rcu.h"
 #include "exec/tb-hash.h"
+#include "qemu-traces.h"
+#include "qemu-decision_map.h"
+
+static void trace_before_exec(TranslationBlock *);
+static void trace_after_exec(unsigned long);
+static void trace_at_fault(CPUArchState *e);
+/* #define DEBUG_TRACE */
 
 /* -icount align implementation. */
 
@@ -197,7 +204,24 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
 #endif /* DEBUG_DISAS */
 
     cpu->can_do_io = 0;
+
+    if (tracefile_enabled) {
+        trace_before_exec(cpu->current_tb);
+    }
+
     next_tb = tcg_qemu_tb_exec(env, tb_ptr);
+
+    if (tracefile_enabled) {
+        trace_after_exec(next_tb);
+    }
+
+    if (next_tb & TB_EXIT_NOPATCH) {
+        /* The flag TB_EXIT_NOPATCH means that next_tb should be
+         * 0 after tracing.
+         */
+        next_tb = 0;
+    }
+
     cpu->can_do_io = 1;
     trace_exec_tb_exit((void *) (next_tb & ~TB_EXIT_MASK),
                        next_tb & TB_EXIT_MASK);
@@ -498,9 +522,13 @@ int cpu_exec(CPUState *cpu)
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
                    jump. */
-                if (next_tb != 0 && tb->page_addr[1] == -1) {
-                    tb_add_jump((TranslationBlock *)(next_tb & ~TB_EXIT_MASK),
-                                next_tb & TB_EXIT_MASK, tb);
+                TranslationBlock *patch_tb =
+                    (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
+
+                if ((patch_tb != NULL) && tb->page_addr[1] == -1 &&
+                    !tracefile_history_for_tb(patch_tb)) {
+
+                    tb_add_jump(patch_tb, next_tb & TB_EXIT_MASK, tb);
                 }
                 have_tb_lock = false;
                 spin_unlock(&tcg_ctx.tb_ctx.tb_lock);
@@ -514,8 +542,10 @@ int cpu_exec(CPUState *cpu)
                 if (likely(!cpu->exit_request)) {
                     trace_exec_tb(tb, tb->pc);
                     tc_ptr = tb->tc_ptr;
+
                     /* execute the generated code */
                     next_tb = cpu_tb_exec(cpu, tc_ptr);
+
                     switch (next_tb & TB_EXIT_MASK) {
                     case TB_EXIT_REQUESTED:
                         /* Something asked us to stop executing
@@ -571,6 +601,10 @@ int cpu_exec(CPUState *cpu)
             x86_cpu = X86_CPU(cpu);
             env = &x86_cpu->env;
 #endif
+            if (tracefile_enabled) {
+                trace_at_fault(cpu->env_ptr);
+            }
+
             if (have_tb_lock) {
                 spin_unlock(&tcg_ctx.tb_ctx.tb_lock);
                 have_tb_lock = false;
@@ -584,4 +618,112 @@ int cpu_exec(CPUState *cpu)
     /* fail safe : never use current_cpu outside cpu_exec() */
     current_cpu = NULL;
     return ret;
+}
+
+static TranslationBlock *trace_current_tb;
+
+static void trace_before_exec(TranslationBlock *tb)
+{
+#ifdef DEBUG_TRACE
+    printf("From " TARGET_FMT_lx " - "
+           TARGET_FMT_lx "\n", tb->pc, tb->pc + tb->size - 1);
+#endif
+    trace_current_tb = tb;
+}
+
+/* TB is the tb we jumped to, LAST_TB (if not null) is the last executed tb.  */
+static void trace_after_exec(unsigned long next_tb)
+{
+    TranslationBlock *last_tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
+    int exit_val = next_tb & TB_EXIT_MASK;
+    int br = exit_val & (TB_EXIT_IDX1 | TB_EXIT_IDX0);
+
+    if (exit_val == TB_EXIT_ICOUNT_EXPIRED || exit_val == TB_EXIT_REQUESTED) {
+        /* Those two values mean that the TB was not executed, see tcg.h for
+         * details.
+         */
+        return;
+    }
+
+
+#ifdef DEBUG_TRACE
+    printf("... to " TARGET_FMT_lx " (" TARGET_FMT_lx ")",
+           trace_current_tb->pc + trace_current_tb->size - 1, env->nip);
+    if (last_tb) {
+        printf(" (last_ip=" TARGET_FMT_lx ", tflags=%04x)",
+               last_tb->pc + last_tb->size - 1, last_tb->tflags);
+    }
+    printf("[br=%d tb->tflags=%04x, op=%04x]\n",
+           br, trace_current_tb->tflags, trace_current->op);
+#endif
+
+    if (last_tb) {
+        /* Last instruction is a branch (because last_tb is set).  */
+        /* If last_tb != tb, then this is a threaded execution and tb has
+           already been executed.  */
+        unsigned char op = (1 << br);
+
+        if (last_tb == trace_current_tb) {
+            op |= TRACE_OP_BLOCK;
+        }
+
+        if ((last_tb->tflags & op) == op
+            && !tracefile_history_for_tb(last_tb)) {
+            return;
+        }
+
+        trace_current->pc = last_tb->pc;
+        trace_current->size = last_tb->size;
+        trace_current->op = op;
+        last_tb->tflags |= op;
+    } else {
+        /* Note: if last_tb is not set, we don't know if we exited from tb
+           or not.  We just know that tb has been executed and the last
+           instruction was not a branch.  */
+        if (trace_current_tb->tflags & TRACE_OP_BLOCK) {
+            return;
+        }
+        trace_current->pc = trace_current_tb->pc;
+        trace_current->size = trace_current_tb->size;
+        trace_current->op = TRACE_OP_BLOCK;
+        trace_current_tb->tflags |= TRACE_OP_BLOCK;
+    }
+    trace_push_entry();
+}
+
+static void trace_at_fault(CPUArchState *e)
+{
+    target_ulong cs_base, pc;
+    int flags;
+
+    cpu_get_tb_cpu_state(e, &pc, &cs_base, &flags);
+
+#ifdef DEBUG_TRACE
+    printf("... fault at " TARGET_FMT_lx "\n", pc);
+#endif
+    if (trace_current_tb
+        && pc >= trace_current_tb->pc
+        && pc < trace_current_tb->pc + trace_current_tb->size) {
+        if (!tracefile_history_for_tb(trace_current_tb)
+            && (trace_current_tb->tflags & TRACE_OP_BLOCK)) {
+            return;
+        }
+        trace_current->pc = trace_current_tb->pc;
+        trace_current->op = TRACE_OP_FAULT;
+        trace_current->size = pc - trace_current->pc;
+        if (trace_current->size == trace_current_tb->size) {
+            trace_current->op = TRACE_OP_FAULT | TRACE_OP_BLOCK;
+        }
+    } else {
+        if (trace_current_tb &&
+            !tracefile_history_for_tb(trace_current_tb)) {
+            /* Discard single fault.  */
+            return;
+        }
+        trace_current->pc = pc;
+        trace_current->size = 0;
+        trace_current->op = TRACE_OP_FAULT;
+    }
+
+    trace_push_entry();
 }

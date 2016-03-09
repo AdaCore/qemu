@@ -3572,6 +3572,14 @@ to the RNG daemon.
 
 ETEXI
 
+DEF("exec-trace", HAS_ARG, QEMU_OPTION_exec_trace, \
+    "-exec-trace filename"
+    "                Enable execution traces generation to filename.\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -exec-trace filename
+Write execution traces to filename.
+ETEXI
 
 DEF("plug-in", HAS_ARG, QEMU_OPTION_plugin, \
     "-plug-ins plugin1=opt1,plugin2=opt2...\n"

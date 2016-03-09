@@ -69,6 +69,7 @@ int __clone2(int (*fn)(void *), void *child_stack_base,
 #ifdef CONFIG_TIMERFD
 #include <sys/timerfd.h>
 #endif
+#include "qemu-traces.h"
 #ifdef TARGET_GPROF
 #include <sys/gmon.h>
 #endif
@@ -5620,6 +5621,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         _mcleanup();
 #endif
         gdb_exit(cpu_env, arg1);
+        trace_cleanup();
         _exit(arg1);
         ret = 0; /* avoid warning */
         break;
@@ -7481,6 +7483,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         _mcleanup();
 #endif
         gdb_exit(cpu_env, arg1);
+        trace_cleanup();
         ret = get_errno(exit_group(arg1));
         break;
 #endif

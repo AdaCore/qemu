@@ -174,7 +174,8 @@ struct TranslationBlock {
        jmp_first */
     struct TranslationBlock *jmp_next[2];
     struct TranslationBlock *jmp_first;
-};
+    uint32_t tflags;
+} __attribute__ ((aligned(8)));
 
 #include "exec/spinlock.h"
 
