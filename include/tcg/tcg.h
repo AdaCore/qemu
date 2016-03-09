@@ -1189,11 +1189,20 @@ static inline size_t tcg_current_code_size(TCGContext *s)
  * to this default (which just calls the prologue.code emitted by
  * tcg_target_qemu_prologue()).
  */
-#define TB_EXIT_MASK      3
+/* This value is set to 3 in vanilla QEMU.
+ * We set 7 because we need and extra bit in the mask.
+ */
+#define TB_EXIT_MASK      7
 #define TB_EXIT_IDX0      0
 #define TB_EXIT_IDX1      1
 #define TB_EXIT_IDXMAX    1
 #define TB_EXIT_REQUESTED 3
+#define TB_EXIT_ICOUNT_EXPIRED 2
+
+#define TB_EXIT_NOPATCH 4
+/* When this flag is set, it means tb should be 0, but we want to keep the tb
+ * value for tracing purposes. So after tracing tb should be set to 0.
+ */
 
 #ifdef CONFIG_TCG_INTERPRETER
 uintptr_t tcg_qemu_tb_exec(CPUArchState *env, const void *tb_ptr);

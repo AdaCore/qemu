@@ -124,11 +124,13 @@
 #include "qapi/qapi-visit-qom.h"
 #include "qapi/qapi-commands-ui.h"
 #include "qapi/qmp/qdict.h"
+#include "qapi/qapi-commands-misc.h"
 #include "qapi/qmp/qerror.h"
 #include "sysemu/iothread.h"
 #include "qemu/guest-random.h"
 
 #include "config-host.h"
+#include "qemu-traces.h"
 
 #define MAX_VIRTIO_CONSOLES 1
 
@@ -3785,6 +3787,12 @@ void qemu_init(int argc, char **argv, char **envp)
                     exit(1);
                 }
                 quick_monitor_cmd = optarg;
+                break;
+            case QEMU_OPTION_exec_trace:
+                exec_trace_init(optarg);
+                break;
+            case QEMU_OPTION_exec_trace_limit:
+                exec_trace_limit(optarg);
                 break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {

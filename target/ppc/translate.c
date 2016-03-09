@@ -39,6 +39,7 @@
 
 #include "qemu/qemu-print.h"
 #include "qapi/error.h"
+#include "qemu-traces.h"
 
 #define CPU_SINGLE_STEP 0x1
 #define CPU_BRANCH_STEP 0x2

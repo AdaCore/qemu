@@ -2876,6 +2876,8 @@ common_ss.add(files('cpus-common.c'))
 
 subdir('softmmu')
 
+specific_ss.add(files('qemu-traces.c'))
+
 common_ss.add(capstone)
 specific_ss.add(files('cpu.c', 'disas.c', 'gdbstub.c'), capstone)
 

@@ -532,7 +532,10 @@ struct TranslationBlock {
     uintptr_t jmp_list_head;
     uintptr_t jmp_list_next[2];
     uintptr_t jmp_dest[2];
-};
+
+    /* QEMU trace flags */
+    uint32_t tflags;
+} __attribute__ ((aligned(8)));
 
 /* Hide the qatomic_read to make code a little easier on the eyes */
 static inline uint32_t tb_cflags(const TranslationBlock *tb)

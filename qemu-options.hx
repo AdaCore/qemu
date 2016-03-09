@@ -5491,6 +5491,23 @@ SRST
             (qemu) qom-set /objects/iothread1 poll-max-ns 100000
 ERST
 
+DEF("exec-trace", HAS_ARG, QEMU_OPTION_exec_trace,
+    "-exec-trace filename\n"
+    "                Enable execution traces generation to filename.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-exec-trace filename``
+    Write execution traces to filename.
+ERST
+
+DEF("exec-trace-limit", HAS_ARG, QEMU_OPTION_exec_trace_limit, \
+    "-exec-trace-limit size\n"
+    "                Enable execution traces limit.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-exec-trace-limit size``
+    Limit the size of the execution traces.
+ERST
 
 DEF("rlimit", HAS_ARG, QEMU_OPTION_rlimit, \
     "-rlimit time(in second)\n"

@@ -42,6 +42,7 @@
 #include "exec/exec-all.h"
 #include "exec/gdbstub.h"
 #include "tcg/tcg.h"
+#include "qemu-traces.h"
 #include "qemu/timer.h"
 #include "qemu/envlist.h"
 #include "qemu/guest-random.h"
@@ -394,6 +395,11 @@ static void handle_arg_strace(const char *arg)
     enable_strace = true;
 }
 
+static void handle_arg_exec_trace(const char *arg)
+{
+    qemu_trace_init(arg);
+}
+
 static void handle_arg_version(const char *arg)
 {
     printf("qemu-" TARGET_NAME " version " QEMU_FULL_VERSION
@@ -477,6 +483,8 @@ static const struct qemu_argument arg_table[] = {
     {"plugin",     "QEMU_PLUGIN",      true,  handle_arg_plugin,
      "",           "[file=]<file>[,<argname>=<argvalue>]"},
 #endif
+    {"exec-trace", "QEMU_EXEC_TRACE",  true,  handle_arg_exec_trace,
+     "",           "log execution trace"},
     {"version",    "QEMU_VERSION",     false, handle_arg_version,
      "",           "display version information and exit"},
 #if defined(TARGET_XTENSA)

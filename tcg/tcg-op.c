@@ -28,6 +28,8 @@
 #include "tcg/tcg-op.h"
 #include "tcg/tcg-mo.h"
 #include "exec/plugin-gen.h"
+#include "qemu-traces.h"
+#include "qemu/log.h"
 
 /* Reduce the number of ifdefs below.  This assumes that all uses of
    TCGV_HIGH and TCGV_LOW are properly protected by a conditional that
@@ -2715,15 +2717,25 @@ void tcg_gen_exit_tb(const TranslationBlock *tb, unsigned idx)
 
     if (tb == NULL) {
         tcg_debug_assert(idx == 0);
-    } else if (idx <= TB_EXIT_IDXMAX) {
-#ifdef CONFIG_DEBUG_TCG
-        /* This is an exit following a goto_tb.  Verify that we have
-           seen this numbered exit before, via tcg_gen_goto_tb.  */
-        tcg_debug_assert(tcg_ctx->goto_tb_issue_mask & (1 << idx));
-#endif
     } else {
-        /* This is an exit via the exitreq label.  */
-        tcg_debug_assert(idx == TB_EXIT_REQUESTED);
+        if (idx | TB_EXIT_NOPATCH) {
+            /* This is allowed to happen with a number unlike
+             * TB_EXIT_REQUESTED
+             */
+        } else if (idx <= TB_EXIT_IDXMAX) {
+#ifdef CONFIG_DEBUG_TCG
+            /* This is an exit following a goto_tb.  Verify that we have
+               seen this numbered exit before, via tcg_gen_goto_tb.  */
+            tcg_debug_assert(tcg_ctx->goto_tb_issue_mask & (1 << idx));
+#endif
+            /* When not chaining, exit without indicating a link.  */
+            if (qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+                val = 0;
+            }
+        } else {
+            /* This is an exit via the exitreq label.  */
+            tcg_debug_assert(idx == TB_EXIT_REQUESTED);
+        }
     }
 
     plugin_gen_disable_mem_helpers();
