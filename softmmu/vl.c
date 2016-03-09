@@ -128,6 +128,7 @@
 
 #define MAX_VIRTIO_CONSOLES 1
 
+#include "hw/adacore/rlimit.h"
 void qemu_exit_with_debug(const char *fmt, ...);
 
 typedef struct BlockdevOptionsQueueEntry {
@@ -1876,6 +1877,8 @@ static void qemu_create_early_backends(void)
 
     object_option_foreach_add(object_create_early);
 
+    rlimit_init();
+
     /* spice needs the timers to be initialized by this point */
     /* spice must initialize before audio as it changes the default auiodev */
     /* spice must initialize before chardevs (for spicevmc and spiceport) */
@@ -3535,6 +3538,9 @@ void qemu_init(int argc, char **argv, char **envp)
                 break;
             case QEMU_OPTION_nouserconfig:
                 /* Nothing to be parsed here. Especially, do not error out below. */
+                break;
+            case QEMU_OPTION_rlimit:
+                rlimit_set_value(optarg);
                 break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {

@@ -65,3 +65,5 @@ subdir('sparc64')
 subdir('tricore')
 subdir('unicore32')
 subdir('xtensa')
+
+subdir('adacore')
