@@ -133,6 +133,7 @@ int main(int argc, char **argv)
 
 #include "hw/adacore/qemu-plugin.h"
 #include "hw/adacore/gnat-bus.h"
+#include "qemu-traces.h"
 
 #define MAX_VIRTIO_CONSOLES 1
 
@@ -3983,6 +3984,9 @@ int main(int argc, char **argv, char **envp)
                 break;
             case QEMU_OPTION_host_cpu_affinity:
                 set_cpu_affinity(optarg);
+                break;
+            case QEMU_OPTION_exec_trace:
+                exec_trace_init(optarg);
                 break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
