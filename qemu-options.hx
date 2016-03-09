@@ -5481,6 +5481,16 @@ SRST
 ERST
 
 
+DEF("rlimit", HAS_ARG, QEMU_OPTION_rlimit, \
+    "-rlimit time(in second)\n"
+    "                Set maximum execution time before QEMU stops with an\n"
+    "                error message.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-rlimit time(in second)``
+    Set maximum execution time before QEMU stops with an error message.
+ERST
+
 HXCOMM This is the last statement. Insert new options before this line!
 
 #undef DEF
