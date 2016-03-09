@@ -32,6 +32,7 @@
 #include "qemu/error-report.h"
 #include "qemu/accel.h"
 #include "qapi/qapi-builtin-visit.h"
+#include "qemu-traces.h"
 
 struct TCGState {
     AccelState parent_obj;
@@ -78,6 +79,11 @@ static bool check_tcg_memory_orders_compatible(void)
 
 static bool default_mttcg_enabled(void)
 {
+    /* Don't activate mttcg when using trace.  */
+    if (tracefile_enabled) {
+        return false;
+    }
+
     if (icount_enabled() || TCG_OVERSIZED_GUEST) {
         return false;
     } else {
@@ -137,7 +143,9 @@ static void tcg_set_thread(Object *obj, const char *value, Error **errp)
     TCGState *s = TCG_STATE(obj);
 
     if (strcmp(value, "multi") == 0) {
-        if (TCG_OVERSIZED_GUEST) {
+        if (tracefile_enabled) {
+            error_setg(errp, "No MTTCG when traces are enabled");
+        } else if (TCG_OVERSIZED_GUEST) {
             error_setg(errp, "No MTTCG when guest word size > hosts");
         } else if (icount_enabled()) {
             error_setg(errp, "No MTTCG when icount is enabled");
