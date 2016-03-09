@@ -109,11 +109,13 @@
 #include "qapi/qapi-commands-block-core.h"
 #include "qapi/qapi-commands-run-state.h"
 #include "qapi/qapi-commands-ui.h"
+#include "qapi/qapi-commands-misc.h"
 #include "qapi/qmp/qerror.h"
 #include "sysemu/iothread.h"
 #include "qemu/guest-random.h"
 
 #include "hw/adacore/gnat-bus.h"
+#include "qemu-traces.h"
 
 #define MAX_VIRTIO_CONSOLES 1
 
@@ -2814,6 +2816,45 @@ static void create_default_memdev(MachineState *ms, const char *path)
                             &error_fatal);
 }
 
+void qemu_exit_with_debug(const char *fmt, ...)
+{
+    va_list ap;
+    Error *local_err = NULL;
+    Error **errp = &local_err;
+    char *retval = NULL;
+    int i;
+    const char *cmds[] = {
+        "info version",
+        "info status",
+        "info registers",
+        "print/x $pc",
+        "x/16i $pc - 32",
+        "info roms",
+
+        /* mtree and tlb are creating too much output and may cause freezes in
+         * excross.
+         */
+        /* "info mtree", */
+        /* "info tlb", */
+        NULL,
+    };
+
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+
+    for (i = 0; cmds[i] != NULL; i++) {
+        retval = qmp_human_monitor_command(cmds[i],
+                                           false /* has_cpu_index */,
+                                           0 /*cpu_index */,
+                                           errp);
+        fprintf(stderr, "===== %s\n%s\n",
+                cmds[i], retval);
+    }
+
+    exit(1);
+}
+
 void qemu_init(int argc, char **argv, char **envp)
 {
     int i;
@@ -3791,6 +3832,12 @@ void qemu_init(int argc, char **argv, char **envp)
                 break;
             case QEMU_OPTION_host_cpu_affinity:
                 set_cpu_affinity(optarg);
+                break;
+            case QEMU_OPTION_exec_trace:
+                exec_trace_init(optarg);
+                break;
+            case QEMU_OPTION_exec_trace_limit:
+                exec_trace_limit(optarg);
                 break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {

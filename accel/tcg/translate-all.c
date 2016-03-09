@@ -1704,8 +1704,9 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     tb->orig_tb = NULL;
     tb->trace_vcpu_dstate = *cpu->trace_dstate;
     tcg_ctx->tb_cflags = cflags;
- tb_overflow:
+    tb->tflags = 0;
 
+ tb_overflow:
 #ifdef CONFIG_PROFILER
     /* includes aborted translations because of exceptions */
     atomic_set(&prof->tb_count1, prof->tb_count1 + 1);
