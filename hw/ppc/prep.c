@@ -43,6 +43,10 @@
 #include "sysemu/qtest.h"
 #include "exec/address-spaces.h"
 #include "elf.h"
+#include "hw/hostfs.h"
+
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 //#define HARD_DEBUG_PPC_IO
 //#define DEBUG_PPC_IO
@@ -696,6 +700,18 @@ static void ppc_prep_init(MachineState *machine)
                          /* XXX: need an option to load a NVRAM image */
                          0,
                          graphic_width, graphic_height, graphic_depth);
+
+
+    /* HostFS */
+    hostfs_create(0xA0000000, sysmem);
+
+    /* Initialize plug-ins */
+    plugin_init(i82378->i8259, 16);
+    plugin_device_init();
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(i82378->i8259, 16);
+    gnatbus_device_init();
 }
 
 static QEMUMachine prep_machine = {
