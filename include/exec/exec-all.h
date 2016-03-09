@@ -404,7 +404,10 @@ struct TranslationBlock {
     uintptr_t jmp_list_head;
     uintptr_t jmp_list_next[2];
     uintptr_t jmp_dest[2];
-};
+
+    /* QEMU trace flags */
+    uint32_t tflags;
+} __attribute__ ((aligned(8)));
 
 extern bool parallel_cpus;
 

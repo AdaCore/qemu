@@ -31,6 +31,7 @@
 #include "tcg-mo.h"
 #include "trace-tcg.h"
 #include "trace/mem.h"
+#include "qemu-traces.h"
 
 /* Reduce the number of ifdefs below.  This assumes that all uses of
    TCGV_HIGH and TCGV_LOW are properly protected by a conditional that
@@ -2575,19 +2576,25 @@ void tcg_gen_exit_tb(TranslationBlock *tb, unsigned idx)
 
     if (tb == NULL) {
         tcg_debug_assert(idx == 0);
-    } else if (idx <= TB_EXIT_IDXMAX) {
-#ifdef CONFIG_DEBUG_TCG
-        /* This is an exit following a goto_tb.  Verify that we have
-           seen this numbered exit before, via tcg_gen_goto_tb.  */
-        tcg_debug_assert(tcg_ctx->goto_tb_issue_mask & (1 << idx));
-#endif
-        /* When not chaining, exit without indicating a link.  */
-        if (qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
-            val = 0;
-        }
     } else {
-        /* This is an exit via the exitreq label.  */
-        tcg_debug_assert(idx == TB_EXIT_REQUESTED);
+        if (idx | TB_EXIT_NOPATCH) {
+            /* This is allowed to happen with a number unlike
+             * TB_EXIT_REQUESTED
+             */
+        } else if (idx <= TB_EXIT_IDXMAX) {
+#ifdef CONFIG_DEBUG_TCG
+            /* This is an exit following a goto_tb.  Verify that we have
+               seen this numbered exit before, via tcg_gen_goto_tb.  */
+            tcg_debug_assert(tcg_ctx->goto_tb_issue_mask & (1 << idx));
+#endif
+            /* When not chaining, exit without indicating a link.  */
+            if (qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+                val = 0;
+            }
+        } else {
+            /* This is an exit via the exitreq label.  */
+            tcg_debug_assert(idx == TB_EXIT_REQUESTED);
+        }
     }
 
     tcg_gen_op1i(INDEX_op_exit_tb, val);
@@ -2616,6 +2623,10 @@ void tcg_gen_lookup_and_goto_ptr(void)
         tcg_gen_op1i(INDEX_op_goto_ptr, tcgv_ptr_arg(ptr));
         tcg_temp_free_ptr(ptr);
     } else {
+        /* This won't happen when we have trace enabled as we do
+         * tcg_gen_exit_tb manually there.
+         */
+        assert(!tracefile_enabled);
         tcg_gen_exit_tb(NULL, 0);
     }
 }

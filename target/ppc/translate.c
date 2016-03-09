@@ -36,6 +36,7 @@
 #include "exec/log.h"
 #include "qemu/atomic128.h"
 
+#include "qemu-traces.h"
 
 #define CPU_SINGLE_STEP 0x1
 #define CPU_BRANCH_STEP 0x2
@@ -3685,7 +3686,12 @@ static void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
         tcg_gen_exit_tb(ctx->base.tb, n);
     } else {
         tcg_gen_movi_tl(cpu_nip, dest & ~3);
-        gen_lookup_and_goto_ptr(ctx);
+
+        if (!tracefile_enabled) {
+            gen_lookup_and_goto_ptr(ctx);
+        } else {
+            tcg_gen_exit_tb(ctx->base.tb, n | TB_EXIT_NOPATCH);
+        }
     }
 }
 
@@ -3825,7 +3831,11 @@ static void gen_bcond(DisasContext *ctx, int type)
         } else {
             tcg_gen_andi_tl(cpu_nip, target, ~3);
         }
-        gen_lookup_and_goto_ptr(ctx);
+        if (!tracefile_enabled) {
+            gen_lookup_and_goto_ptr(ctx);
+        } else {
+            tcg_gen_exit_tb(ctx->base.tb, TB_EXIT_NOPATCH);
+        }
         tcg_temp_free(target);
     }
     if ((bo & 0x14) != 0x14) {

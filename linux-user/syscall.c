@@ -59,6 +59,7 @@
 #ifdef CONFIG_TIMERFD
 #include <sys/timerfd.h>
 #endif
+#include "qemu-traces.h"
 #ifdef TARGET_GPROF
 #include <sys/gmon.h>
 #endif
@@ -7002,6 +7003,7 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
 
         cpu_list_unlock();
         preexit_cleanup(cpu_env, arg1);
+        exec_trace_cleanup();
         _exit(arg1);
         return 0; /* avoid warning */
     case TARGET_NR_read:
@@ -8970,6 +8972,7 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
         /* new thread calls */
     case TARGET_NR_exit_group:
         preexit_cleanup(cpu_env, arg1);
+        exec_trace_cleanup();
         return get_errno(exit_group(arg1));
 #endif
     case TARGET_NR_setdomainname:
