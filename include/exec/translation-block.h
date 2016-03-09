@@ -140,6 +140,9 @@ struct TranslationBlock {
     uintptr_t jmp_list_head;
     uintptr_t jmp_list_next[2];
     uintptr_t jmp_dest[2];
+
+    /* QEMU trace flags */
+    uint32_t tflags;
 };
 
 /* The alignment given to TranslationBlock during allocation. */

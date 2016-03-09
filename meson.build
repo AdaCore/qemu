@@ -3538,6 +3538,7 @@ common_ss.add(files('cpu-common.c'))
 specific_ss.add(files('cpu-target.c'))
 
 subdir('system')
+specific_ss.add(files('qemu-traces.c'))
 
 # Work around a gcc bug/misfeature wherein constant propagation looks
 # through an alias:
