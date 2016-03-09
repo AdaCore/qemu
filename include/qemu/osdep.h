@@ -450,6 +450,7 @@ bool qemu_has_ofd_lock(void);
 
 int qemu_create_pidfile(const char *filename);
 int qemu_get_thread_id(void);
+void set_cpu_affinity(const char *optarg);
 
 #ifndef CONFIG_IOVEC
 struct iovec {
