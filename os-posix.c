@@ -360,3 +360,18 @@ int os_mlock(void)
 
     return ret;
 }
+
+void set_cpu_affinity(const char *optarg)
+{
+    char *endptr = NULL;
+    int   mask = strtol(optarg, &endptr, 16);
+
+    if (endptr != optarg) {
+        (void)mask;
+        fprintf(stderr, "CPU affinity not supported\n");
+        abort();
+    } else {
+        fprintf(stderr, "Invalid CPU mask '%s'\n", optarg);
+        abort();
+    }
+}

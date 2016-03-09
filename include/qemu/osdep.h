@@ -481,6 +481,7 @@ bool qemu_has_ofd_lock(void);
 bool qemu_write_pidfile(const char *pidfile, Error **errp);
 
 int qemu_get_thread_id(void);
+void set_cpu_affinity(const char *optarg);
 
 #ifndef CONFIG_IOVEC
 struct iovec {

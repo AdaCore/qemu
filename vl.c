@@ -3966,6 +3966,9 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_gnatbus_timeout:
                 gnatbus_save_timeout_optargs(optarg);
                 break;
+            case QEMU_OPTION_host_cpu_affinity:
+                set_cpu_affinity(optarg);
+                break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
                     error_report("Option not supported in this build");

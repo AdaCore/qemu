@@ -97,3 +97,19 @@ int os_parse_cmd_args(int index, const char *optarg)
 {
     return -1;
 }
+
+void set_cpu_affinity(const char *optarg)
+{
+    HANDLE     h;
+    DWORD_PTR  mask;
+    char      *endptr = NULL;
+
+    mask = strtol(optarg, &endptr, 16);
+    if (endptr != optarg) {
+        h = GetCurrentProcess();
+        SetProcessAffinityMask(h, mask);
+    } else {
+        fprintf(stderr, "Invalid CPU mask '%s'\n", optarg);
+        abort();
+    }
+}
