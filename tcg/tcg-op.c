@@ -30,6 +30,9 @@
 #include "exec/plugin-gen.h"
 #include "tcg-internal.h"
 #include "tcg-has.h"
+#include "qemu/log.h"
+
+#include "adacore/qemu-traces.h"
 
 /*
  * Encourage the compiler to tail-call to a function, rather than inlining.
@@ -3215,16 +3218,27 @@ void tcg_gen_exit_tb(const TranslationBlock *tb, unsigned idx)
     uintptr_t val = (uintptr_t)tcg_splitwx_to_rx((void *)tb) + idx;
 
     if (tb == NULL) {
-        tcg_debug_assert(idx == 0);
-    } else if (idx <= TB_EXIT_IDXMAX) {
-#ifdef CONFIG_DEBUG_TCG
-        /* This is an exit following a goto_tb.  Verify that we have
-           seen this numbered exit before, via tcg_gen_goto_tb.  */
-        tcg_debug_assert(tcg_ctx->goto_tb_issue_mask & (1 << idx));
-#endif
+        /* Ignore TB_EXIT_NOPATCH */
+        tcg_debug_assert((idx & ~TB_EXIT_NOPATCH) == 0);
     } else {
-        /* This is an exit via the exitreq label.  */
-        tcg_debug_assert(idx == TB_EXIT_REQUESTED);
+        if (idx | TB_EXIT_NOPATCH) {
+            /* This is allowed to happen with a number unlike
+             * TB_EXIT_REQUESTED
+             */
+        } else if (idx <= TB_EXIT_IDXMAX) {
+#ifdef CONFIG_DEBUG_TCG
+            /* This is an exit following a goto_tb.  Verify that we have
+               seen this numbered exit before, via tcg_gen_goto_tb.  */
+            tcg_debug_assert(tcg_ctx->goto_tb_issue_mask & (1 << idx));
+#endif
+            /* When not chaining, exit without indicating a link.  */
+            if (qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+                val = 0;
+            }
+        } else {
+            /* This is an exit via the exitreq label.  */
+            tcg_debug_assert(idx == TB_EXIT_REQUESTED);
+        }
     }
 
     tcg_gen_op1i(INDEX_op_exit_tb, 0, val);

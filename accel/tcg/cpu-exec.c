@@ -47,6 +47,8 @@
 #include "tb-internal.h"
 #include "internal-common.h"
 
+#include "adacore/qemu-traces.h"
+
 /* -icount align implementation. */
 
 typedef struct SyncClocks {
@@ -435,8 +437,24 @@ cpu_tb_exec(CPUState *cpu, TranslationBlock *itb, int *tb_exit)
         log_cpu_exec(log_pc(cpu, itb), cpu, itb);
     }
 
+    if (tracefile_enabled) {
+        exec_trace_before_exec(itb);
+    }
+
     qemu_thread_jit_execute();
     ret = tcg_qemu_tb_exec(cpu_env(cpu), tb_ptr);
+
+    if (tracefile_enabled) {
+        exec_trace_after_exec(ret);
+    }
+
+    if (ret & TB_EXIT_NOPATCH) {
+        /* The flag TB_EXIT_NOPATCH means that next_tb should be 0 after
+         * tracing.
+         */
+        ret = 0;
+    }
+
     cpu->neg.can_do_io = true;
     qemu_plugin_disable_mem_helpers(cpu);
     /*
@@ -540,6 +558,11 @@ static void cpu_exec_longjmp_cleanup(CPUState *cpu)
         tcg_ctx->gen_tb = NULL;
     }
 #endif
+
+    if (tracefile_enabled) {
+        exec_trace_at_fault(cpu_env(cpu));
+    }
+
     if (bql_locked()) {
         bql_unlock();
     }
@@ -995,7 +1018,10 @@ cpu_exec_loop(CPUState *cpu, SyncClocks *sc)
 #endif
             /* See if we can patch the calling TB. */
             if (last_tb) {
-                tb_add_jump(last_tb, tb_exit, tb);
+                if (!(tb->cflags & CF_INVALID)
+                    && !tracefile_history_for_tb(last_tb)) {
+                    tb_add_jump(last_tb, tb_exit, tb);
+                }
             }
 
             cpu_loop_exec_tb(cpu, tb, s.pc, &last_tb, &tb_exit);
