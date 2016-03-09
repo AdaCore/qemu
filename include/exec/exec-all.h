@@ -253,7 +253,10 @@ struct TranslationBlock {
      */
     uintptr_t jmp_list_next[2];
     uintptr_t jmp_list_first;
-};
+
+    /* QEMU trace flags */
+    uint32_t tflags;
+} __attribute__ ((aligned(8)));
 
 void tb_free(TranslationBlock *tb);
 void tb_flush(CPUState *cpu);
