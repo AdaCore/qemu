@@ -51,6 +51,9 @@
 #include "elf.h"
 #include "qemu/units.h"
 #include "kvm_ppc.h"
+#include "hw/adacore/hostfs.h"
+
+#include "hw/adacore/gnat-bus.h"
 
 /* Copied from hw/isa/i82378.c until we find a better solution... */
 
@@ -614,6 +617,14 @@ static void ppc_prep_init(MachineState *machine)
                          /* XXX: need an option to load a NVRAM image */
                          0,
                          graphic_width, graphic_height, graphic_depth);
+
+
+    /* HostFS */
+    hostfs_create(0xA0000000, sysmem);
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(i82378->i8259, 16);
+    gnatbus_device_init();
 }
 
 static void prep_machine_init(MachineClass *mc)
