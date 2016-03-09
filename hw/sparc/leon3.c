@@ -40,11 +40,16 @@
 #include "hw/loader.h"
 #include "elf.h"
 #include "trace.h"
+#include "exec/address-spaces.h"
+#include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
 
 #include "hw/timer/grlib_gptimer.h"
 #include "hw/char/grlib_uart.h"
 #include "hw/intc/grlib_irqmp.h"
 #include "hw/misc/grlib_ahb_apb_pnp.h"
+
+#define MAX_IRQ (16)
 
 /* Default system clock.  */
 #define CPU_CLK (40 * 1000 * 1000)
@@ -308,6 +313,7 @@ static void leon3_generic_hw_init(MachineState *machine)
     int i;
     AHBPnp *ahb_pnp;
     APBPnp *apb_pnp;
+    qemu_irq *gnatbus_irqs;
     Leon3ConfState *leon3_conf = LEON3_CONF(object_new(TYPE_LEON3_CONF));
     /* This must be realized in order to have the options value set. */
     object_property_set_bool(OBJECT(leon3_conf), "realized", true,
@@ -477,6 +483,19 @@ static void leon3_generic_hw_init(MachineState *machine)
     grlib_apb_pnp_add_entry(apb_pnp, LEON3_UART_OFFSET, 0xFFF,
                             GRLIB_VENDOR_GAISLER, GRLIB_APBUART_DEV, 1,
                             LEON3_UART_IRQ, GRLIB_APBIO_AREA);
+
+    /* gnatbus IRQs */
+    gnatbus_irqs = qemu_allocate_irqs(NULL, NULL, MAX_IRQ);
+
+    for (i = 0; i < MAX_IRQ; i++) {
+        gnatbus_irqs[i] = qdev_get_gpio_in(irqmpdev, i);
+    }
+    /* HostFS */
+    hostfs_create(0x80001000, get_system_memory());
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(gnatbus_irqs, MAX_IRQ);
+    gnatbus_device_init();
 }
 
 static void leon3_generic_machine_init(MachineClass *mc)
