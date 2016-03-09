@@ -3989,6 +3989,9 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_exec_trace:
                 trace_init(optarg);
                 break;
+            case QEMU_OPTION_host_cpu_affinity:
+                set_cpu_affinity(optarg);
+                break;
             default:
                 os_parse_cmd_args(popt->index, optarg);
             }

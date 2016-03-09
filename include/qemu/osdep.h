@@ -184,6 +184,7 @@ int qemu_close(int fd);
 
 int qemu_create_pidfile(const char *filename);
 int qemu_get_thread_id(void);
+void set_cpu_affinity(const char *optarg);
 
 #ifndef CONFIG_IOVEC
 struct iovec {

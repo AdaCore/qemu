@@ -128,3 +128,19 @@ int qemu_create_pidfile(const char *filename)
     }
     return 0;
 }
+
+void set_cpu_affinity(const char *optarg)
+{
+    HANDLE     h;
+    DWORD_PTR  mask;
+    char      *endptr = NULL;
+
+    mask = strtol(optarg, &endptr, 16);
+    if (endptr != optarg) {
+        h = GetCurrentProcess();
+        SetProcessAffinityMask(h, mask);
+    } else {
+        fprintf(stderr, "Invalid CPU mask '%s'\n", optarg);
+        abort();
+    }
+}
