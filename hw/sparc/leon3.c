@@ -40,6 +40,8 @@
 #include "elf.h"
 #include "trace.h"
 #include "exec/address-spaces.h"
+#include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
 
 #include "hw/sparc/grlib.h"
 #include "hw/misc/grlib_ahb_apb_pnp.h"
@@ -349,6 +351,13 @@ static void leon3_generic_hw_init(MachineState *machine)
                                 GRLIB_VENDOR_GAISLER, GRLIB_APBUART_DEV, 1,
                                 LEON3_UART_IRQ, GRLIB_APBIO_AREA);
     }
+
+    /* HostFS */
+    hostfs_create(0x80001000, get_system_memory());
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(cpu_irqs, MAX_PILS);
+    gnatbus_device_init();
 }
 
 static void leon3_generic_machine_init(MachineClass *mc)
