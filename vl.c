@@ -3034,6 +3034,43 @@ void qemu_exit_with_debug(const char *fmt, ...)
     exit(1);
 }
 
+/***********************************************************/
+/* rLimit */
+static uint64_t rlimit;
+
+static void rlimit_timer_tick(void *opaque)
+{
+    qemu_exit_with_debug("\nQEMU rlimit exceeded (%"PRId64"s)\n", rlimit);
+}
+
+static void rlimit_set_value(const char *optarg)
+{
+    char *endptr = NULL;
+
+    rlimit = strtol(optarg, &endptr, 10);
+
+    if (endptr == optarg) {
+        fprintf(stderr, "Invalid rlimit value '%s'\n", optarg);
+        abort();
+    }
+}
+
+static void rlimit_init(void)
+{
+    uint64_t now;
+    QEMUTimer *timer;
+
+    if (rlimit != 0) {
+        timer = timer_new_ns(QEMU_CLOCK_HOST, rlimit_timer_tick, NULL);
+        if (timer == NULL) {
+            fprintf(stderr, "%s: Cannot allocate timer\n", __func__);
+            abort();
+        }
+        now = qemu_clock_get_ns(QEMU_CLOCK_HOST);
+        timer_mod_ns(timer, now + rlimit * 1000000000ULL);
+    }
+}
+
 int main(int argc, char **argv, char **envp)
 {
     int i;
@@ -4021,6 +4058,9 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_exec_trace_limit:
                 exec_trace_limit(optarg);
                 break;
+            case QEMU_OPTION_rlimit:
+                rlimit_set_value(optarg);
+                break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
                     error_report("Option not supported in this build");
@@ -4430,6 +4470,8 @@ int main(int argc, char **argv, char **envp)
     }
 
     os_set_line_buffering();
+
+    rlimit_init();
 
     /* spice needs the timers to be initialized by this point */
     qemu_spice_init();
