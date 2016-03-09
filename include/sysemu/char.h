@@ -10,6 +10,9 @@
 #include "qapi/qmp/qstring.h"
 #include "qemu/main-loop.h"
 #include "qemu/bitmap.h"
+#include "io/channel.h"
+#include "io/channel-socket.h"
+#include "io/channel-tls.h"
 
 /* character device */
 
@@ -489,5 +492,63 @@ extern int term_escape_char;
 /* console.c */
 typedef CharDriverState *(VcHandler)(ChardevVC *vc, Error **errp);
 void register_vc_handler(VcHandler *handler);
+
+CharDriverState *vc_init(const char *id, ChardevBackend *backend,
+                         ChardevReturn *ret, bool *be_opened,
+                         Error **errp);
+
+/* async I/O support */
+
+void io_remove_watch_poll(guint tag);
+
+guint io_add_watch_poll(CharDriverState *chr,
+                        QIOChannel *ioc,
+                        IOCanReadHandler *fd_can_read,
+                        QIOChannelFunc fd_read,
+                        gpointer user_data,
+                        GMainContext *context);
+
+ssize_t tcp_chr_recv(CharDriverState *chr, char *buf, size_t len);
+gboolean tcp_chr_read(QIOChannel *chan, GIOCondition cond, void *opaque);
+int tcp_chr_read_poll(void *opaque);
+GSource *tcp_chr_add_watch(CharDriverState *chr, GIOCondition cond);
+
+typedef struct {
+    QIOChannel *ioc; /* Client I/O channel */
+    QIOChannelSocket *sioc; /* Client master channel */
+    QIOChannelSocket *listen_ioc;
+    guint listen_tag;
+    QCryptoTLSCreds *tls_creds;
+    int connected;
+    int max_size;
+    int do_telnetopt;
+    int do_nodelay;
+    int is_unix;
+    int *read_msgfds;
+    size_t read_msgfds_num;
+    int *write_msgfds;
+    size_t write_msgfds_num;
+
+    SocketAddress *addr;
+    bool is_listen;
+    bool is_telnet;
+
+    guint reconnect_timer;
+    int64_t reconnect_time;
+    bool connect_err_reported;
+} TCPCharDriver;
+
+#ifdef _WIN32
+typedef struct {
+    int max_size;
+    HANDLE hcom, hrecv, hsend;
+    OVERLAPPED orecv;
+    BOOL fpipe;
+    DWORD len;
+
+    /* Protected by the CharDriverState chr_write_lock.  */
+    OVERLAPPED osend;
+} WinCharState;
+#endif
 
 #endif

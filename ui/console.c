@@ -2067,9 +2067,9 @@ static CharDriverState *text_console_init(ChardevVC *vc, Error **errp)
 
 static VcHandler *vc_handler = text_console_init;
 
-static CharDriverState *vc_init(const char *id, ChardevBackend *backend,
-                                ChardevReturn *ret, bool *be_opened,
-                                Error **errp)
+CharDriverState *vc_init(const char *id, ChardevBackend *backend,
+                         ChardevReturn *ret, bool *be_opened,
+                         Error **errp)
 {
     /* console/chardev init sometimes completes elsewhere in a 2nd
      * stage, so defer OPENED events until they are fully initialized
