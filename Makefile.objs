@@ -134,6 +134,7 @@ trace-events-subdirs += chardev
 trace-events-subdirs += crypto
 trace-events-subdirs += hw/9pfs
 trace-events-subdirs += hw/acpi
+trace-events-subdirs += hw/adacore
 trace-events-subdirs += hw/alpha
 trace-events-subdirs += hw/arm
 trace-events-subdirs += hw/audio
