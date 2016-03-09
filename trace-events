@@ -1650,4 +1650,15 @@ alsa_no_frames(int state) "No frames available and ALSA state is %d"
 
 # audio/ossaudio.c
 oss_version(int version) "OSS version = %#x"
-oss_invalid_available_size(int size, int bufsize) "Invalid available size, size=%d bufsize=%d"
+oss_invalid_available_size(int size, int bufsize) "Invalid available size, size=%d bufsize=%d"0
+
+# hw/hostfs.c
+
+hostfs_open(const char *filename, uint32_t opt, uint32_t mode, int ret) "'%s', 0x%08x, 0x%08x = %d;"
+hostfs_close(uint32_t fd, int ret) "0x%08x = %d;"
+hostfs_unlink(uint32_t fd, int ret) "0x%08x = %d;"
+hostfs_lseek(uint32_t fd, off_t off, int whence, int ret) "0x%08x, %jd, %d = %d;"
+hostfs_read(uint32_t fd, char *buf, uint32_t size, int ret) "0x%08x, %p, 0x%08x = %d;"
+hostfs_write(uint32_t fd, char *buf, uint32_t size, int ret) "0x%08x, %p, 0x%08x = %d;"
+hostfs_open_flags(uint32_t hostfs_flags, uint32_t flags) "hostfs_flags:0x%08x -> flags:0x%08x"
+hostfs_do_syscall(uint32_t id, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) "syscall_id:0x%08x 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x"
