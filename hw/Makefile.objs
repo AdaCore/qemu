@@ -2,6 +2,7 @@ devices-dirs-y = core/
 ifeq ($(CONFIG_SOFTMMU), y)
 devices-dirs-$(call lor,$(CONFIG_VIRTIO_9P),$(call land,$(CONFIG_VIRTFS),$(CONFIG_XEN))) += 9pfs/
 devices-dirs-y += acpi/
+devices-dirs-y += adacore/
 devices-dirs-y += adc/
 devices-dirs-y += audio/
 devices-dirs-y += block/
