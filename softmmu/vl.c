@@ -135,6 +135,8 @@
 #include "qemu/guest-random.h"
 #include "qemu/keyval.h"
 
+#include "adacore/qemu-traces.h"
+
 #define MAX_VIRTIO_CONSOLES 1
 
 #include "hw/adacore/rlimit.h"
@@ -3618,6 +3620,12 @@ void qemu_init(int argc, char **argv)
                     exit(1);
                 }
                 quick_monitor_cmd = optarg;
+                break;
+            case QEMU_OPTION_exec_trace:
+                exec_trace_init(optarg);
+                break;
+            case QEMU_OPTION_exec_trace_limit:
+                exec_trace_limit(optarg);
                 break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
