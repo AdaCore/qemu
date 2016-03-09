@@ -1799,6 +1799,7 @@ if have_system
     'chardev',
     'hw/9pfs',
     'hw/acpi',
+    'hw/adacore',
     'hw/adc',
     'hw/alpha',
     'hw/arm',
