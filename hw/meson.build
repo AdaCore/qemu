@@ -68,3 +68,5 @@ subdir('vmapple')
 subdir('watchdog')
 subdir('xen')
 subdir('fsi')
+
+subdir('adacore')
