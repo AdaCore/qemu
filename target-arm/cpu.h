@@ -387,6 +387,10 @@ typedef struct CPUARMState {
         uint32_t control;
         int current_sp;
         int exception;
+
+        uint32_t actlr;
+        uint32_t fpccr;
+        uint32_t fpcar;         /* reserved stack area */
     } v7m;
 
     /* Information associated with an exception about to be taken:

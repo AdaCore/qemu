@@ -156,6 +156,9 @@ static uint32_t nvic_readl(nvic_state *s, uint32_t offset)
     switch (offset) {
     case 4: /* Interrupt Control Type.  */
         return (s->num_irq / 32) - 1;
+    case 8: /* Auxiliary Control Register */
+        cpu = ARM_CPU(current_cpu);
+        return cpu->env.v7m.actlr;
     case 0x10: /* SysTick Control and Status.  */
         val = s->systick.control;
         s->systick.control &= ~SYSTICK_COUNTFLAG;
@@ -283,6 +286,16 @@ static uint32_t nvic_readl(nvic_state *s, uint32_t offset)
     case 0xd70: /* ISAR4.  */
         return 0x01310102;
     /* TODO: Implement debug registers.  */
+    case 0xd88: /* Coprocessor Access Control Register */
+        cpu = ARM_CPU(current_cpu);
+        return cpu->env.cp15.c1_xscaleauxcr;
+    /* Cortex-M4F Floating Point system registers */
+    case 0xF34: /* FP Context Control Register */
+        cpu = ARM_CPU(current_cpu);
+        return cpu->env.v7m.fpccr;
+    case 0xF38: /* FP Context Address Register */
+        cpu = ARM_CPU(current_cpu);
+        return cpu->env.v7m.fpcar;
     default:
         qemu_log_mask(LOG_GUEST_ERROR, "NVIC: Bad read offset 0x%x\n", offset);
         return 0;
@@ -294,6 +307,9 @@ static void nvic_writel(nvic_state *s, uint32_t offset, uint32_t value)
     ARMCPU *cpu;
     uint32_t oldval;
     switch (offset) {
+    case 8: /* Auxiliary Control Register */
+        cpu = ARM_CPU(current_cpu);
+        cpu->env.v7m.actlr = value;
     case 0x10: /* SysTick Control and Status.  */
         oldval = s->systick.control;
         s->systick.control &= 0xfffffff8;
@@ -381,10 +397,22 @@ static void nvic_writel(nvic_state *s, uint32_t offset, uint32_t value)
         qemu_log_mask(LOG_UNIMP,
                       "NVIC: fault status registers unimplemented\n");
         break;
+    case 0xd88: /* Coprocessor Access Control Register */
+        cpu = ARM_CPU(current_cpu);
+        cpu->env.cp15.c1_xscaleauxcr = value & 0x00F0FFFF;
+        break;
     case 0xf00: /* Software Triggered Interrupt Register */
         if ((value & 0x1ff) < s->num_irq) {
             gic_set_pending_private(&s->gic, 0, value & 0x1ff);
         }
+    /* Cortex-M4F Floating Point system registers */
+    case 0xF34: /* FP Context Control Register */
+        cpu = ARM_CPU(current_cpu);
+        cpu->env.v7m.fpccr = value & 0xC00003FF;
+        break;
+    case 0xF38: /* FP Context Address Register */
+        cpu = ARM_CPU(current_cpu);
+        cpu->env.v7m.fpcar = value & 0x00000007;
         break;
     default:
         qemu_log_mask(LOG_GUEST_ERROR,

@@ -11184,7 +11184,19 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
 #endif
     dc->ns = ARM_TBFLAG_NS(tb->flags);
     dc->fp_excp_el = ARM_TBFLAG_FPEXC_EL(tb->flags);
-    dc->vfp_enabled = ARM_TBFLAG_VFPEN(tb->flags);
+
+    if (unlikely(arm_feature(env, ARM_FEATURE_M))) {
+        uint8_t vfp_priv = (env->cp15.c1_xscaleauxcr >> 20) & 0x3;
+
+        if (dc->user) {
+            dc->vfp_enabled = vfp_priv == 0x3;
+        } else {
+            dc->vfp_enabled = vfp_priv & 0x1;
+        }
+    } else {
+        dc->vfp_enabled = ARM_TBFLAG_VFPEN(tb->flags);
+    }
+
     dc->vec_len = ARM_TBFLAG_VECLEN(tb->flags);
     dc->vec_stride = ARM_TBFLAG_VECSTRIDE(tb->flags);
     dc->c15_cpar = ARM_TBFLAG_XSCALE_CPAR(tb->flags);
