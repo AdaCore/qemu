@@ -866,6 +866,9 @@ static uint32_t nvic_readl(NVICState *s, uint32_t offset, MemTxAttrs attrs)
             goto bad_offset;
         }
         return ((s->num_irq - NVIC_FIRST_IRQ) / 32) - 1;
+    case 8: /* Auxiliary Control Register */
+        cpu = ARM_CPU(current_cpu);
+        return cpu->env.v7m.actlr;
     case 0xc: /* CPPWR */
         if (!arm_feature(&cpu->env, ARM_FEATURE_V8)) {
             goto bad_offset;
@@ -1303,6 +1306,10 @@ static void nvic_writel(NVICState *s, uint32_t offset, uint32_t value,
     }
 
     switch (offset) {
+    case 8: /* Auxiliary Control Register */
+        cpu = ARM_CPU(current_cpu);
+        cpu->env.v7m.actlr = value;
+        break;
     case 0xc: /* CPPWR */
         if (!arm_feature(&cpu->env, ARM_FEATURE_V8)) {
             goto bad_offset;
