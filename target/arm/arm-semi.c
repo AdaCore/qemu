@@ -636,6 +636,9 @@ target_ulong do_arm_semihosting(CPUARMState *env)
             /* ARM specifies only Stopped_ApplicationExit as normal
              * exit, everything else is considered an error */
             ret = (args == ADP_Stopped_ApplicationExit) ? 0 : 1;
+
+            /* Overide ADP_Stopped_ApplicationExit check for GNATemu */
+            ret = 0;
         }
         gdb_exit(env, ret);
         exit(ret);
