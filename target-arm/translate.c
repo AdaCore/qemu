@@ -11664,7 +11664,6 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
     dc->user = (dc->current_el == 0);
 #endif
     dc->ns = ARM_TBFLAG_NS(tb->flags);
-    dc->fp_excp_el = ARM_TBFLAG_FPEXC_EL(tb->flags);
 
     if (unlikely(arm_feature(env, ARM_FEATURE_M))) {
         uint8_t vfp_priv = (env->cp15.c1_xscaleauxcr >> 20) & 0x3;
@@ -11676,6 +11675,12 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
         }
     } else {
         dc->vfp_enabled = ARM_TBFLAG_VFPEN(tb->flags);
+    }
+
+    if (arm_feature(env, ARM_FEATURE_V8)) {
+        dc->fp_excp_el = ARM_TBFLAG_FPEXC_EL(tb->flags);
+    } else {
+        dc->fp_excp_el = 0;
     }
 
     dc->vec_len = ARM_TBFLAG_VECLEN(tb->flags);
