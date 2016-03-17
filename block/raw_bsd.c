@@ -209,16 +209,20 @@ static int raw_open(BlockDriverState *bs, QDict *options, int flags,
 {
     bs->sg = bs->file->sg;
 
-    if (bs->probed && !bdrv_is_read_only(bs)) {
-        fprintf(stderr,
-                "WARNING: Image format was not specified for '%s' and probing "
-                "guessed raw.\n"
-                "         Automatically detecting the format is dangerous for "
-                "raw images, write operations on block 0 will be restricted.\n"
-                "         Specify the 'raw' format explicitly to remove the "
-                "restrictions.\n",
-                bs->file->filename);
-    }
+    /* This message would break output compatibility with previous versions of
+     * QEMU.
+     */
+
+    /* if (bs->probed && !bdrv_is_read_only(bs)) { */
+    /*     fprintf(stderr, */
+    /*             "WARNING: Image format was not specified for '%s' and probing " */
+    /*             "guessed raw.\n" */
+    /*             "         Automatically detecting the format is dangerous for " */
+    /*             "raw images, write operations on block 0 will be restricted.\n" */
+    /*             "         Specify the 'raw' format explicitly to remove the " */
+    /*             "restrictions.\n", */
+    /*             bs->file->filename); */
+    /* } */
 
     return 0;
 }
