@@ -3418,9 +3418,9 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename)
     }
 #ifdef _WIN32
     if (strstart(filename, "pipe_client:", &p)) {
-        qemu_opt_set(opts, "backend", "pipe");
-        qemu_opt_set(opts, "path", p);
-        qemu_opt_set_bool(opts, "server", FALSE);
+        qemu_opt_set(opts, "backend", "pipe", &error_abort);
+        qemu_opt_set(opts, "path", p, &error_abort);
+        qemu_opt_set_bool(opts, "server", FALSE, &error_abort);
         return opts;
     }
 #endif
