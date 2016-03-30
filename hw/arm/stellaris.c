@@ -1387,6 +1387,10 @@ static void stm32_init(MachineState *args)
     int           flash_size;
     DeviceState  *dev;
 
+    if (cpu_model == NULL) {
+        cpu_model = "cortex-m4f";
+    }
+
     system_clock_scale = 6;
     flash_size = 1024 * 1024; /* 1024K */
     sram_size = 192 * 1024; /* 192K */
