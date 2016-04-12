@@ -463,6 +463,32 @@ static QemuOptsList qemu_mem_opts = {
     },
 };
 
+static QemuOptsList qemu_add_memory_opts = {
+    .name = "add-memory",
+    .implied_opt_name = "",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_add_memory_opts.head),
+    .merge_lists = false,
+    .desc = {
+        {
+            .name = "size",
+            .type = QEMU_OPT_SIZE,
+        },
+        {
+            .name = "addr",
+            .type = QEMU_OPT_NUMBER,
+        },
+        {
+            .name = "name",
+            .type = QEMU_OPT_STRING,
+        },
+        {
+            .name = "read-only",
+            .type = QEMU_OPT_BOOL,
+        },
+        { /* end of list */ }
+    },
+};
+
 static QemuOptsList qemu_icount_opts = {
     .name = "icount",
     .implied_opt_name = "shift",
@@ -2927,6 +2953,45 @@ static void set_memory_options(uint64_t *ram_slots, ram_addr_t *maxram_size,
     }
 }
 
+static int foreach_add_memory(void *opaque, QemuOpts *opts, Error **errp)
+{
+    uint64_t size, addr;
+    bool readonly;
+    const char *name;
+    MemoryRegion *ram;
+
+
+    size = qemu_opt_get_size(opts, "size", 0);
+    addr = qemu_opt_get_number(opts, "addr", 0);
+    readonly = qemu_opt_get_bool(opts, "read-only", false);
+    name  = qemu_opt_get(opts, "name");
+
+    if (name == NULL) {
+        error_report("missing name");
+        return 1;
+    }
+    if (qemu_opt_get(opts, "addr") == NULL) {
+        error_report("missing address (addr)");
+        return 1;
+    }
+    if (qemu_opt_get(opts, "size") == NULL) {
+        error_report("missing size");
+        return 1;
+    }
+
+    if (size == 0) {
+        error_report("size cannot be zero");
+        return 1;
+    }
+
+    ram = g_new(MemoryRegion, 1);
+    memory_region_allocate_system_memory(ram, NULL, name, size);
+    memory_region_add_subregion_overlap(get_system_memory(), addr, ram,
+                                        1 /* priority */);
+    memory_region_set_readonly(ram, readonly);
+    return 0;
+}
+
 /***********************************************************/
 /* rLimit */
 static uint64_t rlimit;
@@ -3066,6 +3131,7 @@ int main(int argc, char **argv, char **envp)
     qemu_add_opts(&qemu_sandbox_opts);
     qemu_add_opts(&qemu_add_fd_opts);
     qemu_add_opts(&qemu_object_opts);
+    qemu_add_opts(&qemu_add_memory_opts);
     qemu_add_opts(&qemu_tpmdev_opts);
     qemu_add_opts(&qemu_realtime_opts);
     qemu_add_opts(&qemu_msg_opts);
@@ -3392,6 +3458,13 @@ int main(int argc, char **argv, char **envp)
                 }
                 break;
 #endif
+            case QEMU_OPTION_add_memory:
+                opts = qemu_opts_parse_noisily(qemu_find_opts("add-memory"),
+                                               optarg, true);
+                if (!opts) {
+                    exit(EXIT_FAILURE);
+                }
+                break;
             case QEMU_OPTION_mempath:
                 mem_path = optarg;
                 break;
@@ -4376,6 +4449,12 @@ int main(int argc, char **argv, char **envp)
     if (qemu_opts_foreach(qemu_find_opts("object"),
                           object_create,
                           object_create_delayed, NULL)) {
+        exit(1);
+    }
+
+    if (qemu_opts_foreach(qemu_find_opts("add-memory"),
+                          foreach_add_memory,
+                          NULL, NULL)) {
         exit(1);
     }
 
