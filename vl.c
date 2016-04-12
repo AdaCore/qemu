@@ -188,6 +188,7 @@ bool boot_strict;
 uint8_t *boot_splash_filedata;
 size_t boot_splash_filedata_size;
 uint8_t qemu_extra_params_fw[2];
+const char *quick_monitor_cmd;
 
 int icount_align_option;
 
@@ -4137,6 +4138,14 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_rlimit:
                 rlimit_set_value(optarg);
                 break;
+            case QEMU_OPTION_monitor_cmd:
+                if (quick_monitor_cmd) {
+                    fprintf(stderr,
+                            "qemu: only one monitor-cmd option may be given\n");
+                    return 1;
+                }
+                quick_monitor_cmd = optarg;
+                break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
                     error_report("Option not supported in this build");
@@ -4817,6 +4826,14 @@ int main(int argc, char **argv, char **envp)
 
     accel_setup_post(current_machine);
     os_setup_post();
+
+    if (quick_monitor_cmd != NULL) {
+        printf("%s", qmp_human_monitor_command(quick_monitor_cmd,
+                                               false /* has_cpu_index */,
+                                               0 /* cpu_index      */,
+                                               NULL));
+        exit(1);
+    }
 
     main_loop();
 
