@@ -4800,6 +4800,15 @@ STEXI
 Set maximum execution time before QEMU stops with an error message.
 ETEXI
 
+DEF("monitor-cmd", HAS_ARG, QEMU_OPTION_monitor_cmd, \
+    "-monitor-cmd command\n"
+    "                Print the output of a monitor command and close QEMU\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -monitor-cmd command
+Print the output of a monitor command and close QEMU
+ETEXI
+
 HXCOMM This is the last statement. Insert new options before this line!
 STEXI
 @end table
