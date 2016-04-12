@@ -158,6 +158,7 @@ typedef struct DeviceOption {
     QTAILQ_ENTRY(DeviceOption) next;
 } DeviceOption;
 
+static const char *quick_monitor_cmd;
 static const char *cpu_option;
 static const char *mem_path;
 static const char *incoming;
@@ -3700,6 +3701,14 @@ void qemu_init(int argc, char **argv)
             case QEMU_OPTION_rlimit:
                 rlimit_set_value(optarg);
                 break;
+            case QEMU_OPTION_monitor_cmd:
+                if (quick_monitor_cmd) {
+                    fprintf(stderr,
+                            "qemu: only one monitor-cmd option may be given\n");
+                    exit(1);
+                }
+                quick_monitor_cmd = optarg;
+                break;
 #if defined(CONFIG_POSIX)
             case QEMU_OPTION_runas:
                 if (!os_set_runas(optarg)) {
@@ -3868,4 +3877,12 @@ void qemu_init(int argc, char **argv)
     accel_setup_post(current_machine);
     os_setup_post();
     resume_mux_open();
+
+    if (quick_monitor_cmd != NULL) {
+        printf("%s", qmp_human_monitor_command(quick_monitor_cmd,
+                                               false /* has_cpu_index */,
+                                               0 /* cpu_index      */,
+                                               NULL));
+        exit(0);
+    }
 }
