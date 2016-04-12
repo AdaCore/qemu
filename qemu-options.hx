@@ -613,6 +613,17 @@ SRST
     enabled and the guest startup RAM will never increase.
 ERST
 
+DEF("add-memory", HAS_ARG, QEMU_OPTION_add_memory,
+    "-add-memory name=memory_name,size=memory_size,addr=memory_addr"
+    "[,read-only=on|off]\n"
+    "                Add a memory bank to the address space",
+    QEMU_ARCH_ALL)
+SRST
+``-add-memory name=memory_name,size=memory_size,addr=memory_addr\
+[,read-only=on|off]``
+    Add a memory bank to the address space.
+ERST
+
 DEF("mem-path", HAS_ARG, QEMU_OPTION_mempath,
     "-mem-path FILE  provide backing storage for guest RAM\n", QEMU_ARCH_ALL)
 SRST
