@@ -5321,4 +5321,13 @@ SRST
     Set maximum execution time before QEMU stops with an error message.
 ERST
 
+DEF("monitor-cmd", HAS_ARG, QEMU_OPTION_monitor_cmd, \
+    "-monitor-cmd command\n"
+    "                Print the output of a monitor command and close QEMU\n",
+    QEMU_ARCH_ALL)
+SRST
+``-monitor-cmd command``
+    Print the output of a monitor command and close QEMU.
+ERST
+
 HXCOMM This is the last statement. Insert new options before this line!
