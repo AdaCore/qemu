@@ -167,6 +167,8 @@ bool boot_strict;
 uint8_t *boot_splash_filedata;
 int only_migratable; /* turn it off unless user states otherwise */
 bool wakeup_suspend_enabled;
+const char *quick_monitor_cmd;
+
 int icount_align_option;
 static const char *qtest_chrdev;
 static const char *qtest_log;
@@ -4128,6 +4130,14 @@ void qemu_init(int argc, char **argv, char **envp)
             case QEMU_OPTION_rlimit:
                 rlimit_set_value(optarg);
                 break;
+            case QEMU_OPTION_monitor_cmd:
+                if (quick_monitor_cmd) {
+                    fprintf(stderr,
+                            "qemu: only one monitor-cmd option may be given\n");
+                    exit(1);
+                }
+                quick_monitor_cmd = optarg;
+                break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
                     error_report("Option not supported in this build");
@@ -4847,6 +4857,14 @@ void qemu_init(int argc, char **argv, char **envp)
 
     accel_setup_post(current_machine);
     os_setup_post();
+
+    if (quick_monitor_cmd != NULL) {
+        printf("%s", qmp_human_monitor_command(quick_monitor_cmd,
+                                               false /* has_cpu_index */,
+                                               0 /* cpu_index      */,
+                                               NULL));
+        exit(0);
+    }
 
     return;
 }
