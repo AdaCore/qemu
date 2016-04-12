@@ -376,6 +376,14 @@ If @var{slots} and @var{maxmem} are not specified, memory hotplug won't
 be enabled and the guest startup RAM will never increase.
 ETEXI
 
+DEF("add-memory", HAS_ARG, QEMU_OPTION_add_memory,
+    "-add-memory name=memory_name,size=memory_size,addr=memory_addr[,read-only=on|off]\n"
+    "                Add a memory bank to the address space", QEMU_ARCH_ALL)
+STEXI
+@item -add-memory
+@findex -add-memory
+ETEXI
+
 DEF("mem-path", HAS_ARG, QEMU_OPTION_mempath,
     "-mem-path FILE  provide backing storage for guest RAM\n", QEMU_ARCH_ALL)
 STEXI
