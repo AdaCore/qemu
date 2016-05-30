@@ -4970,6 +4970,166 @@ static void init_proc_e500(CPUPPCState *env, int version)
                  SPR_NOACCESS, SPR_NOACCESS,
                  &spr_read_generic, SPR_NOACCESS,
                  0x00000000);
+    /* L2 cache control */
+    /* XXX : not implemented */
+    spr_register(env, SPR_L2CR, "L2CR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_l2cr,
+                 0x00000000);
+    /* LPIDR reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_ATBU, "SPR_ATBU",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_atbu, &spr_write_atbu,
+                 0x00000000);
+    /* ATBU reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_ATBL, "LPIDR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_atbl, &spr_write_atbl,
+                 0x00000000);
+    /* ATBU reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_PCR, "LPIDR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_MAS5, "MAS5",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_MAS8, "MAS5",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_DCMP, "DCMP",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_GSPRG0, "GSPRG0",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_GSPRG1, "GSPRG1",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_GSPRG2, "GSPRG2",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_GSPRG3, "GSPRG3",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_E500MC_DBCR4, "E500MC_DBCR4",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* SPR_BOOKE_EPLC reg*/
+    /* XXX : not implemented*/
+    spr_register(env, SPR_E500MC_DBSRWR, "DBSRWR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_GIVPR, "GIVPR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GSRR0, "BOOKE_GSRR0",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GSRR1, "BOOKE_GSRR1",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+
+    /* XXX : not implemented*/
+    spr_register(env, SPR_L2CFG0, "SPR_L2CFG0",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GIVOR2, "SPR_BOOKE_GIVOR2",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GIVOR3, "SPR_BOOKE_GIVOR3",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GIVOR4, "SPR_BOOKE_GIVOR4",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GIVOR8, "SPR_BOOKE_GIVOR8",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GIVOR13, "SPR_BOOKE_GIVOR13",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GIVOR14, "SPR_BOOKE_GIVOR14",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GEPR, "SPR_BOOKE_GEPR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GESR, "SPR_BOOKE_GESR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GDEAR, "SPR_BOOKE_GDEAR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_GPIR, "SPR_BOOKE_GPIR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
+    /* XXX : not implemented*/
+    spr_register(env, SPR_BOOKE_MSRP, "SPR_BOOKE_MSRP",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_generic,
+                 0x00000000);
     /* XXX better abstract into Emb.xxx features */
     if ((version == fsl_e5500) || (version == fsl_e6500)) {
         spr_register(env, SPR_BOOKE_EPCR, "EPCR",
