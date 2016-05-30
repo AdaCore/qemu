@@ -208,3 +208,7 @@ config T2080RDB
 config MPC8641D
     bool
     default y
+
+config P3041DS
+    bool
+    default y
