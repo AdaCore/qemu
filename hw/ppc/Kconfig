@@ -179,3 +179,6 @@ config T2080RDB
 
 config MPC8641D
     bool
+
+config P3041DS
+    bool
