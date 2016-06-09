@@ -190,6 +190,9 @@ static void main_cpu_reset(void *opaque)
      * starting the kernel.
      */
     env->spr[SPR_BOOKE_PID] = 0x1;
+
+    /* enable L2 cache as it is required by vxworks kernel */
+    env->spr[SPR_L2CR] |= 0x80000000;
 }
 
 static uint32_t g_DEVDISR  = 0x0;

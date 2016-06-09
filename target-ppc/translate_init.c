@@ -4883,6 +4883,12 @@ static void init_proc_e500 (CPUPPCState *env, int version)
                  SPR_NOACCESS, SPR_NOACCESS,
                  &spr_read_generic, SPR_NOACCESS,
                  0x00000000);
+    /* L2 cache control */
+    /* XXX : not implemented */
+    spr_register(env, SPR_L2CR, "L2CR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 &spr_read_generic, &spr_write_l2cr,
+                 0x00000000);
     /* XXX better abstract into Emb.xxx features */
     if (version == fsl_e5500) {
         spr_register(env, SPR_BOOKE_EPCR, "EPCR",
