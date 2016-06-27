@@ -5240,7 +5240,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn)
 
 static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
                                                   TranslationBlock *tb,
-                                                  bool spc)
+                                                  bool search_pc)
 {
     CPUState *cs = CPU(cpu);
     CPUSPARCState *env = &cpu->env;
@@ -5283,18 +5283,24 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
                 }
             }
         }
-        if (spc) {
+        if (search_pc) {
             qemu_log("Search PC...\n");
             j = tcg_op_buf_count();
             if (lj < j) {
                 lj++;
-                while (lj < j)
+                while (lj < j) {
                     tcg_ctx.gen_opc_instr_start[lj++] = 0;
-                tcg_ctx.gen_opc_pc[lj] = dc->pc;
-                gen_opc_npc[lj] = dc->npc;
-                tcg_ctx.gen_opc_instr_start[lj] = 1;
-                tcg_ctx.gen_opc_icount[lj] = num_insns;
+                }
             }
+
+            /* Always update pc and npc even if tcg_op_buf_count() did not
+             * progress. This may happen if a target instruction is optimised
+             * away (e.g. mov %g1, %g1) and translated to no host instructions.
+             */
+            tcg_ctx.gen_opc_pc[lj] = dc->pc;
+            gen_opc_npc[lj] = dc->npc;
+            tcg_ctx.gen_opc_instr_start[lj] = 1;
+            tcg_ctx.gen_opc_icount[lj] = num_insns;
         }
         if (num_insns + 1 == max_insns && (tb->cflags & CF_LAST_IO))
             gen_io_start();
@@ -5345,11 +5351,12 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     }
     gen_tb_end(tb, num_insns);
 
-    if (spc) {
+    if (search_pc) {
         j = tcg_op_buf_count();
         lj++;
-        while (lj <= j)
+        while (lj <= j) {
             tcg_ctx.gen_opc_instr_start[lj++] = 0;
+        }
 #if 0
         log_page_dump();
 #endif
