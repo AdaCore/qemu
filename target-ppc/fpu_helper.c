@@ -1421,6 +1421,9 @@ static inline uint32_t efsdiv(CPUPPCState *env, uint32_t op1, uint32_t op2)
     u1.l = op1;
     u2.l = op2;
 
+    /* Clear exception flags before new operation */
+    set_float_exception_flags(0, &env->vec_status);
+
     res.f = float32_div(u1.f, u2.f, &env->vec_status);
 
     if ((get_float_exception_flags(&env->vec_status) & float_flag_overflow)
@@ -1799,6 +1802,10 @@ uint64_t helper_efddiv(CPUPPCState *env, uint64_t op1, uint64_t op2)
 
     u1.ll = op1;
     u2.ll = op2;
+
+    /* Clear exception flags before new operation */
+    set_float_exception_flags(0, &env->vec_status);
+
     res.d = float64_div(u1.d, u2.d, &env->vec_status);
 
     if ((get_float_exception_flags(&env->vec_status) & float_flag_underflow)
