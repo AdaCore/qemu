@@ -682,7 +682,7 @@ void gnatbus_master_init(qemu_irq *cpu_irqs, int nr_irq)
         if (gnatbus_init(name) < 0 ) {
             fprintf(stderr,
                     "error: GNATBus device '%s' initialisation failed\n", name);
-            abort();
+            exit(1);
         }
     }
 }
