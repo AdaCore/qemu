@@ -499,7 +499,9 @@ check-report.html: check-report.xml
 
 # Other tests
 
-QEMU_IOTESTS_HELPERS-$(CONFIG_LINUX) = tests/qemu-iotests/socket_scm_helper$(EXESUF)
+# Disable EMU_IOTESTS_HELPERS as part of P728-029
+# Because they trigger an compile error difficult to reproduce
+DISABLED_QEMU_IOTESTS_HELPERS-$(CONFIG_LINUX) = tests/qemu-iotests/socket_scm_helper$(EXESUF)
 
 .PHONY: check-tests/qemu-iotests-quick.sh
 check-tests/qemu-iotests-quick.sh: tests/qemu-iotests-quick.sh qemu-img$(EXESUF) qemu-io$(EXESUF) $(QEMU_IOTESTS_HELPERS-y)
