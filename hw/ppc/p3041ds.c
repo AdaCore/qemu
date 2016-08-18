@@ -276,6 +276,42 @@ static const MemoryRegionOps p3041_gbu_ops = {
     },
 };
 
+
+static uint64_t p3041_pamu_read(void *opaque, hwaddr addr, unsigned size)
+{
+    CPUPPCState *env  = opaque;
+    hwaddr  full_addr = (addr & 0xfff) + P3041DS_PAMU_REGS_BASE + ccsr_addr;
+
+    switch (addr) {
+        default:
+            PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
+    }
+    return 0;
+}
+
+static void p3041_pamu_write(void *opaque, hwaddr addr,
+                            uint64_t val, unsigned size)
+{
+    CPUPPCState *env  = opaque;
+    hwaddr  full_addr = (addr & 0xfff) + P3041DS_PAMU_REGS_BASE + ccsr_addr;
+
+    switch (addr) {
+         default:
+            PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?",
+                                             full_addr , val, env->nip);
+    }
+}
+
+static const MemoryRegionOps p3041_pamu_ops = {
+    .read = p3041_pamu_read,
+    .write = p3041_pamu_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 4,
+    },
+};
+
 static uint64_t p3041_lca_read(void *opaque, hwaddr addr, unsigned size)
 {
     CPUPPCState *env  = opaque;
@@ -963,6 +999,12 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
     memory_region_init_io(misc_io, NULL, &p3041_gbu_ops, env,
                           "Global Utilities", 0x1000);
     memory_region_add_subregion(ccsr_space, P3041DS_GLOBAL_UTILITIES, misc_io);
+
+    /* PAMU */
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, NULL, &p3041_pamu_ops, env,
+                          "PAMU", 0xffff);
+    memory_region_add_subregion(ccsr_space, P3041DS_PAMU_REGS_BASE, misc_io);
 
     /* Local configuration/access */
     misc_io = g_malloc0(sizeof(*misc_io));
