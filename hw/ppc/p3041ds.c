@@ -40,7 +40,7 @@
 #include "qemu-traces.h"
 #include "hw/hostfs.h"
 
-/* #define DEBUG_P3041 */
+#define DEBUG_P3041
 
 #define UIMAGE_LOAD_BASE           0
 #define DTC_LOAD_PAD               0x500000
@@ -60,6 +60,7 @@
 #define P3041DS_DDR_CONTROLLER     0x00008000
 #define P3041DS_L3CACHE            0x00010000
 #define P3041DS_L3_CACHE_SIZE      0x00008000
+#define P3041DS_PAMU_REGS_BASE     0x00020000
 #define P3041DS_MPIC_REGS_BASE     0x00040000
 #define P3041DS_GLOBAL_UTILITIES   0x000E0000
 #define P3041DS_SERIAL0_REGS_BASE  0x0011C500
@@ -280,16 +281,97 @@ static uint64_t p3041_lca_read(void *opaque, hwaddr addr, unsigned size)
     CPUPPCState *env  = opaque;
     hwaddr  full_addr = (addr & 0xfff) + P3041DS_LOCAL_CONF + ccsr_addr;
 
+//     PRINT_SUPPORTED_REGISTER("? Unknown ?",
+//                              full_addr, 0, env->nip);
+
     switch (addr & 0xfff) {
     case 0x0:
         PRINT_SUPPORTED_REGISTER("CCSRBAR",
                                  full_addr, ccsr_addr >> 12, env->nip);
         return ccsr_addr >> 12;
         break;
-    case 0xc08 ... 0xd70:
-        PRINT_READ_UNSUPPORTED_REGISTER("Local access window",
-                                        full_addr, env->nip);
-        break;
+
+    case 0xc04:
+        return 0xf4000000;
+
+    case 0xc08:
+        return 0x81800014;
+
+
+    case 0xc14:
+    case 0xc24:
+    case 0xc34:
+    case 0xc44:
+    case 0xc54:
+    case 0xc64:
+    case 0xc74:
+    case 0xc84:
+    case 0xc94:
+    case 0xca4:
+    case 0xcb4:
+    case 0xcc4:
+    case 0xcd4:
+    case 0xce4:
+    case 0xcf4:
+    case 0xd04:
+    case 0xd14:
+    case 0xd24:
+    case 0xd34:
+    case 0xd44:
+    case 0xd54:
+    case 0xd64:
+    case 0xd74:
+    case 0xd84:
+    case 0xd94:
+    case 0xda4:
+    case 0xdb4:
+    case 0xdc4:
+    case 0xdd4:
+    case 0xde4:
+    case 0xdf4:
+        return 0xd0000000;
+
+
+    case 0xc18:
+        return 0x81000014;
+
+    case 0xc28:
+    case 0xc38:
+    case 0xc48:
+    case 0xc58:
+    case 0xc68:
+    case 0xc78:
+    case 0xc88:
+    case 0xc98:
+    case 0xca8:
+    case 0xcb8:
+    case 0xcc8:
+    case 0xcd8:
+    case 0xce8:
+    case 0xcf8:
+    case 0xd08:
+    case 0xd18:
+    case 0xd28:
+    case 0xd38:
+    case 0xd48:
+    case 0xd58:
+    case 0xd68:
+    case 0xd78:
+    case 0xd88:
+    case 0xd98:
+    case 0xda8:
+    case 0xdb8:
+    case 0xdc8:
+    case 0xdd8:
+    case 0xde8:
+    case 0xdf8:
+
+        return 0x81d00015;
+
+//     case 0xc0c ... 0xd70:
+//         PRINT_READ_UNSUPPORTED_REGISTER("Local access window",
+//                                         full_addr, env->nip);
+//         break;
     default:
         PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
     }
