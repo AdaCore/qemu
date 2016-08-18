@@ -63,6 +63,7 @@
 #define P3041DS_PAMU_REGS_BASE     0x00020000
 #define P3041DS_MPIC_REGS_BASE     0x00040000
 #define P3041DS_GLOBAL_UTILITIES   0x000E0000
+#define P3041DS_RCPM_BASE          0x000E2000
 #define P3041DS_SERIAL0_REGS_BASE  0x0011C500
 #define P3041DS_SERIAL1_REGS_BASE  0x0011D500
 #define P3041DS_ELBC               0x00124000
@@ -276,7 +277,6 @@ static const MemoryRegionOps p3041_gbu_ops = {
     },
 };
 
-
 static uint64_t p3041_pamu_read(void *opaque, hwaddr addr, unsigned size)
 {
     CPUPPCState *env  = opaque;
@@ -312,13 +312,50 @@ static const MemoryRegionOps p3041_pamu_ops = {
     },
 };
 
+static uint64_t p3041_rcpm_read(void *opaque, hwaddr addr, unsigned size)
+{
+    CPUPPCState *env  = opaque;
+    hwaddr  full_addr = (addr & 0xfff) + P3041DS_RCPM_BASE + ccsr_addr;
+
+    switch (addr) {
+        case 0x84:
+            return 1;
+        default:
+            PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
+    }
+    return 0;
+}
+
+static void p3041_rcpm_write(void *opaque, hwaddr addr,
+                             uint64_t val, unsigned size)
+{
+    CPUPPCState *env  = opaque;
+    hwaddr  full_addr = (addr & 0xfff) + P3041DS_RCPM_BASE + ccsr_addr;
+
+    switch (addr) {
+        default:
+            PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?",
+                                             full_addr , val, env->nip);
+    }
+}
+
+static const MemoryRegionOps p3041_rcpm_ops = {
+    .read = p3041_rcpm_read,
+    .write = p3041_rcpm_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 4,
+    },
+};
+
 static uint64_t p3041_lca_read(void *opaque, hwaddr addr, unsigned size)
 {
     CPUPPCState *env  = opaque;
     hwaddr  full_addr = (addr & 0xfff) + P3041DS_LOCAL_CONF + ccsr_addr;
 
-//     PRINT_SUPPORTED_REGISTER("? Unknown ?",
-//                              full_addr, 0, env->nip);
+    PRINT_SUPPORTED_REGISTER("? Unknown ?",
+                              full_addr, 0, env->nip);
 
     switch (addr & 0xfff) {
     case 0x0:
@@ -333,8 +370,21 @@ static uint64_t p3041_lca_read(void *opaque, hwaddr addr, unsigned size)
     case 0xc08:
         return 0x81800014;
 
+    case 0xc10:
+        PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                 full_addr, 0, env->nip);
+        return 0;
 
     case 0xc14:
+        PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                 full_addr, 0, env->nip);
+        return 0;
+
+    case 0xc18:
+        PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                 full_addr, 0x8100001a, env->nip);
+        return 0x8100001a;
+
     case 0xc24:
     case 0xc34:
     case 0xc44:
@@ -367,11 +417,10 @@ static uint64_t p3041_lca_read(void *opaque, hwaddr addr, unsigned size)
     case 0xdf4:
         return 0xd0000000;
 
-
-    case 0xc18:
-        return 0x81000014;
-
     case 0xc28:
+        PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                 full_addr, 0x0, env->nip);
+        return 0x0;
     case 0xc38:
     case 0xc48:
     case 0xc58:
@@ -419,6 +468,9 @@ static void p3041_lca_write(void *opaque, hwaddr addr,
 {
     CPUPPCState *env  = opaque;
     hwaddr  full_addr = (addr & 0xfff) + P3041DS_LOCAL_CONF + ccsr_addr;
+
+    PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?",
+                                     full_addr, val, env->nip);
 
     switch (addr & 0xfff) {
     case 0x0:
@@ -1005,6 +1057,12 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
     memory_region_init_io(misc_io, NULL, &p3041_pamu_ops, env,
                           "PAMU", 0xffff);
     memory_region_add_subregion(ccsr_space, P3041DS_PAMU_REGS_BASE, misc_io);
+
+    /* RCPM */
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, NULL, &p3041_rcpm_ops, env,
+                          "RCPM", 0xfff);
+    memory_region_add_subregion(ccsr_space, P3041DS_RCPM_BASE, misc_io);
 
     /* Local configuration/access */
     misc_io = g_malloc0(sizeof(*misc_io));
