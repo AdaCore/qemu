@@ -69,7 +69,8 @@
 #define P3041DS_ELBC               0x00124000
 #define P3041DS_GPIO               0x00130000
 #define P3041DS_PCI_REGS_BASE      0x00200000
-#define P3041DS_BUF_MAN            0x0031A000
+#define P3041DS_QMAN_BASE          0x00318000
+#define P3041DS_BMAN_BASE          0x0031A000
 #define P3041DS_DTSEC1_BASE        0x00400000
 #define P3041DS_PCI_REGS_SIZE      0x00001000
 #define P3041DS_PCI_IO             0xE1000000
@@ -339,9 +340,123 @@ static void p3041_rcpm_write(void *opaque, hwaddr addr,
     }
 }
 
+
 static const MemoryRegionOps p3041_rcpm_ops = {
     .read = p3041_rcpm_read,
     .write = p3041_rcpm_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 4,
+    },
+};
+
+static uint64_t p3041_qman_read(void *opaque, hwaddr addr, unsigned size)
+{
+    CPUPPCState *env  = opaque;
+    hwaddr  full_addr = (addr & 0xfff) + P3041DS_QMAN_BASE + ccsr_addr;
+
+    switch (addr) {
+        case 0xc04:
+            PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                     full_addr, 0x7fd00000, env->nip);
+            return 0x7fd00000;
+
+        case 0xc10:
+        case 0xc30:
+            PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                     full_addr, 0x80000013, env->nip);
+            return 0x80000013;
+
+        case 0xc24:
+            PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                     full_addr, 0x7fe00000, env->nip);
+            return 0x7fe00000;
+
+        case 0xb00:
+            PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                     full_addr, 0x01000000, env->nip);
+            return 0x01000000;
+
+        case 0xb04:
+            PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                     full_addr, 0x00000008, env->nip);
+            return 0x00000008;
+
+        case 0xb08:
+            PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                     full_addr, 0x00003fff, env->nip);
+            return 0x00003fff;
+
+        default:
+            PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
+    }
+    return 0;
+}
+
+static void p3041_qman_write(void *opaque, hwaddr addr,
+                             uint64_t val, unsigned size)
+{
+    CPUPPCState *env  = opaque;
+    hwaddr  full_addr = (addr & 0xfff) + P3041DS_QMAN_BASE + ccsr_addr;
+
+    switch (addr) {
+        default:
+            PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?",
+                                             full_addr , val, env->nip);
+    }
+}
+
+
+static const MemoryRegionOps p3041_qman_ops = {
+    .read = p3041_qman_read,
+    .write = p3041_qman_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 4,
+    },
+};
+
+
+static uint64_t p3041_bman_read(void *opaque, hwaddr addr, unsigned size)
+{
+    CPUPPCState *env  = opaque;
+    hwaddr  full_addr = (addr & 0xfff) + P3041DS_BMAN_BASE + ccsr_addr;
+
+    switch (addr) {
+        case 0xc04:
+            PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                     full_addr, 0x7ff00000, env->nip);
+            return 0x7ff00000;
+
+        case 0xc10:
+            PRINT_SUPPORTED_REGISTER("CCSRBAR",
+                                     full_addr, 0x13, env->nip);
+            return 0x13;
+
+        default:
+            PRINT_READ_UNSUPPORTED_REGISTER("? Unknown ?", full_addr, env->nip);
+    }
+    return 0;
+}
+
+static void p3041_bman_write(void *opaque, hwaddr addr,
+                             uint64_t val, unsigned size)
+{
+    CPUPPCState *env  = opaque;
+    hwaddr  full_addr = (addr & 0xfff) + P3041DS_BMAN_BASE + ccsr_addr;
+
+    switch (addr) {
+        default:
+            PRINT_WRITE_UNSUPPORTED_REGISTER("? Unknown ?",
+                                             full_addr , val, env->nip);
+    }
+}
+
+static const MemoryRegionOps p3041_bman_ops = {
+    .read = p3041_bman_read,
+    .write = p3041_bman_write,
     .endianness = DEVICE_NATIVE_ENDIAN,
     .impl = {
         .min_access_size = 1,
@@ -1063,6 +1178,18 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
     memory_region_init_io(misc_io, NULL, &p3041_rcpm_ops, env,
                           "RCPM", 0xfff);
     memory_region_add_subregion(ccsr_space, P3041DS_RCPM_BASE, misc_io);
+
+    /* QMAN */
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, NULL, &p3041_qman_ops, env,
+                          "QMAN", 0xfff);
+    memory_region_add_subregion(ccsr_space, P3041DS_QMAN_BASE, misc_io);
+
+    /* BMAN */
+    misc_io = g_malloc0(sizeof(*misc_io));
+    memory_region_init_io(misc_io, NULL, &p3041_bman_ops, env,
+                          "BMAN", 0xfff);
+    memory_region_add_subregion(ccsr_space, P3041DS_BMAN_BASE, misc_io);
 
     /* Local configuration/access */
     misc_io = g_malloc0(sizeof(*misc_io));
