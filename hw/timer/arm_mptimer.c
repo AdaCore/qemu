@@ -44,7 +44,8 @@ static inline void timerblock_update_irq(TimerBlock *tb)
 /* Return conversion factor from mpcore timer ticks to qemu timer ticks.  */
 static inline uint32_t timerblock_scale(TimerBlock *tb)
 {
-    return (((tb->control >> 8) & 0xff) + 1) * 10;
+    return (((tb->control >> 8) & 0xff) + 1) * 10
+      * ((float)333333333.0 / (float)get_ticks_per_sec());
 }
 
 static void timerblock_reload(TimerBlock *tb, int restart)
