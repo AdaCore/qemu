@@ -57,7 +57,8 @@ static inline void timerblock_update_irq(TimerBlock *tb)
 /* Return conversion factor from mpcore timer ticks to qemu timer ticks.  */
 static inline uint32_t timerblock_scale(uint32_t control)
 {
-    return (((control >> 8) & 0xff) + 1) * 10;
+    return (((control >> 8) & 0xff) + 1) * 10
+      * ((float)333333333.0 / (float)NANOSECONDS_PER_SECOND);
 }
 
 static inline void timerblock_set_count(struct ptimer_state *timer,
