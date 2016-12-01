@@ -11495,6 +11495,11 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
                 gen_update_nip(ctxp, ctx.nip);
                 gen_debug_exception(ctxp);
                 ctx.exception = POWERPC_EXCP_BRANCH;
+                /* The address covered by the breakpoint must be included in
+                   [tb->pc, tb->pc + tb->size) in order to for it to be
+                   properly cleared -- thus we increment the PC here so that
+                   the logic setting tb->size below does the right thing.  */
+                ctx.nip += 4;
                 break;
             }
         }
