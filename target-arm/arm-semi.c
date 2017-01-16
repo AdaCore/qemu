@@ -310,7 +310,7 @@ target_ulong do_arm_semihosting(CPUARMState *env)
           if (use_gdb_syscalls()) {
                 return arm_gdb_syscall(cpu, arm_semi_cb, "write,2,%x,1", args);
           } else {
-                return write(STDERR_FILENO, &c, 1);
+                return write(STDOUT_FILENO, &c, 1);
           }
         }
     case TARGET_SYS_WRITE0:
@@ -322,7 +322,7 @@ target_ulong do_arm_semihosting(CPUARMState *env)
             return arm_gdb_syscall(cpu, arm_semi_cb, "write,2,%x,%x",
                                    args, len);
         } else {
-            ret = write(STDERR_FILENO, s, len);
+            ret = write(STDOUT_FILENO, s, len);
         }
         unlock_user(s, args, 0);
         return ret;
