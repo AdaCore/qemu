@@ -158,6 +158,11 @@ int serial_max_hds(void);
 
 extern Chardev *parallel_hds[MAX_PARALLEL_PORTS];
 
+/* Semihosting console */
+
+#define MAX_SEMIHOSTING_CONSOLES 1
+extern Chardev *semihosting_hds[MAX_SEMIHOSTING_CONSOLES];
+
 void hmp_info_usb(Monitor *mon, const QDict *qdict);
 
 void add_boot_device_path(int32_t bootindex, DeviceState *dev,

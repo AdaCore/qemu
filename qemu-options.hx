@@ -3982,6 +3982,16 @@ STEXI
 @findex -semihosting
 Enable semihosting mode (ARM, M68K, Xtensa, MIPS only).
 ETEXI
+DEF("semihosting-console", HAS_ARG, QEMU_OPTION_semihosting_console,
+    "-semihosting-console dev\n",
+    QEMU_ARCH_ARM | QEMU_ARCH_M68K | QEMU_ARCH_XTENSA | QEMU_ARCH_LM32 |
+    QEMU_ARCH_MIPS)
+STEXI
+@item -semihosting-console dev
+@findex -semihosting-console
+Set char device for semihosting console. By default, the semihosting console
+will write in the first serial port, if any, or to STDERR.
+ETEXI
 DEF("semihosting-config", HAS_ARG, QEMU_OPTION_semihosting_config,
     "-semihosting-config [enable=on|off][,target=native|gdb|auto][,arg=str[,...]]\n" \
     "                semihosting configuration\n",
