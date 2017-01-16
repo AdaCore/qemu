@@ -157,6 +157,7 @@ CharDriverState *serial_hds[MAX_SERIAL_PORTS];
 CharDriverState *parallel_hds[MAX_PARALLEL_PORTS];
 CharDriverState *virtcon_hds[MAX_VIRTIO_CONSOLES];
 CharDriverState *sclp_hds[MAX_SCLP_CONSOLES];
+CharDriverState *semihosting_hds[MAX_SEMIHOSTING_CONSOLES];
 int win2k_install_hack = 0;
 int singlestep = 0;
 int smp_cpus = 1;
@@ -2509,6 +2510,7 @@ struct device_config {
         DEV_DEBUGCON,  /* -debugcon */
         DEV_GDB,       /* -gdb, -s */
         DEV_SCLP,      /* s390 sclp */
+        DEV_SEMI,      /* -semihosting-console */
     } type;
     const char *cmdline;
     Location loc;
@@ -2563,6 +2565,29 @@ static int serial_parse(const char *devname)
     if (!serial_hds[index]) {
         error_report("could not connect serial device"
                      " to character backend '%s'", devname);
+        return -1;
+    }
+    index++;
+    return 0;
+}
+
+static int semihosting_console_parse(const char *devname)
+{
+    static int index;
+    char label[32];
+
+    if (strcmp(devname, "none") == 0) {
+        return 0;
+    }
+    if (index == MAX_SEMIHOSTING_CONSOLES) {
+        fprintf(stderr, "qemu: too many semihosting console ports\n");
+        exit(1);
+    }
+    snprintf(label, sizeof(label), "semihosting_console%d", index);
+    semihosting_hds[index] = qemu_chr_new(label, devname);
+    if (!semihosting_hds[index]) {
+        fprintf(stderr, "qemu: could not connect semihosting console device"
+                " to character backend '%s'\n", devname);
         return -1;
     }
     index++;
@@ -3984,6 +4009,9 @@ int main(int argc, char **argv, char **envp)
                 semihosting.enabled = true;
                 semihosting.target = SEMIHOSTING_TARGET_AUTO;
                 break;
+            case QEMU_OPTION_semihosting_console:
+                add_device_config(DEV_SEMI, optarg);
+                break;
             case QEMU_OPTION_semihosting_config:
                 semihosting.enabled = true;
                 opts = qemu_opts_parse_noisily(qemu_find_opts("semihosting-config"),
@@ -4693,6 +4721,9 @@ int main(int argc, char **argv, char **envp)
     if (foreach_device_config(DEV_VIRTCON, virtcon_parse) < 0)
         exit(1);
     if (foreach_device_config(DEV_SCLP, sclp_parse) < 0) {
+        exit(1);
+    }
+    if (foreach_device_config(DEV_SEMI, semihosting_console_parse) < 0) {
         exit(1);
     }
     if (foreach_device_config(DEV_DEBUGCON, debugcon_parse) < 0)
