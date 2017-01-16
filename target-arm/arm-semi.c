@@ -251,7 +251,7 @@ uint32_t do_arm_semihosting(CPUARMState *env)
                 gdb_do_syscall(arm_semi_cb, "write,2,%x,1", args);
                 return env->regs[0];
           } else {
-                return write(STDERR_FILENO, &c, 1);
+                return write(STDOUT_FILENO, &c, 1);
           }
         }
     case TARGET_SYS_WRITE0:
@@ -263,7 +263,7 @@ uint32_t do_arm_semihosting(CPUARMState *env)
             gdb_do_syscall(arm_semi_cb, "write,2,%x,%x", args, len);
             ret = env->regs[0];
         } else {
-            ret = write(STDERR_FILENO, s, len);
+            ret = write(STDOUT_FILENO, s, len);
         }
         unlock_user(s, args, 0);
         return ret;
