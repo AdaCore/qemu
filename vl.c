@@ -161,6 +161,7 @@ static int num_serial_hds;
 static Chardev **serial_hds;
 Chardev *parallel_hds[MAX_PARALLEL_PORTS];
 Chardev *virtcon_hds[MAX_VIRTIO_CONSOLES];
+Chardev *semihosting_hds[MAX_SEMIHOSTING_CONSOLES];
 int win2k_install_hack = 0;
 int singlestep = 0;
 int smp_cpus;
@@ -2414,6 +2415,7 @@ struct device_config {
         DEV_DEBUGCON,  /* -debugcon */
         DEV_GDB,       /* -gdb, -s */
         DEV_SCLP,      /* s390 sclp */
+        DEV_SEMI,      /* -semihosting-console */
     } type;
     const char *cmdline;
     Location loc;
@@ -2484,6 +2486,29 @@ Chardev *serial_hd(int i)
 int serial_max_hds(void)
 {
     return num_serial_hds;
+}
+
+static int semihosting_console_parse(const char *devname)
+{
+    static int index;
+    char label[32];
+
+    if (strcmp(devname, "none") == 0) {
+        return 0;
+    }
+    if (index == MAX_SEMIHOSTING_CONSOLES) {
+        fprintf(stderr, "qemu: too many semihosting console ports\n");
+        exit(1);
+    }
+    snprintf(label, sizeof(label), "semihosting_console%d", index);
+    semihosting_hds[index] = qemu_chr_new(label, devname);
+    if (!semihosting_hds[index]) {
+        fprintf(stderr, "qemu: could not connect semihosting console device"
+                " to character backend '%s'\n", devname);
+        return -1;
+    }
+    index++;
+    return 0;
 }
 
 static int parallel_parse(const char *devname)
@@ -3861,6 +3886,9 @@ int main(int argc, char **argv, char **envp)
                 semihosting.enabled = true;
                 semihosting.target = SEMIHOSTING_TARGET_AUTO;
                 break;
+            case QEMU_OPTION_semihosting_console:
+                add_device_config(DEV_SEMI, optarg);
+                break;
             case QEMU_OPTION_semihosting_config:
                 semihosting.enabled = true;
                 opts = qemu_opts_parse_noisily(qemu_find_opts("semihosting-config"),
@@ -4654,6 +4682,9 @@ int main(int argc, char **argv, char **envp)
         exit(1);
     if (foreach_device_config(DEV_VIRTCON, virtcon_parse) < 0)
         exit(1);
+    if (foreach_device_config(DEV_SEMI, semihosting_console_parse) < 0) {
+        exit(1);
+    }
     if (foreach_device_config(DEV_DEBUGCON, debugcon_parse) < 0)
         exit(1);
 

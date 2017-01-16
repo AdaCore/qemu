@@ -22,6 +22,8 @@
 
 #include "cpu.h"
 #include "exec/semihost.h"
+#include "chardev/char-fe.h"
+#include "sysemu/sysemu.h"
 #ifdef CONFIG_USER_ONLY
 #include "qemu.h"
 
@@ -220,6 +222,100 @@ static target_ulong arm_gdb_syscall(ARMCPU *cpu, gdb_syscall_complete_cb cb,
     return is_a64(env) ? env->xregs[0] : env->regs[0];
 }
 
+#define FIFO_LENGTH 1024
+
+typedef struct console_FIFO {
+    CharBackend chr;
+    char        buffer[FIFO_LENGTH];
+    int         len;
+    int         current;
+} console_FIFO;
+
+static int console_FIFO_can_receive(void *opaque)
+{
+    console_FIFO *fifo = opaque;
+
+    return FIFO_LENGTH - fifo->len;
+}
+
+static void console_FIFO_receive(void *opaque, const uint8_t *buf, int size)
+{
+    console_FIFO *fifo = opaque;
+
+    if (fifo->len + size > FIFO_LENGTH) {
+        abort();
+    }
+    memcpy(fifo->buffer + fifo->len, buf, size);
+    fifo->len += size;
+}
+
+static char console_FIFO_pop(console_FIFO *fifo)
+{
+    char ret;
+
+    if (fifo->len == 0) {
+        return 0;
+    }
+
+    ret = fifo->buffer[fifo->current++];
+
+    if (fifo->current >= fifo->len) {
+        /* Flush */
+        fifo->len     = 0;
+        fifo->current = 0;
+    }
+
+    return ret;
+}
+
+console_FIFO arm_semi_console_fifo;
+
+static char arm_semi_console_read(void)
+{
+    Chardev *serial = semihosting_hds[0];
+
+    if (serial == NULL) {
+        return 0;
+    }
+
+    if (qemu_chr_fe_init(&arm_semi_console_fifo.chr,
+                         semihosting_hds[0],
+                         NULL))
+    {
+
+        qemu_chr_fe_set_handlers(&arm_semi_console_fifo.chr,
+                                 console_FIFO_can_receive,
+                                 console_FIFO_receive,
+                                 NULL, NULL,
+                                 &arm_semi_console_fifo,
+                                 NULL,
+                                 true);
+
+    }
+
+    return console_FIFO_pop(&arm_semi_console_fifo);
+}
+
+static int arm_semi_console_write(uint8_t *buf, int len)
+{
+    Chardev *serial = NULL;
+
+    if (semihosting_hds[0] != NULL) {
+        /* Use the semihosting char dev if any */
+        serial = semihosting_hds[0];
+    } else if (serial_hd(0) != NULL) {
+        /* Fallback on the first serial char dev */
+        serial = serial_hd(0);
+    }
+
+    if (serial != NULL) {
+        return qemu_chr_fe_write(serial->be, buf, len);
+    } else {
+        /* Print on stderr if we don't have any char dev */
+        return write(STDERR_FILENO, buf, len);
+    }
+}
+
 /* Read the input value from the argument block; fail the semihosting
  * call if the memory read fails.
  */
@@ -310,7 +406,7 @@ target_ulong do_arm_semihosting(CPUARMState *env)
           if (use_gdb_syscalls()) {
                 return arm_gdb_syscall(cpu, arm_semi_cb, "write,2,%x,1", args);
           } else {
-                return write(STDERR_FILENO, &c, 1);
+              return arm_semi_console_write((uint8_t *)&c, 1);
           }
         }
     case TARGET_SYS_WRITE0:
@@ -322,7 +418,7 @@ target_ulong do_arm_semihosting(CPUARMState *env)
             return arm_gdb_syscall(cpu, arm_semi_cb, "write,2,%x,%x",
                                    args, len);
         } else {
-            ret = write(STDERR_FILENO, s, len);
+            ret = arm_semi_console_write((uint8_t *)s, len);
         }
         unlock_user(s, args, 0);
         return ret;
@@ -371,8 +467,7 @@ target_ulong do_arm_semihosting(CPUARMState *env)
             return len - ret;
         }
     case TARGET_SYS_READC:
-       /* XXX: Read from debug console. Not implemented.  */
-        return 0;
+        return arm_semi_console_read();
     case TARGET_SYS_ISTTY:
         GET_ARG(0);
         if (use_gdb_syscalls()) {
