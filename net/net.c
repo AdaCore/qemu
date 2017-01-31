@@ -570,6 +570,7 @@ ssize_t qemu_deliver_packet(NetClientState *sender,
 {
     NetClientState *nc = opaque;
     ssize_t ret;
+    uint8_t padded [MINIMUM_PACKET_SIZE];
 
     if (nc->link_down) {
         return size;
@@ -577,6 +578,12 @@ ssize_t qemu_deliver_packet(NetClientState *sender,
 
     if (nc->receive_disabled) {
         return 0;
+    }
+
+    if (size < MINIMUM_PACKET_SIZE) {
+       memcpy(padded, data, size);
+       size = MINIMUM_PACKET_SIZE;
+       data = padded;
     }
 
     if (flags & QEMU_NET_PACKET_FLAG_RAW && nc->info->receive_raw) {
