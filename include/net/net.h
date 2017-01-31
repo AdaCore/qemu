@@ -17,6 +17,7 @@
  * the ethernet and virtio_net headers
  */
 #define NET_BUFSIZE (4096 + 65536)
+#define MINIMUM_PACKET_SIZE 62
 
 struct MACAddr {
     uint8_t a[6];

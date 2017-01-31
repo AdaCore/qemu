@@ -98,15 +98,22 @@ static void qemu_net_queue_append(NetQueue *queue,
                                   NetPacketSent *sent_cb)
 {
     NetPacket *packet;
+    size_t new_size;
 
     if (queue->nq_count >= queue->nq_maxlen && !sent_cb) {
         return; /* drop if queue full and no callback */
     }
-    packet = g_malloc(sizeof(NetPacket) + size);
+
+    /* Add padding to avoid short Ethernet packet */
+    new_size = (size < MINIMUM_PACKET_SIZE ? MINIMUM_PACKET_SIZE : size);
+
+    packet = g_malloc(sizeof(NetPacket) + new_size);
     packet->sender = sender;
     packet->flags = flags;
-    packet->size = size;
+    packet->size = new_size;
     packet->sent_cb = sent_cb;
+
+    /* Only copy the real data size, not the new padded size */
     memcpy(packet->data, buf, size);
 
     queue->nq_count++;
