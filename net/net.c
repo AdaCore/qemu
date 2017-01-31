@@ -717,6 +717,7 @@ ssize_t qemu_deliver_packet_iov(NetClientState *sender,
 {
     NetClientState *nc = opaque;
     int ret;
+    uint8_t padded[MINIMUM_PACKET_SIZE];
 
     if (nc->link_down) {
         return iov_size(iov, iovcnt);
@@ -724,6 +725,12 @@ ssize_t qemu_deliver_packet_iov(NetClientState *sender,
 
     if (nc->receive_disabled) {
         return 0;
+    }
+
+    if (size < MINIMUM_PACKET_SIZE) {
+        memcpy(padded, data, size);
+        size = MINIMUM_PACKET_SIZE;
+        data = padded;
     }
 
     if (nc->info->receive_iov && !(flags & QEMU_NET_PACKET_FLAG_RAW)) {
