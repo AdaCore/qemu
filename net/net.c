@@ -681,6 +681,7 @@ static ssize_t nc_sendv_compat(NetClientState *nc, const struct iovec *iov,
     uint8_t *buffer;
     size_t offset;
     ssize_t ret;
+    uint8_t padded[MINIMUM_PACKET_SIZE];
 
     if (iovcnt == 1) {
         buffer = iov[0].iov_base;
@@ -693,6 +694,12 @@ static ssize_t nc_sendv_compat(NetClientState *nc, const struct iovec *iov,
         buf = g_malloc(offset);
         buffer = buf;
         offset = iov_to_buf(iov, iovcnt, 0, buf, offset);
+    }
+
+    if (offset < MINIMUM_PACKET_SIZE) {
+        memcpy(padded, buffer, offset);
+        offset = MINIMUM_PACKET_SIZE;
+        buffer = padded;
     }
 
     if (flags & QEMU_NET_PACKET_FLAG_RAW && nc->info->receive_raw) {
@@ -722,7 +729,15 @@ ssize_t qemu_deliver_packet_iov(NetClientState *sender,
         return 0;
     }
 
-    if (nc->info->receive_iov && !(flags & QEMU_NET_PACKET_FLAG_RAW)) {
+
+    if (nc->info->receive_iov
+        && !(flags & QEMU_NET_PACKET_FLAG_RAW)
+
+        /* If the packet is too small, we use the legacy sendv that will
+         * add padding.
+         */
+        && iov_size(iov, iovcnt) < MINIMUM_PACKET_SIZE)
+    {
         ret = nc->info->receive_iov(nc, iov, iovcnt);
     } else {
         ret = nc_sendv_compat(nc, iov, iovcnt, flags);
