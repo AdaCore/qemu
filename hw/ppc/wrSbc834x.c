@@ -576,7 +576,7 @@ static void sbc834x_init(MachineState *args)
 {
     generic_init(args,
                  0xff400000 /* IMMR_BASE */,
-                 660000000 /* Freq */);
+                 66000000 /* Freq */);
 }
 
 static QEMUMachine sbc834x_machine = {
