@@ -178,6 +178,12 @@ extern CharDriverState *serial_hds[MAX_SERIAL_PORTS];
 
 extern CharDriverState *parallel_hds[MAX_PARALLEL_PORTS];
 
+/* Semihosting console */
+
+#define MAX_SEMIHOSTING_CONSOLES 1
+
+extern CharDriverState *semihosting_hds[MAX_SEMIHOSTING_CONSOLES];
+
 void hmp_usb_add(Monitor *mon, const QDict *qdict);
 void hmp_usb_del(Monitor *mon, const QDict *qdict);
 void hmp_info_usb(Monitor *mon, const QDict *qdict);
