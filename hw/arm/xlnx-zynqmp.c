@@ -18,6 +18,7 @@
 #include "hw/arm/xlnx-zynqmp.h"
 #include "hw/intc/arm_gic_common.h"
 #include "exec/address-spaces.h"
+#include "sysemu/sysemu.h"
 
 #define GIC_NUM_SPI_INTR 160
 
@@ -27,6 +28,7 @@
 #define GIC_BASE_ADDR       0xf9000000
 #define GIC_DIST_ADDR       0xf9010000
 #define GIC_CPU_ADDR        0xf9020000
+#define CRL_APB_ADDR        0xff5e0000
 
 static const uint64_t gem_addr[XLNX_ZYNQMP_NUM_GEMS] = {
     0xFF0B0000, 0xFF0C0000, 0xFF0D0000, 0xFF0E0000,
@@ -52,6 +54,30 @@ typedef struct XlnxZynqMPGICRegion {
 static const XlnxZynqMPGICRegion xlnx_zynqmp_gic_regions[] = {
     { .region_index = 0, .address = GIC_DIST_ADDR, },
     { .region_index = 1, .address = GIC_CPU_ADDR,  },
+};
+
+static uint64_t crl_apb_read(void *opaque, hwaddr addr, unsigned size)
+{
+  return 0;
+}
+
+static void crl_apb_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
+{
+    switch (addr) {
+    case 0x218: /* RESET_CTRL */
+      if (val & 0x10) {
+        qemu_system_reset_request();
+      }
+      break;
+    default:
+      break;
+    }
+}
+
+static const MemoryRegionOps xlnx_crl_apb = {
+    .read = crl_apb_read,
+    .write = crl_apb_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
 static inline int arm_gic_ppi_index(int cpu_nr, int ppi_index)
@@ -95,7 +121,8 @@ static void xlnx_zynqmp_init(Object *obj)
 static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
 {
     XlnxZynqMPState *s = XLNX_ZYNQMP(dev);
-    MemoryRegion *system_memory = get_system_memory();
+    MemoryRegion    *system_memory = get_system_memory();
+    MemoryRegion    *crl_apb       = g_new(MemoryRegion, 1);
     uint8_t i;
     const char *boot_cpu = s->boot_cpu ? s->boot_cpu : "apu-cpu[0]";
     qemu_irq gic_spi[GIC_NUM_SPI_INTR];
@@ -109,6 +136,11 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         error_propagate((errp), (err));
         return;
     }
+
+    memory_region_init_io(crl_apb, NULL, &xlnx_crl_apb, s,
+                          "zynqmp-crl-apb", 0x300);
+    memory_region_add_subregion(system_memory, CRL_APB_ADDR, crl_apb);
+
     assert(ARRAY_SIZE(xlnx_zynqmp_gic_regions) == XLNX_ZYNQMP_GIC_REGIONS);
     for (i = 0; i < XLNX_ZYNQMP_GIC_REGIONS; i++) {
         SysBusDevice *gic = SYS_BUS_DEVICE(&s->gic);
