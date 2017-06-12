@@ -40,6 +40,7 @@
 #define GIC_CPU_ADDR        0xf9020000
 #define GIC_VIFACE_ADDR     0xf9040000
 #define GIC_VCPU_ADDR       0xf9060000
+#define CRF_APB_ADDR        0xfd1a0000
 
 #define SATA_INTR           133
 #define SATA_ADDR           0xFD0C0000
@@ -164,6 +165,65 @@ static const XlnxZynqMPGICRegion xlnx_zynqmp_gic_regions[] = {
         .offset = 0x1000,
         .virt = true
     },
+};
+
+static uint64_t crf_apb_read(void *opaque, hwaddr addr, unsigned size)
+{
+  XlnxZynqMPState *s = (XlnxZynqMPState *)opaque;
+  ARMCPU *target_cpu;
+  uint64_t value;
+  int j;
+
+  switch (addr) {
+  case 0x104:
+    value = 0;
+    for (j = 0; j < 4; j++) {
+      target_cpu = (ARMCPU *)&s->apu_cpu[j];
+      if (target_cpu->power_state != PSCI_ON) {
+        value |= 1 << j;
+        value |= 1 << (j + 10);
+      }
+    }
+    return value;
+    break;
+  default:
+    return 0;
+  }
+}
+
+static void crf_apb_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
+{
+  XlnxZynqMPState *s = (XlnxZynqMPState *)opaque;
+  ARMCPU          *target_cpu;
+  CPUState        *target_cpu_state;
+  int j;
+
+  switch (addr) {
+  case 0x104: /* RST_FPD_APU register */
+    for (j = 0; j < 4; j++) {
+      if (!(val & (0x1 << j))) {
+        // acpu[j] out of reset
+        target_cpu = (ARMCPU *)&s->apu_cpu[j];
+        target_cpu_state = CPU(target_cpu);
+        if (target_cpu->power_state != PSCI_ON) {
+          cpu_reset(target_cpu_state);
+          /* XXX: This is definitely wrong. */
+          target_cpu->power_state = PSCI_ON;
+          target_cpu_state->halted = 0;
+        }
+      }
+    }
+
+    break;
+  default:
+    break;
+  }
+}
+
+static const MemoryRegionOps xlnx_crf_apb = {
+    .read = crf_apb_read,
+    .write = crf_apb_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
 static inline int arm_gic_ppi_index(int cpu_nr, int ppi_index)
@@ -292,6 +352,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
 {
     XlnxZynqMPState *s = XLNX_ZYNQMP(dev);
     MemoryRegion *system_memory = get_system_memory();
+    MemoryRegion *crf_apb = g_new(MemoryRegion, 1);
     uint8_t i;
     uint64_t ram_size;
     int num_apus = MIN(smp_cpus, XLNX_ZYNQMP_NUM_APU_CPUS);
@@ -391,6 +452,10 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         error_propagate(errp, err);
         return;
     }
+
+    memory_region_init_io(crf_apb, NULL, &xlnx_crf_apb, s,
+                          "zynqmp-crf-apb", 0x110);
+    memory_region_add_subregion(system_memory, CRF_APB_ADDR, crf_apb);
 
     assert(ARRAY_SIZE(xlnx_zynqmp_gic_regions) == XLNX_ZYNQMP_GIC_REGIONS);
     for (i = 0; i < XLNX_ZYNQMP_GIC_REGIONS; i++) {
