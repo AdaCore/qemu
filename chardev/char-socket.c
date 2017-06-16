@@ -291,8 +291,9 @@ ssize_t tcp_chr_recv(Chardev *chr, char *buf, size_t len)
     }
 
     if (ret == QIO_CHANNEL_ERR_BLOCK) {
-        errno = EAGAIN;
-        ret = -1;
+        /* QIO_CHANNEL_ERR_BLOCK should not be treated as an error as this might
+         * unexpectedly close valid connections.
+         */
     } else if (ret == -1) {
         errno = EIO;
     }
