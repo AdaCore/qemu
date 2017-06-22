@@ -78,13 +78,14 @@ static void crl_apb_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
 static uint64_t crf_apb_read(void *opaque, hwaddr addr, unsigned size)
 {
   XlnxZynqMPState *s = (XlnxZynqMPState *)opaque;
-  ARMCPU          *target_cpu;
-  uint64_t        value;
+  ARMCPU *target_cpu;
+  uint64_t value;
+  int j;
 
   switch (addr) {
   case 0x104:
     value = 0;
-    for (int j = 0; j < 4; j++) {
+    for (j = 0; j < 4; j++) {
       target_cpu = (ARMCPU *)&s->apu_cpu[j];
       if (target_cpu->powered_off) {
         value |= 1 << j;
