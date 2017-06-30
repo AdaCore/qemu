@@ -24,6 +24,7 @@
 #include "qemu/error-report.h"
 #include "qemu/log.h"
 #include "sysemu/qtest.h"
+#include "hw/adacore/hostfs.h"
 
 typedef struct XlnxZCU102 {
     MachineState parent_obj;
@@ -169,6 +170,9 @@ static void xlnx_zcu102_init(MachineState *machine)
 
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->soc.qspi), i + 1, cs_line);
     }
+
+    /* HostFS */
+    hostfs_create(0xFF080000, get_system_memory());
 
     /* TODO create and connect IDE devices for ide_drive_get() */
 
