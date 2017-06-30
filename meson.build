@@ -1430,6 +1430,7 @@ if have_system
     'chardev',
     'hw/9pfs',
     'hw/acpi',
+    'hw/adacore',
     'hw/alpha',
     'hw/arm',
     'hw/audio',

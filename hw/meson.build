@@ -1,5 +1,6 @@
 subdir('9pfs')
 subdir('acpi')
+subdir('adacore')
 subdir('adc')
 subdir('audio')
 subdir('block')
