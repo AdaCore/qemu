@@ -19,6 +19,7 @@
 #include "hw/boards.h"
 #include "qemu/error-report.h"
 #include "exec/address-spaces.h"
+#include "hw/hostfs.h"
 
 typedef struct XlnxEP108 {
     XlnxZynqMPState soc;
@@ -59,6 +60,9 @@ static void xlnx_ep108_init(MachineState *machine)
     memory_region_allocate_system_memory(&s->ddr_ram, NULL, "ddr-ram",
                                          machine->ram_size);
     memory_region_add_subregion(get_system_memory(), 0, &s->ddr_ram);
+
+    /* HostFS */
+    hostfs_create(0xFF080000, get_system_memory());
 
     xlnx_ep108_binfo.ram_size = machine->ram_size;
     xlnx_ep108_binfo.kernel_filename = machine->kernel_filename;
