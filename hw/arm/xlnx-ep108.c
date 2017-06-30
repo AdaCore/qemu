@@ -24,6 +24,7 @@
 #include "qemu/error-report.h"
 #include "exec/address-spaces.h"
 #include "qemu/log.h"
+#include "hw/hostfs.h"
 
 typedef struct XlnxEP108 {
     XlnxZynqMPState soc;
@@ -107,6 +108,10 @@ static void xlnx_ep108_init(MachineState *machine)
     }
 
     xlnx_ep108_binfo.ram_size = ram_size;
+
+    /* HostFS */
+    hostfs_create(0xFF080000, get_system_memory());
+
     xlnx_ep108_binfo.kernel_filename = machine->kernel_filename;
     xlnx_ep108_binfo.kernel_cmdline = machine->kernel_cmdline;
     xlnx_ep108_binfo.initrd_filename = machine->initrd_filename;
