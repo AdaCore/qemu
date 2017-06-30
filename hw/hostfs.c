@@ -1,7 +1,7 @@
 /*
  * QEMU HostFS
  *
- * Copyright (c) 2013 AdaCore
+ * Copyright (c) 2013-2017 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@
 #include "hw/sysbus.h"
 #include "qemu/osdep.h"
 #include "trace.h"
+#include "hw/target_size.h"
 
 #include "hostfs.h"
 
@@ -41,7 +42,7 @@ typedef struct hostfs_Register_Definition {
     const char *name;
     const char *desc;
     uint32_t access;
-    uint32_t reset;
+    uint64_t reset;
 } hostfs_Register_Definition;
 
 #define ACC_RW      1           /* Read/Write */
@@ -50,31 +51,49 @@ typedef struct hostfs_Register_Definition {
 #define ACC_w1c     4           /* Write 1 to clear */
 #define ACC_UNKNOWN 4           /* Unknown register */
 
-const hostfs_Register_Definition hostfs_registers_def[] = {
-{0x000, "SYSCALL_ID", "Syscall ID",   ACC_RW, 0x00000000},
-{0x004, "ARG1",       "1st argument", ACC_RW, 0x00000000},
-{0x008, "ARG2",       "2nd argument", ACC_RW, 0x00000000},
-{0x00c, "ARG3",       "3rd argument", ACC_RW, 0x00000000},
-{0x010, "ARG4",       "4th argument", ACC_RW, 0x00000000},
-{0x014, "ARG5",       "5th argument", ACC_RW, 0x00000000},
-/* End Of Table */
-{0x0, 0x0, 0x0, 0x0, 0x0}
-};
+#ifndef TARGET_IS_64BITS
+#error "Unknown error"
+#endif
+
+#if TARGET_IS_64BITS
+#define HOSTFS_REG_SIZE (8)
+#else
+#define HOSTFS_REG_SIZE (4)
+#endif
 
 /* Index of each register */
+#define HOSTFS_SYSCALL_ID (0)
+#define HOSTFS_ARG1       (1)
+#define HOSTFS_ARG2       (2)
+#define HOSTFS_ARG3       (3)
+#define HOSTFS_ARG4       (4)
+#define HOSTFS_ARG5       (5)
+#define HOSTFS_REG_INDEX(n) (n / HOSTFS_REG_SIZE)
 
-#define SYSCALL_ID (0x000 / 4)
-#define ARG1       (0x004 / 4)
-#define ARG2       (0x008 / 4)
-#define ARG3       (0x00c / 4)
-#define ARG4       (0x010 / 4)
-#define ARG5       (0x014 / 4)
+/* Offset of each register */
+#define HOSTFS_SYSCALL_ID_OFFSET (HOSTFS_SYSCALL_ID * HOSTFS_REG_SIZE)
+#define HOSTFS_ARG1_OFFSET       (HOSTFS_ARG1 * HOSTFS_REG_SIZE)
+#define HOSTFS_ARG2_OFFSET       (HOSTFS_ARG2 * HOSTFS_REG_SIZE)
+#define HOSTFS_ARG3_OFFSET       (HOSTFS_ARG3 * HOSTFS_REG_SIZE)
+#define HOSTFS_ARG4_OFFSET       (HOSTFS_ARG4 * HOSTFS_REG_SIZE)
+#define HOSTFS_ARG5_OFFSET       (HOSTFS_ARG5 * HOSTFS_REG_SIZE)
+
+const hostfs_Register_Definition hostfs_registers_def[] = {
+    {HOSTFS_SYSCALL_ID_OFFSET, "SYSCALL_ID", "Syscall ID", ACC_RW, 0},
+    {HOSTFS_ARG1_OFFSET, "ARG1", "1st argument", ACC_RW, 0},
+    {HOSTFS_ARG2_OFFSET, "ARG2", "2nd argument", ACC_RW, 0},
+    {HOSTFS_ARG3_OFFSET, "ARG3", "3rd argument", ACC_RW, 0},
+    {HOSTFS_ARG4_OFFSET, "ARG4", "4th argument", ACC_RW, 0},
+    {HOSTFS_ARG5_OFFSET, "ARG5", "5th argument", ACC_RW, 0},
+    /* End Of Table */
+    {0x0, 0x0, 0x0, 0x0, 0x0}
+};
 
 typedef struct hostfs_Register {
     const char *name;
     const char *desc;
-    uint32_t    access;
-    uint32_t    value;
+    uint32_t access;
+    uint64_t value;
 } hostfs_Register;
 
 typedef struct hostfs {
@@ -90,13 +109,13 @@ typedef struct hostfs {
     OBJECT_CHECK(hostfs, (obj), TYPE_HOSTFS_DEVICE)
 
 /* Syscall IDs */
-#define SYSCALL_OPEN     1
-#define SYSCALL_READ     2
-#define SYSCALL_WRITE    3
-#define SYSCALL_CLOSE    4
-#define SYSCALL_UNLINK   5
-#define SYSCALL_LSEEK    6
-#define SYSCALL_SHUTDOWN 7
+#define HOSTFS_SYSCALL_OPEN     1
+#define HOSTFS_SYSCALL_READ     2
+#define HOSTFS_SYSCALL_WRITE    3
+#define HOSTFS_SYSCALL_CLOSE    4
+#define HOSTFS_SYSCALL_UNLINK   5
+#define HOSTFS_SYSCALL_LSEEK    6
+#define HOSTFS_SYSCALL_SHUTDOWN 7
 
 /* HostFS open flags */
 #define HOSTFS_O_RDONLY (1 << 0)
@@ -142,23 +161,23 @@ static uint32_t open_flags(uint32_t hostfs_flags)
     return ret;
 }
 
-static uint32_t do_syscall(hostfs *hfs)
+static uint64_t do_syscall(hostfs *hfs)
 {
-    uint32_t  ID   = hfs->regs[SYSCALL_ID].value;
-    uint32_t  arg1 = hfs->regs[ARG1].value;
-    uint32_t  arg2 = hfs->regs[ARG2].value;
-    uint32_t  arg3 = hfs->regs[ARG3].value;
-    uint32_t  arg4 = hfs->regs[ARG4].value;
-    uint32_t  arg5 = hfs->regs[ARG5].value;
-    uint32_t  ret  = 0;
-    char     *buf  = NULL;
+    uint64_t ID = hfs->regs[HOSTFS_SYSCALL_ID].value;
+    uint64_t arg1 = hfs->regs[HOSTFS_ARG1].value;
+    uint64_t arg2 = hfs->regs[HOSTFS_ARG2].value;
+    uint64_t arg3 = hfs->regs[HOSTFS_ARG3].value;
+    uint64_t arg4 = hfs->regs[HOSTFS_ARG4].value;
+    uint64_t arg5 = hfs->regs[HOSTFS_ARG5].value;
+    uint64_t ret = 0;
+    char *buf = NULL;
     hwaddr addr;
     hwaddr plen;
 
     trace_hostfs_do_syscall(ID, arg1, arg2, arg3, arg4, arg5);
 
     switch (ID) {
-    case SYSCALL_OPEN:
+    case HOSTFS_SYSCALL_OPEN:
         addr = arg1;
         plen = 1024; /* XXX: maximum length of filename string */
         arg2 = open_flags(arg2);
@@ -172,7 +191,7 @@ static uint32_t do_syscall(hostfs *hfs)
 
         return ret;
         break;
-    case SYSCALL_READ:
+    case HOSTFS_SYSCALL_READ:
         addr = arg2;
         plen = arg3;
 
@@ -188,7 +207,7 @@ static uint32_t do_syscall(hostfs *hfs)
         trace_hostfs_read(arg1, buf, arg3, ret);
         return ret;
         break;
-    case SYSCALL_WRITE:
+    case HOSTFS_SYSCALL_WRITE:
         addr = arg2;
         plen = arg3;
 
@@ -205,12 +224,12 @@ static uint32_t do_syscall(hostfs *hfs)
 
         return ret;
         break;
-    case SYSCALL_CLOSE:
+    case HOSTFS_SYSCALL_CLOSE:
         ret = close(arg1);
         trace_hostfs_close(arg1, ret);
         return ret;
         break;
-    case SYSCALL_UNLINK:
+    case HOSTFS_SYSCALL_UNLINK:
         addr = arg1;
         plen = 1024; /* XXX: maximum length of filename string */
 
@@ -222,12 +241,12 @@ static uint32_t do_syscall(hostfs *hfs)
         trace_hostfs_unlink(arg1, ret);
         return ret;
         break;
-    case SYSCALL_LSEEK:
+    case HOSTFS_SYSCALL_LSEEK:
         ret = lseek((int)arg1, (int)arg2, (int)arg3);
         trace_hostfs_lseek((int)arg1, (int)arg2, (int)arg3, ret);
         return ret;
         break;
-    case SYSCALL_SHUTDOWN:
+    case HOSTFS_SYSCALL_SHUTDOWN:
         qemu_system_shutdown_request();
         return ret;
         break;
@@ -238,10 +257,10 @@ static uint32_t do_syscall(hostfs *hfs)
 
 static uint64_t hostfs_read(void *opaque, hwaddr addr, unsigned size)
 {
-    hostfs          *hfs     = opaque;
-    uint32_t        reg_index = addr / 4;
-    hostfs_Register *reg       = NULL;
-    uint32_t        ret       = 0x0;
+    hostfs *hfs = opaque;
+    uint64_t reg_index = HOSTFS_REG_INDEX(addr);
+    hostfs_Register *reg = NULL;
+    uint64_t ret = 0x0;
 
     assert(reg_index < REG_NUMBER);
 
@@ -272,24 +291,25 @@ static uint64_t hostfs_read(void *opaque, hwaddr addr, unsigned size)
 static void hostfs_write(void *opaque, hwaddr addr, uint64_t value,
                          unsigned size)
 {
-    hostfs          *hfs     = opaque;
-    uint32_t        reg_index = addr / 4;
-    hostfs_Register *reg       = NULL;
-    uint32_t        before    = 0x0;
+    hostfs *hfs = opaque;
+    uint64_t reg_index = HOSTFS_REG_INDEX(addr);
+    hostfs_Register *reg = NULL;
+    uint64_t before = 0x0;
 
     assert(reg_index < REG_NUMBER);
+    assert(!(addr % HOSTFS_REG_SIZE));
 
     reg = &hfs->regs[reg_index];
     before = reg->value;
 
     switch (reg_index) {
-    case SYSCALL_ID:
-        hfs->regs[SYSCALL_ID].value = value;
-        hfs->regs[ARG1].value = do_syscall(hfs);
-        hfs->regs[ARG2].value = 0;
-        hfs->regs[ARG3].value = 0;
-        hfs->regs[ARG4].value = 0;
-        hfs->regs[ARG5].value = 0;
+    case HOSTFS_SYSCALL_ID:
+        hfs->regs[HOSTFS_SYSCALL_ID].value = value;
+        hfs->regs[HOSTFS_ARG1].value = do_syscall(hfs);
+        hfs->regs[HOSTFS_ARG2].value = 0;
+        hfs->regs[HOSTFS_ARG3].value = 0;
+        hfs->regs[HOSTFS_ARG4].value = 0;
+        hfs->regs[HOSTFS_ARG5].value = 0;
         break;
     default:
         /* Default handling */
@@ -325,9 +345,13 @@ static const MemoryRegionOps hostfs_ops = {
     .read = hostfs_read,
     .write = hostfs_write,
     .endianness = DEVICE_NATIVE_ENDIAN,
+    .valid = {
+        .min_access_size = HOSTFS_REG_SIZE,
+        .max_access_size = HOSTFS_REG_SIZE,
+    },
     .impl = {
-        .min_access_size = 4,
-        .max_access_size = 4,
+        .min_access_size = HOSTFS_REG_SIZE,
+        .max_access_size = HOSTFS_REG_SIZE,
     },
 };
 
@@ -348,7 +372,7 @@ static void hostfs_reset(DeviceState *d)
     /* Set-up known registers */
     for (i = 0; hostfs_registers_def[i].name != NULL; i++) {
 
-        reg_index = hostfs_registers_def[i].offset / 4;
+        reg_index = HOSTFS_REG_INDEX(hostfs_registers_def[i].offset);
 
         hfs->regs[reg_index].name   = hostfs_registers_def[i].name;
         hfs->regs[reg_index].desc   = hostfs_registers_def[i].desc;
@@ -362,8 +386,8 @@ static int hostfs_init(SysBusDevice *dev)
     hostfs *hfs = QEMU_HOSTFS_DEVICE(dev);
 
     memory_region_init_io(&hfs->io_area, OBJECT(hfs),
-                          &hostfs_ops, hfs, TYPE_HOSTFS_DEVICE, REG_NUMBER * 4);
-
+                          &hostfs_ops, hfs, TYPE_HOSTFS_DEVICE, REG_NUMBER
+                                                        * HOSTFS_REG_SIZE);
     sysbus_init_mmio(dev, &hfs->io_area);
 
     return 0;
