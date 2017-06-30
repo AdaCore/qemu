@@ -26,6 +26,9 @@
 #include "qom/object.h"
 #include "net/can_emu.h"
 #include "audio/audio.h"
+#include "hw/adacore/hostfs.h"
+
+#define HOSTFS_START (0xff082000)
 
 struct XlnxZCU102 {
     MachineState parent_obj;
@@ -238,6 +241,9 @@ static void xlnx_zcu102_init(MachineState *machine)
 
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->soc.qspi), i + 1, cs_line);
     }
+
+    /* HostFS */
+    hostfs_create(HOSTFS_START, get_system_memory());
 
     /* TODO create and connect IDE devices for ide_drive_get() */
 
