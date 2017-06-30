@@ -1812,6 +1812,7 @@ if have_system
     'hw/9pfs',
     'hw/acpi',
     'hw/adc',
+    'hw/adacore',
     'hw/alpha',
     'hw/arm',
     'hw/audio',
