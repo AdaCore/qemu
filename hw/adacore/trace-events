@@ -1,0 +1,36 @@
+# Trace events for debugging and performance instrumentation
+#
+# This file is processed by the tracetool script during the build.
+#
+# To add a new trace event:
+#
+# 1. Choose a name for the trace event.  Declare its arguments and format
+#    string.
+#
+# 2. Call the trace event from code using trace_##name, e.g. multiwrite_cb() ->
+#    trace_multiwrite_cb().  The source file must #include "trace.h".
+#
+# Format of a trace event:
+#
+# [disable] <name>(<type1> <arg1>[, <type2> <arg2>] ...) "<format-string>"
+#
+# Example: g_malloc(size_t size) "size %zu"
+#
+# The "disable" keyword will build without the trace event.
+#
+# The <name> must be a valid as a C function name.
+#
+# Types should be standard C types.  Use void * for pointers because the trace
+# system may not have the necessary headers included.
+#
+# The <format-string> should be a sprintf()-compatible format string.
+
+# hostfs.c
+hostfs_open(const char *filename, uint32_t opt, uint32_t mode, int ret) "'%s', 0x%08x, 0x%08x = %d;"
+hostfs_close(uint32_t fd, int ret) "0x%08x = %d;"
+hostfs_unlink(uint32_t fd, int ret) "0x%08x = %d;"
+hostfs_lseek(uint32_t fd, int off, int whence, int ret) "0x%08x, %d, %d = %d;"
+hostfs_read(uint32_t fd, char *buf, uint32_t size, int ret) "0x%08x, %p, 0x%08x = %d;"
+hostfs_write(uint32_t fd, char *buf, uint32_t size, int ret) "0x%08x, %p, 0x%08x = %d;"
+hostfs_open_flags(uint32_t hostfs_flags, uint32_t flags) "hostfs_flags:0x%08x -> flags:0x%08x"
+hostfs_do_syscall(uint32_t id, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) "syscall_id:0x%08x 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x"
