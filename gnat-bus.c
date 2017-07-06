@@ -141,7 +141,7 @@ static GnatBusPacket *gnatbus_receive_packet_sync(GnatBus_Device *qbdev)
  fail:
 #ifdef _WIN32
     if (qbdev->is_pipe) {
-        WinCharState  *s_wpipe = qbdev->chr->opaque;
+        WinCharState  *s_wpipe = qbdev->chr.chr->opaque;
         DWORD dwMode = PIPE_READMODE_MESSAGE | PIPE_NOWAIT;
         SetNamedPipeHandleState(s_wpipe->hcom, &dwMode, NULL, NULL);
     } else
