@@ -2476,7 +2476,7 @@ static int win_chr_pipe_client_init(CharDriverState *chr, const char *filename,
     return 0;
 
  fail:
-    win_chr_close(chr);
+    win_chr_free(chr);
     return -1;
 }
 
