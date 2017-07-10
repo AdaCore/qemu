@@ -362,18 +362,23 @@ qcrypto_gcrypt_cipher_setiv(QCryptoCipher *cipher,
         memcpy(ctx->iv, iv, niv);
     } else {
         if (cipher->mode == QCRYPTO_CIPHER_MODE_CTR) {
-            err = gcry_cipher_setctr(ctx->handle, iv, niv);
-            if (err != 0) {
-                error_setg(errp, "Cannot set Counter: %s",
+            
+            /* Disable call to gcry_cipher_setctr() which is not available on
+             * some of our Linux platforms.
+             */
+
+            /* err = gcry_cipher_setctr(ctx->handle, iv, niv); */
+            /* if (err != 0) { */
+            error_setg(errp, "Cannot set Counter: %s",
                        gcry_strerror(err));
-                return -1;
-            }
+            return -1;
+            /* } */
         } else {
             gcry_cipher_reset(ctx->handle);
             err = gcry_cipher_setiv(ctx->handle, iv, niv);
             if (err != 0) {
                 error_setg(errp, "Cannot set IV: %s",
-                       gcry_strerror(err));
+                           gcry_strerror(err));
                 return -1;
             }
         }
