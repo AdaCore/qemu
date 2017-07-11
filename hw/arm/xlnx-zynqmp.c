@@ -25,6 +25,8 @@
 #include "sysemu/kvm.h"
 #include "kvm_arm.h"
 #include "sysemu/sysemu.h"
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 #define GIC_NUM_SPI_INTR 160
 
@@ -517,6 +519,13 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
                              &error_abort);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->dpdma), 0, DPDMA_ADDR);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->dpdma), 0, gic_spi[DPDMA_IRQ]);
+
+    /* Initialize plug-ins */
+    plugin_init(gic_spi, 128);
+    plugin_device_init();
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(gic_spi, 128);
+    gnatbus_device_init();
 }
 
 static Property xlnx_zynqmp_props[] = {
