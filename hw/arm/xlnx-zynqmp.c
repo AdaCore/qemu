@@ -27,6 +27,7 @@
 #include "kvm_arm.h"
 #include "target/arm/cpu-qom.h"
 #include "target/arm/gtimer.h"
+#include "hw/adacore/gnat-bus.h"
 
 #define GIC_NUM_SPI_INTR 160
 
@@ -454,7 +455,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     int num_apus = MIN(ms->smp.cpus, XLNX_ZYNQMP_NUM_APU_CPUS);
     const char *boot_cpu = s->boot_cpu ? s->boot_cpu : "apu-cpu[0]";
     ram_addr_t ddr_low_size, ddr_high_size;
-    qemu_irq gic_spi[GIC_NUM_SPI_INTR];
+    qemu_irq *gic_spi = g_new(qemu_irq, GIC_NUM_SPI_INTR);
     Error *err = NULL;
 
     ram_size = memory_region_size(s->ddr_ram);
@@ -846,6 +847,10 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->usb[i].sysbus_xhci), 3,
                            gic_spi[usb_intr[i] + 3]);
     }
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(gic_spi, 128);
+    gnatbus_device_init();
 }
 
 static Property xlnx_zynqmp_props[] = {
