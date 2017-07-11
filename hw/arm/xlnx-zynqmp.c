@@ -19,6 +19,8 @@
 #include "hw/intc/arm_gic_common.h"
 #include "exec/address-spaces.h"
 #include "sysemu/sysemu.h"
+#include "qemu-plugin.h"
+#include "gnat-bus.h"
 
 #define GIC_NUM_SPI_INTR 160
 
@@ -331,6 +333,13 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->uart[i]), 0,
                            gic_spi[uart_intr[i]]);
     }
+
+    /* Initialize plug-ins */
+    plugin_init(gic_spi, 128);
+    plugin_device_init();
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(gic_spi, 128);
+    gnatbus_device_init();
 }
 
 static Property xlnx_zynqmp_props[] = {
