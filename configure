@@ -510,6 +510,7 @@ supported_os="no"
 bogus_os="no"
 malloc_trim=""
 bridge_helper="yes"
+enable_roms="yes"
 
 # parse CC options first
 for opt do
@@ -1522,6 +1523,8 @@ for opt do
   --disable-libpmem) libpmem=no
   ;;
   --disable-bridge-helper) bridge_helper="no"
+  ;;
+  --disable-roms) enable_roms="no"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -6160,7 +6163,7 @@ fi
 roms=
 if { test "$cpu" = "i386" || test "$cpu" = "x86_64"; } && \
         test "$targetos" != "Darwin" && test "$targetos" != "SunOS" && \
-        test "$softmmu" = yes ; then
+        test "$softmmu" = yes -a "$enable_roms" = "yes" ; then
     # Different host OS linkers have different ideas about the name of the ELF
     # emulation. Linux and OpenBSD/amd64 use 'elf_i386'; FreeBSD uses the _fbsd
     # variant; OpenBSD/i386 uses the _obsd variant; and Windows uses i386pe.
@@ -6172,12 +6175,14 @@ if { test "$cpu" = "i386" || test "$cpu" = "x86_64"; } && \
         fi
     done
 fi
-if test "$cpu" = "ppc64" && test "$targetos" != "Darwin" ; then
+
+if test "$cpu" = "ppc64" && test "$targetos" != "Darwin" -a \
+        "$enable_roms" = "yes" ; then
   roms="$roms spapr-rtas"
 fi
 
 # Only build s390-ccw bios if we're on s390x and the compiler has -march=z900
-if test "$cpu" = "s390x" ; then
+if test "$cpu" = "s390x" -a "$enable_roms" = "yes"; then
   write_c_skeleton
   if compile_prog "-march=z900" ""; then
     roms="$roms s390-ccw"
@@ -6444,6 +6449,7 @@ echo "docker            $docker"
 echo "libpmem support   $libpmem"
 echo "libudev           $libudev"
 echo "default devices   $default_devices"
+echo "ROMS:             $roms"
 
 if test "$supported_cpu" = "no"; then
     echo
