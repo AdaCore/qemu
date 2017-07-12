@@ -515,6 +515,7 @@ supported_os="no"
 bogus_os="no"
 malloc_trim=""
 bridge_helper="yes"
+enable_roms="yes"
 
 # parse CC options first
 for opt do
@@ -1605,6 +1606,8 @@ for opt do
   --gdb=*) gdb_bin="$optarg"
   ;;
   --disable-bridge-helper) bridge_helper="no"
+  ;;
+  --disable-roms) enable_roms="no"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -6487,7 +6490,7 @@ fi
 roms=
 if { test "$cpu" = "i386" || test "$cpu" = "x86_64"; } && \
         test "$targetos" != "Darwin" && test "$targetos" != "SunOS" && \
-        test "$softmmu" = yes ; then
+        test "$softmmu" = yes -a "$enable_roms" = "yes" ; then
     # Different host OS linkers have different ideas about the name of the ELF
     # emulation. Linux and OpenBSD/amd64 use 'elf_i386'; FreeBSD uses the _fbsd
     # variant; OpenBSD/i386 uses the _obsd variant; and Windows uses i386pe.
@@ -6501,7 +6504,7 @@ if { test "$cpu" = "i386" || test "$cpu" = "x86_64"; } && \
 fi
 
 # Only build s390-ccw bios if we're on s390x and the compiler has -march=z900
-if test "$cpu" = "s390x" ; then
+if test "$cpu" = "s390x" -a "$enable_roms" = "yes"; then
   write_c_skeleton
   if compile_prog "-march=z900" ""; then
     roms="$roms s390-ccw"
@@ -6739,6 +6742,7 @@ echo "default devices   $default_devices"
 echo "plugin support    $plugins"
 echo "fuzzing support   $fuzzing"
 echo "gdb               $gdb_bin"
+echo "ROMS:             $roms"
 
 if test "$supported_cpu" = "no"; then
     echo
