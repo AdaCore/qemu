@@ -30,8 +30,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef uint32_t target_addr_t;
-
 #define QEMU_PLUGIN_INTERFACE_VERSION   (5)
 
 #define QP_ERROR   (-1)
@@ -44,12 +42,12 @@ typedef struct QemuPlugin_Emulator QemuPlugin_Emulator;
 
 /* Device interface */
 
-typedef uint32_t io_read_fn(void *opaque, target_addr_t addr, uint32_t size);
+typedef uint64_t io_read_fn(void *opaque, hwaddr addr, uint32_t size);
 
-typedef void     io_write_fn(void          *opaque,
-                             target_addr_t  addr,
-                             uint32_t       size,
-                             uint32_t       val);
+typedef void io_write_fn(void *opaque,
+                         hwaddr addr,
+                         uint32_t size,
+                         uint64_t val);
 
 typedef void reset_fn(void *opaque);
 typedef void init_fn(void *opaque);
@@ -87,9 +85,10 @@ typedef struct QemuPlugin_DeviceInfo {
     DeviceEndianness device_endianness;
 
     uint32_t nr_iomem;
-    struct QemuPlugin_IOMemory {
-        target_addr_t base;
-        target_addr_t size;
+    struct QemuPlugin_IOMemory
+    {
+        hwaddr base;
+        hwaddr size;
     } iomem[MAX_IOMEM];
 } QemuPlugin_DeviceInfo;
 
@@ -119,11 +118,11 @@ struct QemuPlugin_Emulator {
     uint32_t (*set_irq)(uint32_t line, uint32_t level);
 
     uint32_t (*dma_read)(void          *dest,
-                         target_addr_t  addr,
+                         hwaddr  addr,
                          uint32_t       size);
 
     uint32_t (*dma_write)(void          *src,
-                          target_addr_t  addr,
+                          hwaddr  addr,
                           uint32_t       size);
 
     uint32_t (*attach_device)(QemuPlugin_DeviceInfo *dev);

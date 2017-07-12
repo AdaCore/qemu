@@ -475,7 +475,7 @@ static inline void gnatbus_write(void     *opaque,
     GnatBusPacket_Write *write;
     GnatBusPacket_Error *resp;
 
-    assert(size <= 4);
+    assert(size <= 8);
 
     if (io_region->qbdev->status != CHR_EVENT_OPENED) {
         return;
@@ -483,14 +483,14 @@ static inline void gnatbus_write(void     *opaque,
 
     gnatbus_freeze_cpu();
 
-    write = g_malloc(sizeof(GnatBusPacket_Write) + 4);
+    write = g_malloc(sizeof(GnatBusPacket_Write) + 8);
 
     GnatBusPacket_Write_Init(write);
-    write->parent.parent.size = sizeof(GnatBusPacket_Write) + 4;
+    write->parent.parent.size = sizeof(GnatBusPacket_Write) + 8;
 
     write->address           = io_region->base + addr;
     write->length            = size;
-    *(uint32_t *)write->data = val;
+    *(uint64_t *)write->data = val;
 
 
     trace_gnatbus_send_write(write->address, write->length);
@@ -517,7 +517,7 @@ static inline uint64_t gnatbus_read(void     *opaque,
         return 0;
     }
 
-    assert(size <= 4);
+    assert(size <= 8);
 
     gnatbus_freeze_cpu();
 
@@ -552,7 +552,11 @@ const MemoryRegionOps gnatbus_io_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
     .valid = {
         .min_access_size = 1,
-        .max_access_size = 4,
+        .max_access_size = 8,
+    },
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 8,
     },
 };
 
