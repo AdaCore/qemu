@@ -494,6 +494,7 @@ supported_os="no"
 bogus_os="no"
 malloc_trim=""
 bridge_helper="yes"
+enable_roms="yes"
 
 # parse CC options first
 for opt do
@@ -1439,6 +1440,8 @@ for opt do
   --disable-debug-mutex) debug_mutex=no
   ;;
   --disable-bridge-helper) bridge_helper="no"
+  ;;
+  --disable-roms) enable_roms="no"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -5750,7 +5753,7 @@ fi
 roms=
 if test \( "$cpu" = "i386" -o "$cpu" = "x86_64" \) -a \
         "$targetos" != "Darwin" -a "$targetos" != "SunOS" -a \
-        "$softmmu" = yes ; then
+        "$softmmu" = yes -a "$enable_roms" = "yes" ; then
     # Different host OS linkers have different ideas about the name of the ELF
     # emulation. Linux and OpenBSD/amd64 use 'elf_i386'; FreeBSD uses the _fbsd
     # variant; OpenBSD/i386 uses the _obsd variant; and Windows uses i386pe.
@@ -5762,11 +5765,12 @@ if test \( "$cpu" = "i386" -o "$cpu" = "x86_64" \) -a \
         fi
     done
 fi
-if test "$cpu" = "ppc64" -a "$targetos" != "Darwin" ; then
+if test "$cpu" = "ppc64" -a "$targetos" != "Darwin" -a \
+        "$enable_roms" = "yes" ; then
   roms="$roms spapr-rtas"
 fi
 
-if test "$cpu" = "s390x" ; then
+if test "$cpu" = "s390x" -a "$enable_roms" = "yes"; then
   roms="$roms s390-ccw"
 fi
 
@@ -6016,6 +6020,7 @@ echo "replication support $replication"
 echo "VxHS block device $vxhs"
 echo "capstone          $capstone"
 echo "docker            $docker"
+echo "ROMS:             $roms"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
