@@ -252,9 +252,13 @@ const MemoryRegionOps plugin_ops = {
     .read = plugin_read,
     .write = plugin_write,
     .endianness = DEVICE_NATIVE_ENDIAN,
+    .valid = {
+        .min_access_size = 1,
+        .max_access_size = 8,
+    },
     .impl = {
         .min_access_size = 1,
-        .max_access_size = 4,
+        .max_access_size = 8,
     },
 };
 
@@ -338,16 +342,16 @@ static void plugin_register_types(void)
 
 type_init(plugin_register_types)
 
-static uint32_t plugin_dma_write(void          *src,
-                                 target_addr_t  addr,
-                                 uint32_t       size)
+static uint32_t plugin_dma_write(void *src,
+                                 hwaddr addr,
+                                 uint32_t size)
 {
     cpu_physical_memory_write(addr, src, size);
     return QP_NOERROR;
 }
 
-static uint32_t plugin_dma_read(void          *dest,
-                                target_addr_t  addr,
+static uint32_t plugin_dma_read(void *dest,
+                                hwaddr addr,
                                 uint32_t size)
 {
     cpu_physical_memory_read(addr, dest, size);
