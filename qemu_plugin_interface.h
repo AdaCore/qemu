@@ -42,11 +42,11 @@ typedef struct QemuPlugin_Emulator QemuPlugin_Emulator;
 
 /* Device interface */
 
-typedef uint64_t io_read_fn(void *opaque, hwaddr addr, uint32_t size);
+typedef uint64_t io_read_fn(void *opaque, uint64_t addr, uint64_t size);
 
 typedef void io_write_fn(void *opaque,
-                         hwaddr addr,
-                         uint32_t size,
+                         uint64_t addr,
+                         uint64_t size,
                          uint64_t val);
 
 typedef void reset_fn(void *opaque);
@@ -88,8 +88,8 @@ typedef struct QemuPlugin_DeviceInfo
     uint32_t nr_iomem;
     struct QemuPlugin_IOMemory
     {
-        hwaddr base;
-        hwaddr size;
+        uint64_t base;
+        uint64_t size;
     } iomem[MAX_IOMEM];
 } QemuPlugin_DeviceInfo;
 
@@ -120,13 +120,13 @@ struct QemuPlugin_Emulator
 
     uint32_t (*set_irq)(uint32_t line, uint32_t level);
 
-    uint32_t (*dma_read)(void          *dest,
-                         hwaddr  addr,
-                         uint32_t       size);
+    uint32_t (*dma_read)(void *dest,
+                         uint64_t addr,
+                         uint64_t size);
 
-    uint32_t (*dma_write)(void          *src,
-                          hwaddr  addr,
-                          uint32_t       size);
+    uint32_t (*dma_write)(void *src,
+                          uint64_t addr,
+                          uint64_t size);
 
     uint32_t (*attach_device)(QemuPlugin_DeviceInfo *dev);
 
