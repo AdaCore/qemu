@@ -217,10 +217,10 @@ static uint32_t plugin_remove_event(QemuPlugin_ClockType clock,
 }
 
 
-static inline void plugin_write(void     *opaque,
-                                hwaddr    addr,
-                                uint64_t  value,
-                                unsigned  size)
+static inline void plugin_write(void *opaque,
+                                uint64_t addr,
+                                uint64_t value,
+                                unsigned size)
 {
     QemuPlugin_IORegion     *io_region = opaque;
     QemuPlugin_SysBusDevice *pdev    = io_region->pdev;
@@ -233,9 +233,9 @@ static inline void plugin_write(void     *opaque,
     }
 }
 
-static inline uint64_t plugin_read(void     *opaque,
-                                   hwaddr    addr,
-                                   unsigned  size)
+static inline uint64_t plugin_read(void *opaque,
+                                   uint64_t addr,
+                                   unsigned size)
 {
     QemuPlugin_IORegion     *io_region = opaque;
     QemuPlugin_SysBusDevice *pdev    = io_region->pdev;
@@ -344,16 +344,16 @@ static void plugin_register_types(void)
 type_init(plugin_register_types)
 
 static uint32_t plugin_dma_write(void *src,
-                                 hwaddr addr,
-                                 uint32_t size)
+                                 uint64_t addr,
+                                 uint64_t size)
 {
     cpu_physical_memory_write(addr, src, size);
     return QP_NOERROR;
 }
 
 static uint32_t plugin_dma_read(void *dest,
-                                hwaddr addr,
-                                uint32_t size)
+                                uint64_t addr,
+                                uint64_t size)
 {
     cpu_physical_memory_read(addr, dest, size);
     return QP_NOERROR;
