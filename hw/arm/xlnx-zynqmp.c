@@ -188,7 +188,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     MemoryRegion    *crf_apb       = g_new(MemoryRegion, 1);
     uint8_t i;
     const char *boot_cpu = s->boot_cpu ? s->boot_cpu : "apu-cpu[0]";
-    qemu_irq gic_spi[GIC_NUM_SPI_INTR];
+    qemu_irq *gic_spi = g_new(qemu_irq, GIC_NUM_SPI_INTR);
     Error *err = NULL;
 
     qdev_prop_set_uint32(DEVICE(&s->gic), "num-irq", GIC_NUM_SPI_INTR + 32);
