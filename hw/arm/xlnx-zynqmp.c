@@ -277,7 +277,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     uint64_t ram_size;
     const char *boot_cpu = s->boot_cpu ? s->boot_cpu : "apu-cpu[0]";
     ram_addr_t ddr_low_size, ddr_high_size;
-    qemu_irq gic_spi[GIC_NUM_SPI_INTR];
+    qemu_irq *gic_spi = g_new(qemu_irq, GIC_NUM_SPI_INTR);
     Error *err = NULL;
 
     ram_size = memory_region_size(s->ddr_ram);
