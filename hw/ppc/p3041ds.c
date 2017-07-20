@@ -1088,7 +1088,6 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
     int           i;
 
     /* Setup CPU */
-    printf("args->cpu_model = %s \n", args->cpu_model);
     if (args->cpu_model == NULL) {
         if (config->cpu_model != NULL) {
             args->cpu_model = config->cpu_model;
