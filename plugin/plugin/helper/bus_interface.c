@@ -292,7 +292,7 @@ int IRQ_pulse(Device *dev, uint8_t line)
         return ret;
     }
 
-    return g_emulator->set_irq(line, 1);
+    return g_emulator->set_irq(line, 0);
 }
 
 
