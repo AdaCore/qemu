@@ -37,3 +37,4 @@ obj-$(CONFIG_TERMINAL3270) += terminal3270.o
 obj-$(CONFIG_MPC55XX) += esci.o
 obj-$(CONFIG_TMS570) += TMS570_sci.o
 obj-$(CONFIG_STM32) += stm32_uart.o
+common-obj-y += qsp_uart.o
