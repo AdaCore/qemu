@@ -35,3 +35,4 @@ obj-y += wrSbc8641d.o
 
 obj-y += wrSbc834x.o
 obj-y += mpc55xx.o
+obj-y += vxworks-virt.o
