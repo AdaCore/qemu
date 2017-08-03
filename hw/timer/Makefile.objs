@@ -36,3 +36,4 @@ common-obj-$(CONFIG_STM32F2XX_TIMER) += stm32f2xx_timer.o
 common-obj-$(CONFIG_ASPEED_SOC) += aspeed_timer.o
 
 obj-$(CONFIG_TMS570) += TMS570_rti.o
+obj-y += qsp_timer.o
