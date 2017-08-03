@@ -92,3 +92,4 @@ obj-$(CONFIG_MAC_VIA) += mac_via.o
 common-obj-$(CONFIG_GRLIB) += grlib_ahb_apb_pnp.o
 
 obj-$(CONFIG_TMS570) += tms570_gio.o
+obj-y += qsp_sys_reg.o
