@@ -3835,9 +3835,6 @@ static void gen_rfi(DisasContext *ctx)
 #if defined(CONFIG_USER_ONLY)
     GEN_PRIV;
 #else
-    /* This instruction doesn't exist anymore on 64-bit server
-     * processors compliant with arch 2.x
-     */
     if (ctx->insns_flags & PPC_SEGMENT_64B) {
         gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);
         return;
