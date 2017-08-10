@@ -854,6 +854,10 @@ static void cortex_r5_initfn(Object *obj)
     cpu->mp_is_up = true;
     cpu->pmsav7_dregion = 16;
     cpu->isar.reset_pmcr_el0 = 0x41151800;
+    cpu->reset_sctlr = 0x00c50078;
+#ifdef TARGET_BIG_ENDIAN
+    cpu->reset_sctlr |= SCTLR_IE | SCTLR_EE;
+#endif
     define_arm_cp_regs(cpu, cortexr5_cp_reginfo);
 }
 
