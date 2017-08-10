@@ -247,6 +247,10 @@ static void arm_cpu_reset(CPUState *s)
     } else {
         env->uncached_cpsr = ARM_CPU_MODE_SVC;
     }
+
+#ifdef TARGET_WORDS_BIGENDIAN
+    env->uncached_cpsr |= CPSR_E;
+#endif
     env->daif = PSTATE_D | PSTATE_A | PSTATE_I | PSTATE_F;
 
     if (arm_feature(env, ARM_FEATURE_M)) {
@@ -1604,6 +1608,10 @@ static void cortex_r5_initfn(Object *obj)
     cpu->isar.id_isar6 = 0x0;
     cpu->mp_is_up = true;
     cpu->pmsav7_dregion = 16;
+    cpu->reset_sctlr = 0x00c50078;
+#ifdef TARGET_WORDS_BIGENDIAN
+    cpu->reset_sctlr |= SCTLR_IE | SCTLR_EE;
+#endif
     define_arm_cp_regs(cpu, cortexr5_cp_reginfo);
 }
 

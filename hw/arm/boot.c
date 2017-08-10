@@ -888,7 +888,9 @@ static int64_t arm_load_elf(struct arm_boot_info *info, uint64_t *pentry,
                  * however loads ELF files independently of the CPU. So
                  * tell the ELF loader to byte reverse the data for us.
                  */
+#ifndef TARGET_WORDS_BIGENDIAN
                 data_swab = 2;
+#endif
             }
         } else {
             info->endianness = ARM_ENDIANNESS_LE;
