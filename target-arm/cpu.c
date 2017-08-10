@@ -177,6 +177,11 @@ static void arm_cpu_reset(CPUState *s)
 #else
     /* SVC mode with interrupts disabled.  */
     env->uncached_cpsr = ARM_CPU_MODE_SVC;
+
+#ifdef TARGET_WORDS_BIGENDIAN
+    env->uncached_cpsr |= CPSR_E;
+#endif
+
     env->daif = PSTATE_D | PSTATE_A | PSTATE_I | PSTATE_F;
     /* On ARMv7-M the CPSR_I is the value of the PRIMASK register, and is
      * clear at reset. Initial SP and PC are loaded from ROM.
@@ -1044,6 +1049,10 @@ static void cortex_r5_initfn(Object *obj)
     cpu->id_isar4 = 0x0010142;
     cpu->id_isar5 = 0x0;
     cpu->mp_is_up = true;
+    cpu->reset_sctlr = 0x00c50078;
+#ifdef TARGET_WORDS_BIGENDIAN
+    cpu->reset_sctlr |= SCTLR_IE | SCTLR_EE;
+#endif
     define_arm_cp_regs(cpu, cortexr5_cp_reginfo);
 }
 
