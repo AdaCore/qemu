@@ -264,6 +264,10 @@ static void arm_cpu_reset(DeviceState *dev)
     } else {
         env->uncached_cpsr = ARM_CPU_MODE_SVC;
     }
+
+#ifdef TARGET_WORDS_BIGENDIAN
+    env->uncached_cpsr |= CPSR_E;
+#endif
     env->daif = PSTATE_D | PSTATE_A | PSTATE_I | PSTATE_F;
 
     if (arm_feature(env, ARM_FEATURE_M)) {
