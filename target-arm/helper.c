@@ -1155,7 +1155,7 @@ static void dbgdtr_write(CPUARMState *env, const ARMCPRegInfo *ri,
                             uint64_t value)
 {
     if (serial_hds[0] != NULL) {
-        qemu_chr_fe_write_log(serial_hds[0], (uint8_t *)&value, 1);
+        qemu_chr_fe_write(serial_hds[0]->be, (uint8_t *)&value, 1);
     }
 }
 
