@@ -994,6 +994,7 @@ void pmccntr_sync(CPUARMState *env);
 #define SCTLR_TRE     (1U << 28)
 #define SCTLR_AFE     (1U << 29)
 #define SCTLR_TE      (1U << 30)
+#define SCTLR_IE      (1U << 31)
 
 #define CPTR_TCPAC    (1U << 31)
 #define CPTR_TTA      (1U << 20)
