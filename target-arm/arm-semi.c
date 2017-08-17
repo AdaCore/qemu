@@ -309,7 +309,7 @@ static int arm_semi_console_write(uint8_t *buf, int len)
     }
 
     if (serial != NULL) {
-        return qemu_chr_fe_write_log(serial, buf, len);
+        return qemu_chr_fe_write(serial->be, buf, len);
     } else {
         /* Print on stderr if we don't have any char dev */
         return write(STDERR_FILENO, buf, len);
