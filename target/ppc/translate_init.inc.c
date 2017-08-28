@@ -5108,7 +5108,7 @@ static void init_proc_e500(CPUPPCState *env, int version)
                  &spr_read_generic, &spr_write_generic,
                  0x00000000);
     /* XXX better abstract into Emb.xxx features */
-    if ((version == fsl_e5500) || (version == fsl_e6500)) {
+    if (version == fsl_e5500) {
         spr_register(env, SPR_BOOKE_EPCR, "EPCR",
                      SPR_NOACCESS, SPR_NOACCESS,
                      &spr_read_generic, &spr_write_generic,
@@ -5121,14 +5121,11 @@ static void init_proc_e500(CPUPPCState *env, int version)
     }
 
     if (version == fsl_e6500) {
-        spr_register(env, SPR_BOOKE_SPRG8, "SPRG8",
+        spr_register(env, SPR_BOOKE_MAS7_MAS3, "MAS7_MAS3",
                      SPR_NOACCESS, SPR_NOACCESS,
-                     &spr_read_generic, &spr_write_generic,
+                     &spr_read_mas73, &spr_write_mas73,
                      0x00000000);
-        spr_register(env, SPR_BOOKE_SPRG9, "SPRG9",
-                     SPR_NOACCESS, SPR_NOACCESS,
-                     &spr_read_generic, &spr_write_generic,
-                     0x00000000);
+        ivpr_mask = (target_ulong)~0xFFFFULL;
         /* Thread identification */
         spr_register(env, SPR_TIR, "TIR",
                      SPR_NOACCESS, SPR_NOACCESS,
