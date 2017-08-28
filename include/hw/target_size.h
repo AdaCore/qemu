@@ -39,4 +39,9 @@
 #define TARGET_IS_64BITS 1
 #endif /* TARGET_AARCH64 */
 
+#ifdef TARGET_PPC64
+#undef TARGET_IS_64BITS
+#define TARGET_IS_64BITS 1
+#endif /* TARGET_PPC64 */
+
 #endif
