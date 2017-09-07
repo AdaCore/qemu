@@ -2363,15 +2363,11 @@ DLOG(fprintf(stderr, "commit_direntries for %s, parent_mapping_index %d\n", mapp
 		factor * (old_cluster_count - new_cluster_count));
 
     for (c = first_cluster; !fat_eof(s, c); c = modified_fat_get(s, c)) {
-        direntry_t *first_direntry;
 	void* direntry = array_get(&(s->directory), current_dir_index);
 	int ret = vvfat_read(s->bs, cluster2sector(s, c), direntry,
 		s->sectors_per_cluster);
 	if (ret)
 	    return ret;
-
-        /* The first directory entry on the filesystem is the volume name */
-        first_direntry = (direntry_t*) s->directory.pointer;
 
 	current_dir_index += factor;
     }
