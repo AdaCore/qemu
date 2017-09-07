@@ -219,8 +219,8 @@ void qemu_chr_be_generic_open(CharDriverState *s)
 
 /* Not reporting errors from writing to logfile, as logs are
  * defined to be "best effort" only */
-void qemu_chr_fe_write_log(CharDriverState *s,
-                           const uint8_t *buf, size_t len)
+static void qemu_chr_fe_write_log(CharDriverState *s,
+                                  const uint8_t *buf, size_t len)
 {
     size_t done = 0;
     ssize_t ret;
