@@ -1083,7 +1083,6 @@ int rom_check_and_register_reset(void)
     hwaddr addr = 0;
     MemoryRegionSection section;
     Rom *rom;
-    AddressSpace *as = NULL;
 
     QTAILQ_FOREACH(rom, &roms, next) {
         if (rom->fw_file) {
@@ -1095,7 +1094,6 @@ int rom_check_and_register_reset(void)
                                      rom->addr, 1);
         rom->isrom = int128_nz(section.size) && memory_region_is_rom(section.mr);
         memory_region_unref(section.mr);
-        as = rom->as;
     }
     qemu_register_reset(rom_reset, NULL);
     roms_loaded = 1;
