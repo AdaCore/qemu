@@ -3488,9 +3488,8 @@ static inline void gen_bcond(DisasContext *ctx, int type)
         } else {
             dst = li;
         }
-        if ((bo & 0x14) != 0x14) {
-            gen_goto_tb(ctx, 0, dst);
-        }
+
+        gen_goto_tb(ctx, 0, dst);
     } else {
         if (NARROW_MODE(ctx)) {
             tcg_gen_andi_tl(cpu_nip, target, (uint32_t)~3);
