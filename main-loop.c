@@ -173,6 +173,8 @@ int qemu_init_main_loop(Error **errp)
 
 static int max_priority;
 
+#define MAX_MAIN_LOOP_SPIN (1000)
+
 #ifndef _WIN32
 static int glib_pollfds_idx;
 static int glib_n_poll_fds;
@@ -215,8 +217,6 @@ static void glib_pollfds_poll(void)
         g_main_context_dispatch(context);
     }
 }
-
-#define MAX_MAIN_LOOP_SPIN (1000)
 
 static int os_host_main_loop_wait(int64_t timeout)
 {
@@ -456,6 +456,28 @@ static int os_host_main_loop_wait(int64_t timeout)
     poll_timeout_ns = qemu_soonest_timeout(poll_timeout_ns, timeout);
 
     qemu_mutex_unlock_iothread();
+
+    /*
+     * Unfortunately polling TCP socket under Win64 doesn't work correctly and
+     * returns immediately which avoid the VCPU thread to restart. So when we
+     * detect a sufficient amount of loop here we just sleep 10ms so the VCPU
+     * has enough time to start and grab the mutex. This is definitely not
+     * nice but enough as a workaround. We will wait our internal revision to
+     * bump to the next upstream version (2.9.0) which allows to run the VCPU
+     * thread outside the BQL and by side effect fix the issue with TCP
+     * sockets.
+     */
+#ifdef _WIN64
+    static int counter;
+
+    if (poll_timeout_ns) {
+        counter = 0;
+    } else if (counter++ == MAX_MAIN_LOOP_SPIN) {
+        usleep(10000);
+        counter = 0;
+    }
+#endif /* _WIN64 */
+
     g_poll_ret = qemu_poll_ns(poll_fds, n_poll_fds + w->num, poll_timeout_ns);
 
     qemu_mutex_lock_iothread();
