@@ -498,6 +498,7 @@ static inline void gnatbus_write(void     *opaque,
     resp = (GnatBusPacket_Error *)send_and_wait_resp(io_region->qbdev,
                                                      (GnatBusPacket_Request *)write);
 
+    g_free(write);
     /* We don't really need to read the response */
     g_free(resp);
 
