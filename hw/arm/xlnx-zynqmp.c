@@ -116,6 +116,14 @@ static const int adma_ch_intr[XLNX_ZYNQMP_NUM_ADMA_CH] = {
     77, 78, 79, 80, 81, 82, 83, 84
 };
 
+static const uint64_t ttc_addr[XLNX_ZYNQMP_NUM_TTC] = {
+    0xFF110000, 0xFF120000, 0xFF130000, 0xFF140000,
+};
+
+static const uint64_t ttc_intr[XLNX_ZYNQMP_NUM_TTC] = {
+    36, 39, 42, 45,
+};
+
 typedef struct XlnxZynqMPGICRegion {
     int region_index;
     uint32_t address;
@@ -347,6 +355,11 @@ static void xlnx_zynqmp_init(Object *obj)
     for (i = 0; i < XLNX_ZYNQMP_NUM_ADMA_CH; i++) {
         sysbus_init_child_obj(obj, "adma[*]", &s->adma[i], sizeof(s->adma[i]),
                               TYPE_XLNX_ZDMA);
+    }
+
+    for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
+        object_initialize(&s->ttc[i], sizeof(s->ttc[i]), TYPE_CADENCE_TTC);
+        qdev_set_parent_bus(DEVICE(&s->ttc[i]), sysbus_get_default());
     }
 }
 
@@ -679,13 +692,22 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->rtc), 0, RTC_ADDR);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->rtc), 0, gic_spi[RTC_IRQ]);
 
-    for (i = 0; i < XLNX_ZYNQMP_NUM_GDMA_CH; i++) {
-        object_property_set_uint(OBJECT(&s->gdma[i]), 128, "bus-width", &err);
-        object_property_set_bool(OBJECT(&s->gdma[i]), true, "realized", &err);
+    for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
+        object_property_set_bool(OBJECT(&s->ttc[i]), true, "realized", &err);
+
         if (err) {
             error_propagate(errp, err);
             return;
         }
+
+        sysbus_mmio_map(SYS_BUS_DEVICE(&s->ttc[i]), 0, ttc_addr[i]);
+        sysbus_connect_irq(SYS_BUS_DEVICE(&s->ttc[i]), 0,
+                           gic_spi[ttc_intr[i]]);
+    }
+
+    for (i = 0; i < XLNX_ZYNQMP_NUM_GDMA_CH; i++) {
+        object_property_set_uint(OBJECT(&s->gdma[i]), 128, "bus-width", &err);
+        object_property_set_bool(OBJECT(&s->gdma[i]), true, "realized", &err);
 
         sysbus_mmio_map(SYS_BUS_DEVICE(&s->gdma[i]), 0, gdma_ch_addr[i]);
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->gdma[i]), 0,

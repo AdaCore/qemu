@@ -32,6 +32,7 @@
 #include "hw/intc/xlnx-zynqmp-ipi.h"
 #include "hw/timer/xlnx-zynqmp-rtc.h"
 #include "hw/cpu/cluster.h"
+#include "hw/timer/cadence_ttc.h"
 
 #define TYPE_XLNX_ZYNQMP "xlnx,zynqmp"
 #define XLNX_ZYNQMP(obj) OBJECT_CHECK(XlnxZynqMPState, (obj), \
@@ -49,6 +50,7 @@
 #define XLNX_ZYNQMP_NUM_QSPI_BUS 2
 #define XLNX_ZYNQMP_NUM_QSPI_BUS_CS 2
 #define XLNX_ZYNQMP_NUM_QSPI_FLASH 4
+#define XLNX_ZYNQMP_NUM_TTC 4
 
 #define XLNX_ZYNQMP_NUM_OCM_BANKS 4
 #define XLNX_ZYNQMP_OCM_RAM_0_ADDRESS 0xFFFC0000
@@ -102,6 +104,7 @@ typedef struct XlnxZynqMPState {
     XlnxZynqMPRTC rtc;
     XlnxZDMA gdma[XLNX_ZYNQMP_NUM_GDMA_CH];
     XlnxZDMA adma[XLNX_ZYNQMP_NUM_ADMA_CH];
+    CadenceTTCState ttc[XLNX_ZYNQMP_NUM_TTC];
 
     char *boot_cpu;
     ARMCPU *boot_cpu_ptr;
