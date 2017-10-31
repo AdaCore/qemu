@@ -2457,21 +2457,6 @@ static int win_chr_pipe_client_init(CharDriverState *chr, const char *filename,
         goto fail;
     }
 
-    /* The pipe connected; change to message-read mode. */
-
-    dwMode = PIPE_READMODE_MESSAGE;
-    fSuccess = SetNamedPipeHandleState(
-        s->hcom,                /* pipe handle */
-        &dwMode,                /* new pipe mode */
-        NULL,                   /* don't set maximum bytes */
-        NULL);                  /* don't set maximum time */
-
-    if (!fSuccess) {
-        error_setg(errp, "SetNamedPipeHandleState failed. GLE=%d", GetLastError());
-        s->hcom = NULL;
-        goto fail;
-    }
-
     qemu_add_polling_cb(win_chr_pipe_poll, chr);
     return 0;
 

@@ -89,8 +89,13 @@ static GnatBusPacket *gnatbus_receive_packet_sync(GnatBus_Device *qbdev)
 
 #ifdef _WIN32
     if (qbdev->is_pipe) {
-        WinCharState  *s_wpipe = qbdev->chr.chr->opaque;
-        DWORD dwMode = PIPE_READMODE_MESSAGE | PIPE_WAIT;
+        /* It seems that PIPE_READMODE_MESSAGE requires that the whole
+         * packet fits in the in/out buffer. So lets use
+         * PIPE_READMODE_BYTE instead so we have no limits.
+         */
+        WinCharState *s_wpipe = qbdev->chr.chr->opaque;
+        DWORD dwMode = PIPE_READMODE_BYTE | PIPE_WAIT;
+
         SetNamedPipeHandleState(s_wpipe->hcom, &dwMode, NULL, NULL);
     } else
 #endif
@@ -141,8 +146,13 @@ static GnatBusPacket *gnatbus_receive_packet_sync(GnatBus_Device *qbdev)
  fail:
 #ifdef _WIN32
     if (qbdev->is_pipe) {
-        WinCharState  *s_wpipe = qbdev->chr.chr->opaque;
-        DWORD dwMode = PIPE_READMODE_MESSAGE | PIPE_NOWAIT;
+        /* It seems that PIPE_READMODE_MESSAGE requires that the whole
+         * packet fits in the in/out buffer. So lets use
+         * PIPE_READMODE_BYTE instead so we have no limits.
+         */
+        WinCharState *s_wpipe = qbdev->chr.chr->opaque;
+        DWORD dwMode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
+
         SetNamedPipeHandleState(s_wpipe->hcom, &dwMode, NULL, NULL);
     } else
 #endif
