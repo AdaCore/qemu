@@ -93,6 +93,8 @@ typedef struct XlnxZynqMPState {
     bool secure;
     /* Has the RPU subsystem?  */
     bool has_rpu;
+    /* GIC revision */
+    uint32_t apu_gic_revision;
 }  XlnxZynqMPState;
 
 #define XLNX_ZYNQMP_H
