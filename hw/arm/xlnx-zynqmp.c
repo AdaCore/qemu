@@ -326,7 +326,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     }
 
     qdev_prop_set_uint32(DEVICE(&s->gic), "num-irq", GIC_NUM_SPI_INTR + 32);
-    qdev_prop_set_uint32(DEVICE(&s->gic), "revision", 2);
+    qdev_prop_set_uint32(DEVICE(&s->gic), "revision", s->apu_gic_revision);
     qdev_prop_set_uint32(DEVICE(&s->gic), "num-cpu", XLNX_ZYNQMP_NUM_APU_CPUS);
 
     /* Realize APUs before realizing the GIC. KVM requires this.  */
@@ -532,6 +532,11 @@ static Property xlnx_zynqmp_props[] = {
     DEFINE_PROP_STRING("boot-cpu", XlnxZynqMPState, boot_cpu),
     DEFINE_PROP_BOOL("secure", XlnxZynqMPState, secure, false),
     DEFINE_PROP_BOOL("has_rpu", XlnxZynqMPState, has_rpu, false),
+    /* This should be 2.. But it is a (bad) workaround as some OS doesn't
+     * work with GICv2..
+     */
+    DEFINE_PROP_UINT32("apu-gic-revision", XlnxZynqMPState,
+                       apu_gic_revision, 2),
     DEFINE_PROP_END_OF_LIST()
 };
 
