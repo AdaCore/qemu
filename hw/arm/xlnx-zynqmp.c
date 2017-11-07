@@ -552,7 +552,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     }
 
     qdev_prop_set_uint32(DEVICE(&s->gic), "num-irq", GIC_NUM_SPI_INTR + 32);
-    qdev_prop_set_uint32(DEVICE(&s->gic), "revision", 2);
+    qdev_prop_set_uint32(DEVICE(&s->gic), "revision", s->apu_gic_revision);
     qdev_prop_set_uint32(DEVICE(&s->gic), "num-cpu", num_apus);
     qdev_prop_set_bit(DEVICE(&s->gic), "has-security-extensions", s->secure);
     qdev_prop_set_bit(DEVICE(&s->gic),
@@ -920,6 +920,11 @@ static Property xlnx_zynqmp_props[] = {
                      CanBusState *),
     DEFINE_PROP_LINK("canbus1", XlnxZynqMPState, canbus[1], TYPE_CAN_BUS,
                      CanBusState *),
+    /* This should be 2.. But it is a (bad) workaround as some OS doesn't
+     * work with GICv2..
+     */
+    DEFINE_PROP_UINT32("apu-gic-revision", XlnxZynqMPState,
+                       apu_gic_revision, 2),
     /* Keeping this property for compatibility, a frequency property would have been
      * better.  */
     DEFINE_PROP_UINT32("gtimer-scale", XlnxZynqMPState,
