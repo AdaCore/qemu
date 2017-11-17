@@ -588,31 +588,23 @@ static int gnatbus_init(const char *optarg)
         /* Windows named pipe */
         status = snprintf(buf, sizeof(buf), "pipe_client:gnatbus\\%s",
                           optarg + 1);
-        if (status < 0 || status >= sizeof(buf)) {
-            printf("%s: Device name too long\n", __func__);
-            return -1;
-        }
 #else
         /* UNIX domain socket */
         status = snprintf(buf, sizeof(buf), "unix:@/gnatbus/%s", optarg + 1);
-        if (status < 0 || status >= sizeof(buf)) {
-            printf("%s: Device name too long\n", __func__);
-            return -1;
-        }
-#endif
+#endif /* _WIN32 */
     } else {
         status = snprintf(buf, sizeof(buf), "tcp:%s", optarg);
-        if (status < 0 || status >= sizeof(buf)) {
-            printf("%s: Invalid device address (hostname too long)\n",
-                   __func__);
-            return -1;
-        }
+    }
+
+    if (status < 0 || status >= sizeof(buf)) {
+        fprintf(stderr, "%s: Device name too long\n", __func__);
+        return -1;
     }
 
     status = snprintf(chardev_name, sizeof(chardev_name),
                       "GnatBus_Chr_%d", dev_cnt++);
     if (status < 0 || status >= sizeof(chardev_name)) {
-        printf("%s: chardev_name too long\n", __func__);
+        fprintf(stderr, "%s: chardev_name too long\n", __func__);
         return -1;
     }
 
@@ -620,7 +612,7 @@ static int gnatbus_init(const char *optarg)
     chr = qemu_chr_new(chardev_name, buf);
 
     if (chr == NULL) {
-        printf("%s: Chardev error\n", __func__);
+        fprintf(stderr, "%s: Chardev error\n", __func__);
         return -1;
     }
 
@@ -647,7 +639,8 @@ static int gnatbus_init(const char *optarg)
     packet = gnatbus_receive_packet_sync(qbdev);
 
     if (packet == NULL) {
-        printf("%s: Device initialization failure: Cannot read Register packet\n", __func__);
+        fprintf(stderr, "%s: Device initialization failure: "
+                "Cannot read Register packet\n", __func__);
         return -1;
     }
 
@@ -655,7 +648,7 @@ static int gnatbus_init(const char *optarg)
     g_free(packet);
 
     if (status != 0 || !qbdev->start_ok) {
-        printf("%s: Device initialization failure\n", __func__);
+        fprintf(stderr, "%s: Device initialization failure\n", __func__);
         return -1;
     }
 
