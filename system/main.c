@@ -26,6 +26,8 @@
 #include "qemu-main.h"
 #include "sysemu/sysemu.h"
 
+#include "adacore/qemu-traces.h"
+
 #ifdef CONFIG_SDL
 #include <SDL.h>
 #endif
@@ -37,6 +39,17 @@ int qemu_default_main(void)
     status = qemu_main_loop();
     qemu_cleanup(status);
 
+    /* Threads are not exited correctly on Windows.
+     * Since we didn't find the bug yet lets kill the process at the end
+     * to avoid deadlock in Windows DLLs.
+     */
+#if defined(_WIN32)
+    exec_trace_cleanup();
+    DWORD pid = GetCurrentProcessId();
+    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS,
+                                  false, pid);
+    TerminateProcess(hProcess, status);
+#endif /* WIN32 */
     return status;
 }
 
