@@ -26,6 +26,8 @@
 #include "qemu-common.h"
 #include "sysemu/sysemu.h"
 
+#include "qemu-traces.h"
+
 #ifdef CONFIG_SDL
 #if defined(__APPLE__) || defined(main)
 #include <SDL.h>
@@ -50,5 +52,16 @@ int main(int argc, char **argv, char **envp)
     qemu_main_loop();
     qemu_cleanup();
 
+    /* Threads are not exited correctly on Windows.
+     * Since we didn't find the bug yet lets kill the process at the end
+     * to avoid deadlock in Windows DLLs.
+     */
+#if defined(_WIN32)
+    exec_trace_cleanup();
+    DWORD pid = GetCurrentProcessId();
+    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS,
+                                  false, pid);
+    TerminateProcess(hProcess, 0);
+#endif /* WIN32 */
     return 0;
 }
