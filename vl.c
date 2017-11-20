@@ -4924,6 +4924,16 @@ int main(int argc, char **argv, char **envp)
     monitor_cleanup();
     gdbserver_cleanup();
     qemu_chr_cleanup();
-
+    /* Threads are not exited correctly on Windows.
+     * Since we didn't find the bug yet lets kill the process at the end
+     * to avoid deadlock in Windows DLLs.
+     */
+#if defined(_WIN32)
+    exec_trace_cleanup();
+    DWORD pid = GetCurrentProcessId();
+    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS,
+                                  false, pid);
+    TerminateProcess(hProcess, 0);
+#endif /* WIN32 */
     return 0;
 }
