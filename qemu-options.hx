@@ -4113,6 +4113,15 @@ STEXI
 Connect a GnatBus Device
 ETEXI
 
+DEF("gnatbus-timeout", HAS_ARG, QEMU_OPTION_gnatbus_timeout, \
+    "-gnatbus-timeout value\n"
+    "                Timeout to connect GNATBus devices.\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -gnatbus-timeout value
+Timeout to connect GNATBus devices.
+ETEXI
+
 DEF("host-cpu-affinity", HAS_ARG, QEMU_OPTION_host_cpu_affinity, \
     "-host-cpu-affinity mask(hexadecimal)\n"
     "                Set CPU affinity mask for Qemu process.\n",

@@ -67,6 +67,8 @@ typedef struct GnatBus_SysBusDevice {
 
 void gnatbus_save_optargs(const char *optarg);
 
+void gnatbus_save_timeout_optargs(const char *optarg);
+
 void gnatbus_master_init(qemu_irq *cpu_irqs, int nr_irq);
 
 void gnatbus_device_init(void);
