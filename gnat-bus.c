@@ -21,6 +21,8 @@ typedef struct Event_Entry {
 } Event_Entry;
 
 GnatBus_Master *g_qbmaster = NULL;
+/* Timeout before qemu crash when attempting to connect a GNATBus device. */
+long timeout = 0;
 
 /* Socket communication tools */
 
@@ -589,7 +591,8 @@ static int gnatbus_init(const char *optarg)
         buf = g_strdup_printf("pipe_client:gnatbus\\%s", optarg + 1);
 #else
         /* UNIX domain socket */
-        buf = g_strdup_printf("unix:@/gnatbus/%s", optarg + 1);
+        buf = g_strdup_printf("unix:@/gnatbus/%s,timeout=%ld", optarg + 1,
+                              timeout);
 #endif /* _WIN32 */
     } else {
         buf = g_strdup_printf("tcp:%s", optarg);
@@ -709,4 +712,14 @@ void gnatbus_save_optargs(const char *optarg)
     g_qbmaster = g_malloc(sizeof(*g_qbmaster));
     g_qbmaster->optarg = g_strdup(optarg);
     QLIST_INIT(&g_qbmaster->devices_list);
+}
+
+void gnatbus_save_timeout_optargs(const char *optarg)
+{
+    timeout = strtol(optarg, NULL, 10);
+
+    if (timeout <= 0) {
+        fprintf(stderr, "gnatbus: wrong timeout parameter\n");
+        exit(1);
+    }
 }
