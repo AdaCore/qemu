@@ -577,8 +577,8 @@ static int gnatbus_init(const char *optarg)
 {
     static int       dev_cnt;
     GnatBus_Device  *qbdev   = NULL;
-    char             buf[512];
-    char             chardev_name[512];
+    char *buf;
+    char *chardev_name;
     CharDriverState *chr;
     int              status  = 0;
     GnatBusPacket   *packet  = NULL;
@@ -586,30 +586,25 @@ static int gnatbus_init(const char *optarg)
     if (optarg[0] == '@') {
 #ifdef _WIN32
         /* Windows named pipe */
-        status = snprintf(buf, sizeof(buf), "pipe_client:gnatbus\\%s",
-                          optarg + 1);
+        buf = g_strdup_printf("pipe_client:gnatbus\\%s", optarg + 1);
 #else
         /* UNIX domain socket */
-        status = snprintf(buf, sizeof(buf), "unix:@/gnatbus/%s", optarg + 1);
+        buf = g_strdup_printf("unix:@/gnatbus/%s", optarg + 1);
 #endif /* _WIN32 */
     } else {
-        status = snprintf(buf, sizeof(buf), "tcp:%s", optarg);
+        buf = g_strdup_printf("tcp:%s", optarg);
     }
 
-    if (status < 0 || status >= sizeof(buf)) {
-        fprintf(stderr, "%s: Device name too long\n", __func__);
-        return -1;
-    }
-
-    status = snprintf(chardev_name, sizeof(chardev_name),
-                      "GnatBus_Chr_%d", dev_cnt++);
-    if (status < 0 || status >= sizeof(chardev_name)) {
-        fprintf(stderr, "%s: chardev_name too long\n", __func__);
-        return -1;
-    }
+    chardev_name = g_strdup_printf("GnatBus_Chr_%d", dev_cnt++);
 
     /* Connect chardev */
     chr = qemu_chr_new(chardev_name, buf);
+
+    /* Not needed anymore */
+    g_free(buf);
+    buf = NULL;
+    g_free(chardev_name);
+    chardev_name = NULL;
 
     if (chr == NULL) {
         fprintf(stderr, "%s: Chardev error\n", __func__);
