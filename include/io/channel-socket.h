@@ -85,6 +85,7 @@ qio_channel_socket_new_fd(int fd,
  * @ioc: the socket channel object
  * @addr: the address to connect to
  * @errp: pointer to a NULL-initialized error object
+ * @timeout: time (in second) to wait before aborting the connection
  *
  * Attempt to connect to the address @addr. This method
  * will run in the foreground so the caller will not regain
@@ -93,7 +94,8 @@ qio_channel_socket_new_fd(int fd,
  */
 int qio_channel_socket_connect_sync(QIOChannelSocket *ioc,
                                     SocketAddress *addr,
-                                    Error **errp);
+                                    Error **errp,
+				    int64_t timeout);
 
 /**
  * qio_channel_socket_connect_async:
