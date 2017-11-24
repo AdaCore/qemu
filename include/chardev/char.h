@@ -116,6 +116,7 @@ typedef struct {
 
     bool is_websock;
 
+    int64_t timeout;
     GSource *reconnect_timer;
     int64_t reconnect_time;
     bool connect_err_reported;

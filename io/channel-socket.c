@@ -136,12 +136,14 @@ qio_channel_socket_new_fd(int fd,
 
 int qio_channel_socket_connect_sync(QIOChannelSocket *ioc,
                                     SocketAddress *addr,
-                                    Error **errp)
+                                    Error **errp,
+                                    int64_t timeout)
 {
     int fd;
 
     trace_qio_channel_socket_connect_sync(ioc, addr);
-    fd = socket_connect(addr, errp);
+    fd = socket_connect(addr, errp, timeout);
+
     if (fd < 0) {
         trace_qio_channel_socket_connect_fail(ioc);
         return -1;
@@ -164,7 +166,7 @@ static void qio_channel_socket_connect_worker(QIOTask *task,
     SocketAddress *addr = opaque;
     Error *err = NULL;
 
-    qio_channel_socket_connect_sync(ioc, addr, &err);
+    qio_channel_socket_connect_sync(ioc, addr, &err, 0);
 
     qio_task_set_error(task, err);
 }

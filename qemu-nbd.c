@@ -260,7 +260,7 @@ static int qemu_nbd_client_list(SocketAddress *saddr, QCryptoTLSCreds *tls,
     int i, j;
 
     sioc = qio_channel_socket_new();
-    if (qio_channel_socket_connect_sync(sioc, saddr, &err) < 0) {
+    if (qio_channel_socket_connect_sync(sioc, saddr, &err, 0) < 0) {
         error_report_err(err);
         return EXIT_FAILURE;
     }
@@ -365,7 +365,7 @@ static void *nbd_client_thread(void *arg)
     sioc = qio_channel_socket_new();
     if (qio_channel_socket_connect_sync(sioc,
                                         saddr,
-                                        &local_error) < 0) {
+                                        &local_error, 0) < 0) {
         error_report_err(local_error);
         goto out;
     }

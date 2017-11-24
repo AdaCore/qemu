@@ -933,6 +933,9 @@ QemuOptsList qemu_chardev_opts = {
         },{
             .name = "logappend",
             .type = QEMU_OPT_BOOL,
+        },{
+            .name = "timeout",
+            .type = QEMU_OPT_NUMBER,
         },
         { /* end of list */ }
     },

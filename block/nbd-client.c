@@ -1102,7 +1102,7 @@ static QIOChannelSocket *nbd_establish_connection(SocketAddress *saddr,
     sioc = qio_channel_socket_new();
     qio_channel_set_name(QIO_CHANNEL(sioc), "nbd-client");
 
-    qio_channel_socket_connect_sync(sioc, saddr, &local_err);
+    qio_channel_socket_connect_sync(sioc, saddr, &local_err, 0);
     if (local_err) {
         object_unref(OBJECT(sioc));
         error_propagate(errp, local_err);

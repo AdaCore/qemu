@@ -897,7 +897,8 @@ err:
     return -1;
 }
 
-static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp)
+static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
+                              int64_t timeout)
 {
     struct sockaddr_un un;
     int sock, rc;
@@ -930,7 +931,13 @@ static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp)
         if (connect(sock, (struct sockaddr *) &un, sizeof(un)) < 0) {
             rc = -errno;
         }
-    } while (rc == -EINTR);
+        if (rc == -ECONNREFUSED) {
+            if (timeout) {
+                timeout--;
+                sleep(1);
+            }
+        }
+    } while ((rc == -EINTR) || ((rc == -ECONNREFUSED) && (timeout)));
 
     if (rc < 0) {
         error_setg_errno(errp, -rc, "Failed to connect socket %s",
@@ -955,7 +962,8 @@ static int unix_listen_saddr(UnixSocketAddress *saddr,
     return -1;
 }
 
-static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp)
+static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
+                              int64_t timeout)
 {
     error_setg(errp, "unix sockets are not available on windows");
     errno = ENOTSUP;
@@ -997,7 +1005,7 @@ int unix_connect(const char *path, Error **errp)
 
     saddr = g_new0(UnixSocketAddress, 1);
     saddr->path = g_strdup(path);
-    sock = unix_connect_saddr(saddr, errp);
+    sock = unix_connect_saddr(saddr, errp, 0);
     qapi_free_UnixSocketAddress(saddr);
     return sock;
 }
@@ -1066,7 +1074,7 @@ static int socket_get_fd(const char *fdstr, Error **errp)
     return fd;
 }
 
-int socket_connect(SocketAddress *addr, Error **errp)
+int socket_connect(SocketAddress *addr, Error **errp, int timeout)
 {
     int fd;
 
@@ -1076,7 +1084,7 @@ int socket_connect(SocketAddress *addr, Error **errp)
         break;
 
     case SOCKET_ADDRESS_TYPE_UNIX:
-        fd = unix_connect_saddr(&addr->u.q_unix, errp);
+        fd = unix_connect_saddr(&addr->u.q_unix, errp, timeout);
         break;
 
     case SOCKET_ADDRESS_TYPE_FD:
