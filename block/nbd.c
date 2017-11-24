@@ -401,7 +401,7 @@ static void *connect_thread_func(void *opaque)
 
     error_free(thr->err);
     thr->err = NULL;
-    ret = qio_channel_socket_connect_sync(thr->sioc, thr->saddr, &thr->err);
+    ret = qio_channel_socket_connect_sync(thr->sioc, thr->saddr, &thr->err, 0);
     if (ret < 0) {
         object_unref(OBJECT(thr->sioc));
         thr->sioc = NULL;
@@ -1809,7 +1809,7 @@ static int nbd_establish_connection(BlockDriverState *bs,
     s->sioc = qio_channel_socket_new();
     qio_channel_set_name(QIO_CHANNEL(s->sioc), "nbd-client");
 
-    qio_channel_socket_connect_sync(s->sioc, saddr, errp);
+    qio_channel_socket_connect_sync(s->sioc, saddr, errp, 0);
     if (*errp) {
         object_unref(OBJECT(s->sioc));
         s->sioc = NULL;
