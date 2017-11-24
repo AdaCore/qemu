@@ -982,7 +982,8 @@ err:
     return -1;
 }
 
-static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp)
+static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
+                              int64_t timeout)
 {
     bool abstract = saddr_is_abstract(saddr);
     struct sockaddr_un un;
@@ -1030,7 +1031,13 @@ static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp)
         if (connect(sock, (struct sockaddr *) &un, addrlen) < 0) {
             rc = -errno;
         }
-    } while (rc == -EINTR);
+        if (rc == -ECONNREFUSED) {
+            if (timeout) {
+                timeout--;
+                sleep(1);
+            }
+        }
+    } while ((rc == -EINTR) || ((rc == -ECONNREFUSED) && (timeout)));
 
     if (rc < 0) {
         error_setg_errno(errp, -rc, "Failed to connect to '%s'",
@@ -1065,7 +1072,7 @@ int unix_connect(const char *path, Error **errp)
 
     saddr = g_new0(UnixSocketAddress, 1);
     saddr->path = g_strdup(path);
-    sock = unix_connect_saddr(saddr, errp);
+    sock = unix_connect_saddr(saddr, errp, 0);
     qapi_free_UnixSocketAddress(saddr);
     return sock;
 }
@@ -1179,7 +1186,7 @@ int socket_address_parse_named_fd(SocketAddress *addr, Error **errp)
     return 0;
 }
 
-int socket_connect(SocketAddress *addr, Error **errp)
+int socket_connect(SocketAddress *addr, Error **errp, int timeout)
 {
     int fd;
 
@@ -1189,7 +1196,7 @@ int socket_connect(SocketAddress *addr, Error **errp)
         break;
 
     case SOCKET_ADDRESS_TYPE_UNIX:
-        fd = unix_connect_saddr(&addr->u.q_unix, errp);
+        fd = unix_connect_saddr(&addr->u.q_unix, errp, timeout);
         break;
 
     case SOCKET_ADDRESS_TYPE_FD:
