@@ -3460,7 +3460,8 @@ static int tcp_chr_wait_connected(CharDriverState *chr, Error **errp)
         } else {
             sioc = qio_channel_socket_new();
             tcp_chr_set_client_ioc_name(chr, sioc);
-            if (qio_channel_socket_connect_sync(sioc, s->addr, errp) < 0) {
+            if (qio_channel_socket_connect_sync(sioc, s->addr,
+                                                errp, chr->timeout) < 0) {
                 object_unref(OBJECT(sioc));
                 return -1;
             }
@@ -4020,6 +4021,7 @@ static void qemu_chr_parse_socket(QemuOpts *opts, ChardevBackend *backend,
     bool is_telnet      = qemu_opt_get_bool(opts, "telnet", false);
     bool do_nodelay     = !qemu_opt_get_bool(opts, "delay", true);
     int64_t reconnect   = qemu_opt_get_number(opts, "reconnect", 0);
+    int64_t timeout     = qemu_opt_get_number(opts, "timeout", 0);
     const char *path = qemu_opt_get(opts, "path");
     const char *host = qemu_opt_get(opts, "host");
     const char *port = qemu_opt_get(opts, "port");
@@ -4056,6 +4058,8 @@ static void qemu_chr_parse_socket(QemuOpts *opts, ChardevBackend *backend,
     sock->wait = is_waitconnect;
     sock->has_reconnect = true;
     sock->reconnect = reconnect;
+    sock->has_timeout = true;
+    sock->timeout = timeout;
     sock->tls_creds = g_strdup(tls_creds);
 
     addr = g_new0(SocketAddress, 1);
@@ -4592,6 +4596,9 @@ QemuOptsList qemu_chardev_opts = {
         },{
             .name = "logappend",
             .type = QEMU_OPT_BOOL,
+        },{
+            .name = "timeout",
+            .type = QEMU_OPT_NUMBER,
         },
         { /* end of list */ }
     },
@@ -4771,6 +4778,7 @@ static CharDriverState *qmp_chardev_open_socket(const char *id,
     bool is_telnet      = sock->has_telnet  ? sock->telnet  : false;
     bool is_waitconnect = sock->has_wait    ? sock->wait    : false;
     int64_t reconnect   = sock->has_reconnect ? sock->reconnect : 0;
+    int64_t timeout     = sock->has_timeout ? sock->timeout : 0;
     ChardevCommon *common = qapi_ChardevSocket_base(sock);
     QIOChannelSocket *sioc = NULL;
 
@@ -4835,6 +4843,7 @@ static CharDriverState *qmp_chardev_open_socket(const char *id,
     chr->chr_add_client = tcp_chr_add_client;
     chr->chr_add_watch = tcp_chr_add_watch;
     chr->chr_update_read_handler = tcp_chr_update_read_handler;
+    chr->timeout = timeout;
     /* be isn't opened until we get a connection */
     *be_opened = false;
 
