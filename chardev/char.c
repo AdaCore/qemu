@@ -951,6 +951,9 @@ QemuOptsList qemu_chardev_opts = {
             .name = "abstract",
             .type = QEMU_OPT_BOOL,
 #endif
+        },{
+            .name = "timeout",
+            .type = QEMU_OPT_NUMBER,
         },
         { /* end of list */ }
     },

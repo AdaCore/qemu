@@ -285,7 +285,8 @@
             '*telnet': 'bool',
             '*tn3270': 'bool',
             '*websocket': 'bool',
-            '*reconnect': 'int' },
+            '*reconnect': 'int',
+            '*timeout': 'int' },
   'base': 'ChardevCommon' }
 
 ##

@@ -78,52 +78,6 @@ struct Chardev {
     DECLARE_BITMAP(features, QEMU_CHAR_FEATURE_LAST);
 };
 
-typedef struct {
-    char buf[21];
-    size_t buflen;
-} TCPChardevTelnetInit;
-
-typedef enum {
-    TCP_CHARDEV_STATE_DISCONNECTED,
-    TCP_CHARDEV_STATE_CONNECTING,
-    TCP_CHARDEV_STATE_CONNECTED,
-} TCPChardevState;
-
-struct SocketChardev {
-    Chardev parent;
-    QIOChannel *ioc; /* Client I/O channel */
-    QIOChannelSocket *sioc; /* Client master channel */
-    QIONetListener *listener;
-    GSource *hup_source;
-    QCryptoTLSCreds *tls_creds;
-    char *tls_authz;
-    TCPChardevState state;
-    int max_size;
-    int do_telnetopt;
-    int do_nodelay;
-    int *read_msgfds;
-    size_t read_msgfds_num;
-    int *write_msgfds;
-    size_t write_msgfds_num;
-    bool registered_yank;
-
-    SocketAddress *addr;
-    bool is_listen;
-    bool is_telnet;
-    bool is_tn3270;
-    GSource *telnet_source;
-    TCPChardevTelnetInit *telnet_init;
-
-    bool is_websock;
-
-    GSource *reconnect_timer;
-    int64_t reconnect_time;
-    bool connect_err_reported;
-
-    QIOTask *connect_task;
-};
-typedef struct SocketChardev SocketChardev;
-
 /**
  * qemu_chr_new_from_opts:
  * @opts: see qemu-config.c for a list of valid options
