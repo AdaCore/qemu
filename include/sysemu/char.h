@@ -114,6 +114,7 @@ struct CharDriverState {
     int be_open;
     int is_mux;
     guint fd_in_tag;
+    int64_t timeout;
     bool replay;
     DECLARE_BITMAP(features, QEMU_CHAR_FEATURE_LAST);
     QTAILQ_ENTRY(CharDriverState) next;

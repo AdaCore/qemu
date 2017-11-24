@@ -3765,7 +3765,8 @@
                                      '*wait'      : 'bool',
                                      '*nodelay'   : 'bool',
                                      '*telnet'    : 'bool',
-                                     '*reconnect' : 'int' },
+                                     '*reconnect' : 'int',
+                                     '*timeout'   : 'int'},
   'base': 'ChardevCommon' }
 
 ##

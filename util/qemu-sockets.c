@@ -929,7 +929,8 @@ err:
 }
 
 static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
-                              NonBlockingConnectHandler *callback, void *opaque)
+                              NonBlockingConnectHandler *callback,
+                              int64_t timeout, void *opaque)
 {
     struct sockaddr_un un;
     ConnectState *connect_state = NULL;
@@ -971,7 +972,13 @@ static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
         if (connect(sock, (struct sockaddr *) &un, sizeof(un)) < 0) {
             rc = -errno;
         }
-    } while (rc == -EINTR);
+        if (rc == -ECONNREFUSED) {
+            if (timeout) {
+                timeout--;
+                sleep(1);
+            }
+        }
+    } while ((rc == -EINTR) || ((rc == -ECONNREFUSED) && (timeout)));
 
     if (connect_state != NULL && QEMU_SOCKET_RC_INPROGRESS(rc)) {
         connect_state->fd = sock;
@@ -1006,7 +1013,8 @@ static int unix_listen_saddr(UnixSocketAddress *saddr,
 }
 
 static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
-                              NonBlockingConnectHandler *callback, void *opaque)
+                              NonBlockingConnectHandler *callback,
+                              int64_t timeout, void *opaque)
 {
     error_setg(errp, "unix sockets are not available on windows");
     errno = ENOTSUP;
@@ -1052,7 +1060,7 @@ int unix_connect(const char *path, Error **errp)
 
     saddr = g_new0(UnixSocketAddress, 1);
     saddr->path = g_strdup(path);
-    sock = unix_connect_saddr(saddr, errp, NULL, NULL);
+    sock = unix_connect_saddr(saddr, errp, NULL, 0, NULL);
     qapi_free_UnixSocketAddress(saddr);
     return sock;
 }
@@ -1102,7 +1110,8 @@ fail:
 }
 
 int socket_connect(SocketAddress *addr, Error **errp,
-                   NonBlockingConnectHandler *callback, void *opaque)
+                   NonBlockingConnectHandler *callback, void *opaque,
+                   int timeout)
 {
     int fd;
 
@@ -1112,7 +1121,8 @@ int socket_connect(SocketAddress *addr, Error **errp,
         break;
 
     case SOCKET_ADDRESS_KIND_UNIX:
-        fd = unix_connect_saddr(addr->u.q_unix.data, errp, callback, opaque);
+        fd = unix_connect_saddr(addr->u.q_unix.data, errp, callback, timeout,
+                                opaque);
         break;
 
     case SOCKET_ADDRESS_KIND_FD:

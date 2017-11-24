@@ -311,7 +311,7 @@ static QIOChannelSocket *nbd_establish_connection(SocketAddress *saddr,
 
     qio_channel_socket_connect_sync(sioc,
                                     saddr,
-                                    &local_err);
+                                    &local_err, 0);
     if (local_err) {
         error_propagate(errp, local_err);
         return NULL;

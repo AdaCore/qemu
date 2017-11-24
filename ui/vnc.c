@@ -3697,7 +3697,7 @@ void vnc_display_open(const char *id, Error **errp)
         vd->is_unix = saddr->type == SOCKET_ADDRESS_KIND_UNIX;
         sioc = qio_channel_socket_new();
         qio_channel_set_name(QIO_CHANNEL(sioc), "vnc-reverse");
-        if (qio_channel_socket_connect_sync(sioc, saddr, errp) < 0) {
+        if (qio_channel_socket_connect_sync(sioc, saddr, errp, 0) < 0) {
             goto fail;
         }
         vnc_connect(vd, sioc, false, false);
