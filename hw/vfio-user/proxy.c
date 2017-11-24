@@ -907,7 +907,7 @@ VFIOUserProxy *vfio_user_connect_dev(SocketAddress *addr, Error **errp)
 
     sioc = qio_channel_socket_new();
     ioc = QIO_CHANNEL(sioc);
-    if (qio_channel_socket_connect_sync(sioc, addr, errp) < 0) {
+    if (qio_channel_socket_connect_sync(sioc, addr, errp, 0) < 0) {
         goto fail;
     }
     if (!qio_channel_set_blocking(ioc, false, errp)) {

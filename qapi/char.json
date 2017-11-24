@@ -277,6 +277,10 @@
 #     Setting this to zero disables this function.
 #     (default: 0) (Since: 9.2)
 #
+# @timeout: make several attemps to connect (1 every seconds for N
+#     seconds) instead of failing directly if the connection is
+#     refused
+#
 # Since: 1.4
 ##
 { 'struct': 'ChardevSocket',
@@ -289,7 +293,8 @@
             '*telnet': 'bool',
             '*tn3270': 'bool',
             '*websocket': 'bool',
-            '*reconnect-ms': 'int' },
+            '*reconnect-ms': 'int',
+            '*timeout': 'int' },
   'base': 'ChardevCommon' }
 
 ##
