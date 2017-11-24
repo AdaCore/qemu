@@ -818,7 +818,8 @@ static int tcp_chr_wait_connected(Chardev *chr, Error **errp)
         } else {
             sioc = qio_channel_socket_new();
             tcp_chr_set_client_ioc_name(chr, sioc);
-            if (qio_channel_socket_connect_sync(sioc, s->addr, errp) < 0) {
+            if (qio_channel_socket_connect_sync(sioc, s->addr, errp,
+                                                s->timeout) < 0) {
                 object_unref(OBJECT(sioc));
                 return -1;
             }
@@ -914,6 +915,7 @@ static void qmp_chardev_open_socket(Chardev *chr,
     bool is_tn3270      = sock->has_tn3270  ? sock->tn3270  : false;
     bool is_waitconnect = sock->has_wait    ? sock->wait    : false;
     int64_t reconnect   = sock->has_reconnect ? sock->reconnect : 0;
+    int64_t timeout     = sock->has_timeout ? sock->timeout : 0;
     QIOChannelSocket *sioc = NULL;
     SocketAddress *addr;
 
@@ -962,6 +964,7 @@ static void qmp_chardev_open_socket(Chardev *chr,
         qemu_chr_set_feature(chr, QEMU_CHAR_FEATURE_FD_PASS);
     }
 
+    s->timeout = timeout;
     /* be isn't opened until we get a connection */
     *be_opened = false;
 
@@ -1027,6 +1030,7 @@ static void qemu_chr_parse_socket(QemuOpts *opts, ChardevBackend *backend,
     bool is_tn3270      = qemu_opt_get_bool(opts, "tn3270", false);
     bool do_nodelay     = !qemu_opt_get_bool(opts, "delay", true);
     int64_t reconnect   = qemu_opt_get_number(opts, "reconnect", 0);
+    int64_t timeout     = qemu_opt_get_number(opts, "timeout", 0);
     const char *path = qemu_opt_get(opts, "path");
     const char *host = qemu_opt_get(opts, "host");
     const char *port = qemu_opt_get(opts, "port");
@@ -1077,6 +1081,8 @@ static void qemu_chr_parse_socket(QemuOpts *opts, ChardevBackend *backend,
     sock->wait = is_waitconnect;
     sock->has_reconnect = true;
     sock->reconnect = reconnect;
+    sock->has_timeout = true;
+    sock->timeout = timeout;
     sock->tls_creds = g_strdup(tls_creds);
 
     addr = g_new0(SocketAddressLegacy, 1);

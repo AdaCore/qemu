@@ -92,7 +92,7 @@ qio_channel_socket_new_fd(int fd,
  */
 int qio_channel_socket_connect_sync(QIOChannelSocket *ioc,
                                     SocketAddress *addr,
-                                    Error **errp);
+                                    Error **errp, int64_t timeout);
 
 /**
  * qio_channel_socket_connect_async:

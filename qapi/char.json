@@ -266,7 +266,8 @@
                                      '*nodelay'   : 'bool',
                                      '*telnet'    : 'bool',
                                      '*tn3270'    : 'bool',
-                                     '*reconnect' : 'int' },
+                                     '*reconnect' : 'int',
+                                     '*timeout'   : 'int' },
   'base': 'ChardevCommon' }
 
 ##
