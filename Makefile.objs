@@ -79,6 +79,7 @@ qemu-seccomp.o-cflags := $(SECCOMP_CFLAGS)
 qemu-seccomp.o-libs := $(SECCOMP_LIBS)
 
 common-obj-$(CONFIG_FDT) += device_tree.o
+common-obj-y += qemu-clock.o
 
 ######################################################################
 # qapi
