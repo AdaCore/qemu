@@ -38,7 +38,6 @@
 #define GIC_DIST_ADDR       0xf9010000
 #define GIC_CPU_ADDR        0xf9020000
 #define CRF_APB_ADDR        0xfd1a0000
-#define CRL_APB_ADDR        0xff5e0000
 
 #define SATA_INTR           133
 #define SATA_ADDR           0xFD0C0000
@@ -46,6 +45,8 @@
 
 #define DP_ADDR             0xfd4a0000
 #define DP_IRQ              113
+
+#define CRL_ADDR            0xff5e0000
 
 #define DPDMA_ADDR          0xfd4c0000
 #define DPDMA_IRQ           116
@@ -100,24 +101,6 @@ static const XlnxZynqMPGICRegion xlnx_zynqmp_gic_regions[] = {
     { .region_index = 1, .address = GIC_CPU_ADDR,  },
 };
 
-static uint64_t crl_apb_read(void *opaque, hwaddr addr, unsigned size)
-{
-  return 0;
-}
-
-static void crl_apb_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
-{
-    switch (addr) {
-    case 0x218: /* RESET_CTRL */
-      if (val & 0x10) {
-        qemu_system_reset_request();
-      }
-      break;
-    default:
-      break;
-    }
-}
-
 static uint64_t crf_apb_read(void *opaque, hwaddr addr, unsigned size)
 {
   XlnxZynqMPState *s = (XlnxZynqMPState *)opaque;
@@ -170,12 +153,6 @@ static void crf_apb_write(void *opaque, hwaddr addr, uint64_t val, unsigned size
     break;
   }
 }
-
-static const MemoryRegionOps xlnx_crl_apb = {
-    .read = crl_apb_read,
-    .write = crl_apb_write,
-    .endianness = DEVICE_NATIVE_ENDIAN,
-};
 
 static const MemoryRegionOps xlnx_crf_apb = {
     .read = crf_apb_read,
@@ -280,6 +257,9 @@ static void xlnx_zynqmp_init(Object *obj)
         qdev_set_parent_bus(DEVICE(&s->ttc[i]), sysbus_get_default());
     }
 
+    object_initialize(&s->crl, sizeof(s->crl), TYPE_XLNX_CRL);
+    qdev_set_parent_bus(DEVICE(&s->crl), sysbus_get_default());
+
     s->crf = object_new("xlnx.zynqmp_crf");
     qdev_set_parent_bus(DEVICE(s->crf), sysbus_get_default());
     object_property_add_child(obj, "xlnx.zynqmp_crf", OBJECT(s->crf),
@@ -306,7 +286,6 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
 {
     XlnxZynqMPState *s = XLNX_ZYNQMP(dev);
     MemoryRegion    *system_memory = get_system_memory();
-    MemoryRegion    *crl_apb       = g_new(MemoryRegion, 1);
     MemoryRegion    *crf_apb       = g_new(MemoryRegion, 1);
     uint8_t i;
     uint64_t ram_size;
@@ -399,9 +378,6 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         return;
     }
 
-    memory_region_init_io(crl_apb, NULL, &xlnx_crl_apb, s,
-                          "zynqmp-crl-apb", 0x300);
-    memory_region_add_subregion(system_memory, CRL_APB_ADDR, crl_apb);
     memory_region_init_io(crf_apb, NULL, &xlnx_crf_apb, s,
                           "zynqmp-crf-apb", 0x110);
     memory_region_add_subregion(system_memory, CRF_APB_ADDR, crf_apb);
@@ -554,6 +530,14 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
                              &error_abort);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->dpdma), 0, DPDMA_ADDR);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->dpdma), 0, gic_spi[DPDMA_IRQ]);
+
+    object_property_set_bool(OBJECT(&s->crl), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->crl), 0, CRL_ADDR);
+//    sysbus_connect_irq(SYS_BUS_DEVICE(&s->dp), 0, gic_spi[CRL_IRQ]);
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
         object_property_set_bool(OBJECT(&s->ttc[i]), true, "realized", &err);

@@ -30,6 +30,7 @@
 #include "hw/display/xlnx_dp.h"
 #include "hw/timer/cadence_ttc.h"
 #include "hw/misc/fixed-clock.h"
+#include "hw/misc/xlnx_crl.h"
 
 #define TYPE_XLNX_ZYNQMP "xlnx,zynqmp"
 #define XLNX_ZYNQMP(obj) OBJECT_CHECK(XlnxZynqMPState, (obj), \
@@ -89,6 +90,7 @@ typedef struct XlnxZynqMPState {
     XlnxDPState dp;
     XlnxDPDMAState dpdma;
     CadenceTTCState ttc[XLNX_ZYNQMP_NUM_TTC];
+    XlnxCRL crl;
 
     Object *pss_ref_clk;
     Object *video_clk;
