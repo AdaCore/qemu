@@ -278,6 +278,11 @@ static void xlnx_zynqmp_init(Object *obj)
         object_initialize(&s->ttc[i], sizeof(s->ttc[i]), TYPE_CADENCE_TTC);
         qdev_set_parent_bus(DEVICE(&s->ttc[i]), sysbus_get_default());
     }
+
+    s->crf = object_new("xlnx.zynqmp_crf");
+    qdev_set_parent_bus(DEVICE(s->crf), sysbus_get_default());
+    object_property_add_child(obj, "xlnx.zynqmp_crf", OBJECT(s->crf),
+                              &error_abort);
 }
 
 static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
@@ -544,6 +549,8 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->ttc[i]), 0,
                            gic_spi[ttc_intr[i]]);
     }
+
+    sysbus_mmio_map(SYS_BUS_DEVICE(s->crf), 0, 0xFD1A0000);
 
     /* Initialize plug-ins */
     plugin_init(gic_spi, 128);
