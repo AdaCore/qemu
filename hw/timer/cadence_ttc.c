@@ -237,6 +237,19 @@ static void cadence_timer_tick(void *opaque)
     cadence_timer_run(s);
 }
 
+static void cadence_clock_rate_update(void *opaque, ClockEvent evt)
+{
+    CadenceTTCState *s = CADENCE_TTC(opaque);
+    int i;
+
+    for (i = 0; i < 3; i++) {
+        cadence_timer_sync(&s->timer[i]);
+        s->timer[i].freq = clock_get_hz(s->clock_in);
+        cadence_timer_run(&s->timer[i]);
+        cadence_timer_update(&s->timer[i]);
+    }
+}
+
 static uint32_t cadence_ttc_read_imp(void *opaque, hwaddr offset)
 {
     CadenceTimerState *s = cadence_timer_from_addr(opaque, offset);
@@ -432,6 +445,9 @@ static void cadence_ttc_init(Object *obj)
 {
     CadenceTTCState *s = CADENCE_TTC(obj);
 
+    s->clock_in = qdev_init_clock_in(DEVICE(obj), "clock_in",
+                                     cadence_clock_rate_update, s,
+                                     ClockUpdate);
     memory_region_init_io(&s->iomem, obj, &cadence_ttc_ops, s,
                           "timer", 0x1000);
     sysbus_init_mmio(SYS_BUS_DEVICE(obj), &s->iomem);

@@ -23,10 +23,11 @@
 #include "qemu/osdep.h"
 #include "hw/sysbus.h"
 #include "qemu/timer.h"
+#include "hw/qdev-clock.h"
 
 typedef struct {
     QEMUTimer *timer;
-    int freq;
+    uint64_t freq;
 
     uint32_t reg_clock;
     uint32_t reg_count;
@@ -57,6 +58,7 @@ struct CadenceTTCState {
 
     MemoryRegion iomem;
     CadenceTimerState timer[3];
+    Clock *clock_in;
 };
 
 #endif /* CADENCE_TTC_H */
