@@ -36,6 +36,7 @@
 #include "qom/object.h"
 #include "net/can_emu.h"
 #include "hw/dma/xlnx_csu_dma.h"
+#include "hw/misc/xlnx_crl.h"
 
 #define TYPE_XLNX_ZYNQMP "xlnx-zynqmp"
 OBJECT_DECLARE_SIMPLE_TYPE(XlnxZynqMPState, XLNX_ZYNQMP)
@@ -110,6 +111,7 @@ struct XlnxZynqMPState {
     XlnxZDMA gdma[XLNX_ZYNQMP_NUM_GDMA_CH];
     XlnxZDMA adma[XLNX_ZYNQMP_NUM_ADMA_CH];
     XlnxCSUDMA qspi_dma;
+    XlnxCRL crl;
 
     char *boot_cpu;
     ARMCPU *boot_cpu_ptr;

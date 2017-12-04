@@ -55,6 +55,8 @@
 #define DP_ADDR             0xfd4a0000
 #define DP_IRQ              113
 
+#define CRL_ADDR            0xff5e0000
+
 #define DPDMA_ADDR          0xfd4c0000
 #define DPDMA_IRQ           116
 
@@ -277,6 +279,8 @@ static void xlnx_zynqmp_init(Object *obj)
     object_initialize_child(obj, "ipi", &s->ipi, TYPE_XLNX_ZYNQMP_IPI);
 
     object_initialize_child(obj, "rtc", &s->rtc, TYPE_XLNX_ZYNQMP_RTC);
+
+    object_initialize_child(obj, "crl", &s->crl, TYPE_XLNX_CRL);
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_GDMA_CH; i++) {
         object_initialize_child(obj, "gdma[*]", &s->gdma[i], TYPE_XLNX_ZDMA);
@@ -609,6 +613,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     if (!sysbus_realize(SYS_BUS_DEVICE(&s->ipi), errp)) {
         return;
     }
+
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ipi), 0, IPI_ADDR);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->ipi), 0, gic_spi[IPI_IRQ]);
 
@@ -617,6 +622,11 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->rtc), 0, RTC_ADDR);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->rtc), 0, gic_spi[RTC_IRQ]);
+
+    if (!sysbus_realize(SYS_BUS_DEVICE(&s->crl), errp)) {
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->crl), 0, CRL_ADDR);
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_GDMA_CH; i++) {
         if (!object_property_set_uint(OBJECT(&s->gdma[i]), "bus-width", 128,
