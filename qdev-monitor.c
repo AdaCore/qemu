@@ -38,6 +38,7 @@
 #include "migration/misc.h"
 #include "migration/migration.h"
 #include "qemu/cutils.h"
+#include "qemu/qemu-clock.h"
 
 /*
  * Aliases were a bad idea from the start.  Let's keep them
@@ -751,6 +752,7 @@ static void qdev_print(Monitor *mon, DeviceState *dev, int indent)
                         ngl->num_out);
         }
     }
+    qemu_clk_print(mon, dev, indent);
     class = object_get_class(OBJECT(dev));
     do {
         qdev_print_props(mon, dev, DEVICE_CLASS(class)->props_, indent);
