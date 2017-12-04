@@ -41,6 +41,7 @@
 #include "hw/or-irq.h"
 #include "hw/misc/xlnx-zynqmp-apu-ctrl.h"
 #include "hw/misc/xlnx-zynqmp-crf.h"
+#include "hw/misc/xlnx_crl.h"
 
 #define TYPE_XLNX_ZYNQMP "xlnx-zynqmp"
 OBJECT_DECLARE_SIMPLE_TYPE(XlnxZynqMPState, XLNX_ZYNQMP)
@@ -128,6 +129,7 @@ struct XlnxZynqMPState {
     qemu_or_irq qspi_irq_orgate;
     XlnxZynqMPAPUCtrl apu_ctrl;
     XlnxZynqMPCRF crf;
+    XlnxCRL crl;
 
     char *boot_cpu;
     ARMCPU *boot_cpu_ptr;
