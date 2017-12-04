@@ -106,6 +106,8 @@ typedef struct XlnxZynqMPState {
     XlnxZDMA adma[XLNX_ZYNQMP_NUM_ADMA_CH];
     CadenceTTCState ttc[XLNX_ZYNQMP_NUM_TTC];
 
+    Object *crf;
+
     char *boot_cpu;
     ARMCPU *boot_cpu_ptr;
 
