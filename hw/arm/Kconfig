@@ -401,6 +401,7 @@ config XLNX_ZYNQMP_ARM
     select XILINX_SPIPS
     select XLNX_CSU_DMA
     select XLNX_ZYNQMP
+    select XLNX_CRL
     select XLNX_ZDMA
     select USB_DWC3
 

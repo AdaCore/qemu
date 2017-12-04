@@ -4,6 +4,9 @@ config TMS570_GIO
 config ZYNQ_DDRC
     bool
 
+config XLNX_CRL
+    bool
+
 config APPLESMC
     bool
     depends on ISA_BUS
