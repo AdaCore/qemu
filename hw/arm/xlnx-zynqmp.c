@@ -24,6 +24,7 @@
 #include "exec/address-spaces.h"
 #include "sysemu/kvm.h"
 #include "kvm_arm.h"
+#include "qemu/qemu-clock.h"
 #include "sysemu/sysemu.h"
 #include "hw/adacore/gnat-bus.h"
 
@@ -365,6 +366,22 @@ static void xlnx_zynqmp_init(Object *obj)
     s->crf = object_new("xlnx.zynqmp_crf");
     qdev_set_parent_bus(DEVICE(s->crf), sysbus_get_default());
     object_property_add_child(obj, "xlnx.zynqmp_crf", OBJECT(s->crf),
+                              &error_abort);
+
+    s->pss_ref_clk = object_new(TYPE_FIXED_CLOCK);
+    object_property_add_child(obj, "pss_ref_clk", s->pss_ref_clk,
+                              &error_abort);
+    object_property_set_int(s->pss_ref_clk, 50000000, "rate", &error_abort);
+    s->video_clk = object_new(TYPE_FIXED_CLOCK);
+    object_property_add_child(obj, "video_clk", s->video_clk, &error_abort);
+    object_property_set_int(s->video_clk, 27000000, "rate", &error_abort);
+    s->pss_alt_ref_clk = object_new(TYPE_FIXED_CLOCK);
+    object_property_add_child(obj, "pss_alt_ref_clk", s->pss_alt_ref_clk,
+                              &error_abort);
+    s->aux_refclk = object_new(TYPE_FIXED_CLOCK);
+    object_property_add_child(obj, "aux_refclk", s->aux_refclk, &error_abort);
+    s->gt_crx_ref_clk = object_new(TYPE_FIXED_CLOCK);
+    object_property_add_child(obj, "gt_crx_ref_clk", s->gt_crx_ref_clk,
                               &error_abort);
 }
 
@@ -732,6 +749,38 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     }
 
     sysbus_mmio_map(SYS_BUS_DEVICE(s->crf), 0, 0xFD1A0000);
+
+    /* Bind the clock */
+    qemu_clk_bind(qemu_clk_device_get_clock(DEVICE(s->pss_ref_clk),
+                                                  "clk_out"),
+                        qemu_clk_device_get_clock(DEVICE(s->crf),
+                                                  "pss_ref_clk"));
+
+    qemu_clk_bind(qemu_clk_device_get_clock(DEVICE(s->video_clk),
+                                                  "clk_out"),
+                        qemu_clk_device_get_clock(DEVICE(s->crf), "video_clk"));
+
+    qemu_clk_bind(qemu_clk_device_get_clock(DEVICE(s->pss_alt_ref_clk),
+                                                  "clk_out"),
+                        qemu_clk_device_get_clock(DEVICE(s->crf),
+                                                  "pss_alt_ref_clk"));
+
+    qemu_clk_bind(qemu_clk_device_get_clock(DEVICE(s->aux_refclk),
+                                                  "clk_out"),
+                        qemu_clk_device_get_clock(DEVICE(s->crf),
+                                                  "aux_refclk"));
+
+    qemu_clk_bind(qemu_clk_device_get_clock(DEVICE(s->gt_crx_ref_clk),
+                                                  "clk_out"),
+                        qemu_clk_device_get_clock(DEVICE(s->crf),
+                                                  "gt_crx_ref_clk"));
+
+    object_property_set_bool(s->crf, true, "realized", &err);
+    object_property_set_bool(s->pss_ref_clk, true, "realized", &err);
+    object_property_set_bool(s->video_clk, true, "realized", &err);
+    object_property_set_bool(s->pss_alt_ref_clk, true, "realized", &err);
+    object_property_set_bool(s->aux_refclk, true, "realized", &err);
+    object_property_set_bool(s->gt_crx_ref_clk, true, "realized", &err);
 
     /* Initialize the GnatBus Master */
     gnatbus_master_init(gic_spi, 128);

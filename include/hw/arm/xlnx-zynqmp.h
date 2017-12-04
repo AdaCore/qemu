@@ -33,6 +33,7 @@
 #include "hw/timer/xlnx-zynqmp-rtc.h"
 #include "hw/cpu/cluster.h"
 #include "hw/timer/cadence_ttc.h"
+#include "hw/misc/fixed-clock.h"
 
 #define TYPE_XLNX_ZYNQMP "xlnx,zynqmp"
 #define XLNX_ZYNQMP(obj) OBJECT_CHECK(XlnxZynqMPState, (obj), \
@@ -106,6 +107,11 @@ typedef struct XlnxZynqMPState {
     XlnxZDMA adma[XLNX_ZYNQMP_NUM_ADMA_CH];
     CadenceTTCState ttc[XLNX_ZYNQMP_NUM_TTC];
 
+    Object *pss_ref_clk;
+    Object *video_clk;
+    Object *pss_alt_ref_clk;
+    Object *aux_refclk;
+    Object *gt_crx_ref_clk;
     Object *crf;
 
     char *boot_cpu;
