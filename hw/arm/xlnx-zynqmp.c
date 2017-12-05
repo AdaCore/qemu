@@ -360,13 +360,13 @@ static void xlnx_zynqmp_init(Object *obj)
                               TYPE_XLNX_ZDMA);
     }
 
+    object_initialize(&s->crl, sizeof(s->crl), TYPE_XLNX_CRL);
+    qdev_set_parent_bus(DEVICE(&s->crl), sysbus_get_default());
+
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
         object_initialize(&s->ttc[i], sizeof(s->ttc[i]), TYPE_CADENCE_TTC);
         qdev_set_parent_bus(DEVICE(&s->ttc[i]), sysbus_get_default());
     }
-
-    object_initialize(&s->crl, sizeof(s->crl), TYPE_XLNX_CRL);
-    qdev_set_parent_bus(DEVICE(&s->crl), sysbus_get_default());
 
     s->crf = object_new("xlnx.zynqmp_crf");
     qdev_set_parent_bus(DEVICE(s->crf), sysbus_get_default());
@@ -402,6 +402,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     ram_addr_t ddr_low_size, ddr_high_size;
     qemu_irq *gic_spi = g_new(qemu_irq, GIC_NUM_SPI_INTR);
     Error *err = NULL;
+    QEMUClock *clock_in, *lpd_lsbus;
 
     ram_size = memory_region_size(s->ddr_ram);
 
@@ -724,6 +725,8 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     object_property_set_bool(OBJECT(&s->crl), true, "realized", &err);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->crl), 0, CRL_ADDR);
 
+    lpd_lsbus = qemu_clk_device_get_clock(DEVICE(&s->crl), "out_lpd_lsbus");
+
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
         object_property_set_bool(OBJECT(&s->ttc[i]), true, "realized", &err);
 
@@ -735,6 +738,8 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         sysbus_mmio_map(SYS_BUS_DEVICE(&s->ttc[i]), 0, ttc_addr[i]);
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->ttc[i]), 0,
                            gic_spi[ttc_intr[i]]);
+        clock_in = qemu_clk_device_get_clock(DEVICE(&s->ttc[i]), "clock_in");
+        qemu_clk_bind(lpd_lsbus, clock_in);
     }
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_GDMA_CH; i++) {
