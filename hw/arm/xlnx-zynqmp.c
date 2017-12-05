@@ -504,6 +504,10 @@ static void xlnx_zynqmp_init(Object *obj)
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
         object_initialize_child(obj, "ttc[*]", &s->ttc[i], TYPE_ZYNQMP_TTC);
+        qdev_connect_clock_in(DEVICE(&s->ttc[i]),
+                              "clock_in",
+                              qdev_get_clock_out(DEVICE(&s->crl),
+                                                 "out_lpd_lsbus"));
     }
 }
 
