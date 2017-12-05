@@ -26,6 +26,10 @@
 #include "qemu/log.h"
 #include "hw/hostfs.h"
 
+#define HOSTFS_START (0xff082000)
+#define PARAMS_ADDR  (0xff080000)
+#define PARAMS_SIZE  (0x01000)
+
 typedef struct XlnxEP108 {
     XlnxZynqMPState soc;
     MemoryRegion ddr_ram;
@@ -38,6 +42,8 @@ static void xlnx_ep108_init(MachineState *machine)
     XlnxEP108 *s = g_new0(XlnxEP108, 1);
     int i;
     uint64_t ram_size = machine->ram_size;
+    const char *kernel_cmdline;
+    MemoryRegion *params;
 
     /* Create the memory region to pass to the SoC */
     if (ram_size > XLNX_ZYNQMP_MAX_RAM_SIZE) {
@@ -110,7 +116,18 @@ static void xlnx_ep108_init(MachineState *machine)
     xlnx_ep108_binfo.ram_size = ram_size;
 
     /* HostFS */
-    hostfs_create(0xFF080000, get_system_memory());
+    hostfs_create(HOSTFS_START, get_system_memory());
+
+    /* Parameters */
+    params = g_new(MemoryRegion, 1);
+    memory_region_init_ram(params, NULL, "params", PARAMS_SIZE,
+                           &error_fatal);
+    memory_region_add_subregion(get_system_memory(), PARAMS_ADDR, params);
+
+    kernel_cmdline = machine->kernel_cmdline ? machine->kernel_cmdline : "";
+    cpu_physical_memory_write(PARAMS_ADDR, kernel_cmdline,
+                              strlen(kernel_cmdline) + 1);
+    memory_region_set_readonly(params, true);
 
     xlnx_ep108_binfo.kernel_filename = machine->kernel_filename;
     xlnx_ep108_binfo.kernel_cmdline = machine->kernel_cmdline;
