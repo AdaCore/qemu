@@ -114,7 +114,7 @@ static inline int64_t is_between(int64_t x, int64_t a, int64_t b)
 static void cadence_timer_run(CadenceTimerState *s)
 {
     int i;
-    int64_t event_interval, next_value;
+    int64_t event_interval, next_value, next_time;
 
     assert(s->cpu_time_valid); /* cadence_timer_sync must be called first */
 
@@ -140,8 +140,10 @@ static void cadence_timer_run(CadenceTimerState *s)
     event_interval = next_value - (int64_t)s->reg_value;
     event_interval = (event_interval < 0) ? -event_interval : event_interval;
 
-    timer_mod(s->timer, s->cpu_time +
-                cadence_timer_get_ns(s, event_interval));
+    next_time = cadence_timer_get_ns(s, event_interval);
+    if (next_time) {
+        timer_mod(s->timer, s->cpu_time + next_time);
+    }
 }
 
 static void cadence_timer_sync(CadenceTimerState *s)
