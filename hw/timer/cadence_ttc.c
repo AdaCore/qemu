@@ -203,8 +203,6 @@ static uint64_t cadence_clock_rate_update(void *opaque, uint64_t in_rate)
     CadenceTTCState *s = CADENCE_TTC(opaque);
     int i;
 
-    printf("ttc: update clock rate to %" PRIu64 "\n", in_rate);
-
     for (i = 0; i < 3; i++) {
         cadence_timer_sync(&s->timer[i]);
         s->timer[i].freq = in_rate;
