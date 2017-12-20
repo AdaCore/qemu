@@ -84,7 +84,7 @@ void qemu_clk_bind(QEMUClock *out, QEMUClock *in)
 {
     ClkList *child;
 
-    child = g_malloc(sizeof(child));
+    child = g_malloc(sizeof(ClkList));
     assert(child);
     child->clk = in;
     object_ref(OBJECT(in));
