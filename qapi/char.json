@@ -237,7 +237,8 @@
 # Since: 1.4
 ##
 { 'struct': 'ChardevHostdev',
-  'data': { 'device': 'str' },
+  'data': { 'device': 'str',
+            '*server': 'bool' },
   'base': 'ChardevCommon' }
 
 ##

@@ -38,7 +38,7 @@
 #define NTIMEOUT 5000
 
 static int win_chr_pipe_init(Chardev *chr, const char *filename,
-                             Error **errp)
+                             bool server, Error **errp)
 {
     WinChardev *s = WIN_CHARDEV(chr);
     OVERLAPPED ov;
@@ -60,40 +60,78 @@ static int win_chr_pipe_init(Chardev *chr, const char *filename,
     }
 
     openname = g_strdup_printf("\\\\.\\pipe\\%s", filename);
-    s->file = CreateNamedPipe(openname,
-                              PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
-                              PIPE_TYPE_BYTE | PIPE_READMODE_BYTE |
-                              PIPE_WAIT,
-                              MAXCONNECT, NSENDBUF, NRECVBUF, NTIMEOUT, NULL);
+
+    if (server) {
+        s->file = CreateNamedPipe(openname,
+                                  PIPE_ACCESS_DUPLEX |
+                                  FILE_FLAG_OVERLAPPED,
+                                  PIPE_TYPE_BYTE | PIPE_READMODE_BYTE |
+                                  PIPE_WAIT,
+                                  MAXCONNECT,
+                                  NSENDBUF,
+                                  NRECVBUF,
+                                  NTIMEOUT,
+                                  NULL);
+    } else {
+        s->file = CreateFile(openname,       /* pipe name */
+                             GENERIC_READ |  /* read and write access */
+                             GENERIC_WRITE,
+                             0,              /* no sharing */
+                             NULL,           /* default security attributes */
+                             OPEN_EXISTING,  /* opens existing pipe */
+                             0,              /* default attributes */
+                             NULL);          /* no template file */
+    }
+
     g_free(openname);
     if (s->file == INVALID_HANDLE_VALUE) {
-        error_setg(errp, "Failed CreateNamedPipe (%lu)", GetLastError());
+        error_setg(errp, "Failed %s (%lu)",
+                         server ? "CreateNamedPipe" : "CreateFile",
+                         GetLastError());
         s->file = NULL;
         goto fail;
     }
 
-    ZeroMemory(&ov, sizeof(ov));
-    ov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    ret = ConnectNamedPipe(s->file, &ov);
-    if (ret) {
-        error_setg(errp, "Failed ConnectNamedPipe");
-        goto fail;
-    }
+    if (server) {
+        ZeroMemory(&ov, sizeof(ov));
+        ov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        ret = ConnectNamedPipe(s->file, &ov);
+        if (ret) {
+            error_setg(errp, "Failed ConnectNamedPipe");
+            goto fail;
+        }
 
-    ret = GetOverlappedResult(s->file, &ov, &size, TRUE);
-    if (!ret) {
-        error_setg(errp, "Failed GetOverlappedResult");
+        ret = GetOverlappedResult(s->file, &ov, &size, TRUE);
+        if (!ret) {
+            error_setg(errp, "Failed GetOverlappedResult");
+            if (ov.hEvent) {
+                CloseHandle(ov.hEvent);
+                ov.hEvent = NULL;
+            }
+            goto fail;
+        }
+
         if (ov.hEvent) {
             CloseHandle(ov.hEvent);
             ov.hEvent = NULL;
         }
-        goto fail;
+    } else {
+        /* The pipe connected; change to message-read mode. */
+        dwMode = PIPE_READMODE_MESSAGE;
+        fSuccess = SetNamedPipeHandleState(
+            s->hcom, /* pipe handle */
+            &dwMode, /* new pipe mode */
+            NULL,    /* don't set maximum bytes */
+            NULL);   /* don't set maximum time */
+        
+        if (!fSuccess) {
+            error_setg(errp, "Failed SetNamedPipeHandleState (%lu)",
+                       GetLastError());
+            s->file = NULL;
+            goto fail;
+        }
     }
 
-    if (ov.hEvent) {
-        CloseHandle(ov.hEvent);
-        ov.hEvent = NULL;
-    }
     qemu_add_polling_cb(win_chr_pipe_poll, chr);
     return 0;
 
@@ -108,8 +146,9 @@ static void qemu_chr_open_pipe(Chardev *chr,
 {
     ChardevHostdev *opts = backend->u.pipe.data;
     const char *filename = opts->device;
+    const int is_server = opts->server;
 
-    if (win_chr_pipe_init(chr, filename, errp) < 0) {
+    if (win_chr_pipe_init(chr, filename, is_server, errp) < 0) {
         return;
     }
 }
@@ -165,6 +204,7 @@ static void qemu_chr_parse_pipe(QemuOpts *opts, ChardevBackend *backend,
     dev = backend->u.pipe.data = g_new0(ChardevHostdev, 1);
     qemu_chr_parse_common(opts, qapi_ChardevHostdev_base(dev));
     dev->device = g_strdup(device);
+    dev->server = qemu_opt_get_bool(opts, "server", 1);
 }
 
 static void char_pipe_class_init(ObjectClass *oc, void *data)
