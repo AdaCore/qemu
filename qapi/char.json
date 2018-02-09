@@ -233,10 +233,13 @@
 # @device: The name of the special file for the device, i.e.
 #     /dev/ttyS0 on Unix or COM1: on Windows
 #
+# @server: create server socket (default: true)
+#
 # Since: 1.4
 ##
 { 'struct': 'ChardevHostdev',
-  'data': { 'device': 'str' },
+  'data': { 'device': 'str',
+            '*server': 'bool' },
   'base': 'ChardevCommon' }
 
 ##
