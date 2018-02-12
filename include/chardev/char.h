@@ -296,9 +296,6 @@ OBJECT_DECLARE_TYPE(Chardev, ChardevClass, CHARDEV)
 #define TYPE_CHARDEV_SOCKET "chardev-socket"
 #define TYPE_CHARDEV_UDP "chardev-udp"
 
-DECLARE_INSTANCE_CHECKER(SocketChardev, SOCKET_CHARDEV,
-                         TYPE_CHARDEV_SOCKET)
-
 #define CHARDEV_IS_RINGBUF(chr) \
     object_dynamic_cast(OBJECT(chr), TYPE_CHARDEV_RINGBUF)
 #define CHARDEV_IS_PTY(chr) \

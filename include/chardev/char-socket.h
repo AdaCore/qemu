@@ -72,6 +72,7 @@ struct SocketChardev {
 
     bool is_websock;
 
+    int64_t timeout;
     GSource *reconnect_timer;
     int64_t reconnect_time;
     bool connect_err_reported;
@@ -79,6 +80,8 @@ struct SocketChardev {
     QIOTask *connect_task;
 };
 typedef struct SocketChardev SocketChardev;
+
+extern ssize_t tcp_chr_recv(Chardev *chr, char *buf, size_t len);
 
 DECLARE_INSTANCE_CHECKER(SocketChardev, SOCKET_CHARDEV,
                          TYPE_CHARDEV_SOCKET)
