@@ -346,4 +346,6 @@ void resume_mux_open(void);
 /* console.c */
 void qemu_chr_parse_vc(QemuOpts *opts, ChardevBackend *backend, Error **errp);
 
+ssize_t tcp_chr_recv(Chardev *chr, char *buf, size_t len);
+
 #endif
