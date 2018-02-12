@@ -6,6 +6,12 @@
 #include "qemu/thread.h"
 #include "qom/object.h"
 
+/* Included for the SocketChardev struct definition */
+#include "io/channel.h"
+#include "io/channel-socket.h"
+#include "io/net-listener.h"
+#include "crypto/tlscreds.h"
+
 #define IAC_EOR 239
 #define IAC_SE 240
 #define IAC_NOP 241
@@ -71,6 +77,52 @@ struct Chardev {
     GMainContext *gcontext;
     DECLARE_BITMAP(features, QEMU_CHAR_FEATURE_LAST);
 };
+
+typedef struct {
+    char buf[21];
+    size_t buflen;
+} TCPChardevTelnetInit;
+
+typedef enum {
+    TCP_CHARDEV_STATE_DISCONNECTED,
+    TCP_CHARDEV_STATE_CONNECTING,
+    TCP_CHARDEV_STATE_CONNECTED,
+} TCPChardevState;
+
+struct SocketChardev {
+    Chardev parent;
+    QIOChannel *ioc; /* Client I/O channel */
+    QIOChannelSocket *sioc; /* Client master channel */
+    QIONetListener *listener;
+    GSource *hup_source;
+    QCryptoTLSCreds *tls_creds;
+    char *tls_authz;
+    TCPChardevState state;
+    int max_size;
+    int do_telnetopt;
+    int do_nodelay;
+    int *read_msgfds;
+    size_t read_msgfds_num;
+    int *write_msgfds;
+    size_t write_msgfds_num;
+    bool registered_yank;
+
+    SocketAddress *addr;
+    bool is_listen;
+    bool is_telnet;
+    bool is_tn3270;
+    GSource *telnet_source;
+    TCPChardevTelnetInit *telnet_init;
+
+    bool is_websock;
+
+    GSource *reconnect_timer;
+    int64_t reconnect_time;
+    bool connect_err_reported;
+
+    QIOTask *connect_task;
+};
+typedef struct SocketChardev SocketChardev;
 
 /**
  * qemu_chr_new_from_opts:
@@ -243,6 +295,9 @@ OBJECT_DECLARE_TYPE(Chardev, ChardevClass, CHARDEV)
 #define TYPE_CHARDEV_SERIAL "chardev-serial"
 #define TYPE_CHARDEV_SOCKET "chardev-socket"
 #define TYPE_CHARDEV_UDP "chardev-udp"
+
+DECLARE_INSTANCE_CHECKER(SocketChardev, SOCKET_CHARDEV,
+                         TYPE_CHARDEV_SOCKET)
 
 #define CHARDEV_IS_RINGBUF(chr) \
     object_dynamic_cast(OBJECT(chr), TYPE_CHARDEV_RINGBUF)
