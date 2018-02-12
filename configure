@@ -252,34 +252,15 @@ stack_protector=""
 safe_stack=""
 use_containers="yes"
 gdb_bin=$(command -v "gdb-multiarch" || command -v "gdb")
+git_submodules=""
 
 if test -e "$source_path/.git"
 then
     git_submodules_action="update"
-    git_submodules="ui/keycodemapdb"
-    git_submodules="$git_submodules tests/fp/berkeley-testfloat-3"
-    git_submodules="$git_submodules tests/fp/berkeley-softfloat-3"
 else
     git_submodules_action="ignore"
     git_submodules=""
 
-    if ! test -f "$source_path/ui/keycodemapdb/README"
-    then
-        echo
-        echo "ERROR: missing file $source_path/ui/keycodemapdb/README"
-        echo
-        echo "This is not a GIT checkout but module content appears to"
-        echo "be missing. Do not use 'git archive' or GitHub download links"
-        echo "to acquire QEMU source archives. Non-GIT builds are only"
-        echo "supported with source archives linked from:"
-        echo
-        echo "  https://www.qemu.org/download/#source"
-        echo
-        echo "Developers working with GIT can use scripts/archive-source.sh"
-        echo "if they need to create valid source archives."
-        echo
-        exit 1
-    fi
 fi
 git="git"
 
@@ -405,6 +386,7 @@ bzip2="auto"
 lzfse="auto"
 zstd="auto"
 guest_agent="$default_feature"
+keycodemapdb="yes"
 guest_agent_with_vss="no"
 guest_agent_ntddscsi="no"
 guest_agent_msi="auto"
@@ -1513,6 +1495,8 @@ for opt do
   ;;
   --enable-capstone=system) capstone="system"
   ;;
+  --disable-keycodemapdb) keycodemapdb="no"
+  ;;
   --with-git=*) git="$optarg"
   ;;
   --enable-git-update)
@@ -1963,6 +1947,12 @@ disabled with --disable-FEATURE, default is enabled if available
 NOTE: The object files are built at the place where configure is launched
 EOF
 exit 0
+fi
+
+# Add keycodemapdb submodule
+if test "$keycodemapdb" = "yes"
+then
+    git_submodules="${git_submodules} ui/keycodemapdb"
 fi
 
 # Remove old dependency files to make sure that they get properly regenerated
