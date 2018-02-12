@@ -81,6 +81,8 @@ struct SocketChardev {
 };
 typedef struct SocketChardev SocketChardev;
 
+extern ssize_t tcp_chr_recv(Chardev *chr, char *buf, size_t len);
+
 DECLARE_INSTANCE_CHECKER(SocketChardev, SOCKET_CHARDEV,
                          TYPE_CHARDEV_SOCKET)
 

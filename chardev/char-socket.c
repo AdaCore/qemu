@@ -271,7 +271,7 @@ static int tcp_set_msgfds(Chardev *chr, int *fds, int num)
     return 0;
 }
 
-static ssize_t tcp_chr_recv(Chardev *chr, char *buf, size_t len)
+ssize_t tcp_chr_recv(Chardev *chr, char *buf, size_t len)
 {
     SocketChardev *s = SOCKET_CHARDEV(chr);
     struct iovec iov = { .iov_base = buf, .iov_len = len };
