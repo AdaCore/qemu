@@ -250,6 +250,7 @@ stack_protector=""
 safe_stack=""
 use_containers="yes"
 gdb_bin=$(command -v "gdb-multiarch" || command -v "gdb")
+git_submodules=""
 
 if test -e "$source_path/.git"
 then
@@ -325,6 +326,7 @@ pie=""
 trace_backends="log"
 trace_file="trace"
 opengl="$default_feature"
+keycodemapdb="yes"
 coroutine=""
 tls_priority="NORMAL"
 plugins="$default_feature"
@@ -1026,6 +1028,8 @@ for opt do
   ;;
   --enable-capstone=*) capstone="$optarg"
   ;;
+  --disable-keycodemapdb) keycodemapdb="no"
+  ;;
   --with-git=*) git="$optarg"
   ;;
   --with-git-submodules=*)
@@ -1364,6 +1368,12 @@ cat << EOF
 NOTE: The object files are built at the place where configure is launched
 EOF
 exit 0
+fi
+
+# Add keycodemapdb submodule
+if test "$keycodemapdb" = "yes"
+then
+    git_submodules="${git_submodules} ui/keycodemapdb"
 fi
 
 # Remove old dependency files to make sure that they get properly regenerated
