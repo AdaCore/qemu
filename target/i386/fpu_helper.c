@@ -114,6 +114,36 @@ static inline floatx80 double_to_floatx80(CPUX86State *env, double a)
     return float64_to_floatx80(u.f64, &env->fp_status);
 }
 
+static inline long double floatx80_to_long_double(CPUX86State *env,
+                                                  floatx80 a)
+{
+    union {
+        struct {
+            floatx80 fx80;
+            unsigned char zeros[6];
+        } s;
+        long double ld;
+    } u;
+
+    u.s.fx80 = a;
+    return u.ld;
+}
+
+static inline floatx80 long_double_to_floatx80(CPUX86State *env,
+                                               long double a)
+{
+    union {
+        struct {
+            floatx80 fx80;
+            unsigned char zeros[6];
+        } s;
+        long double ld;
+    } u;
+
+    u.ld = a;
+    return u.s.fx80;
+}
+
 static void fpu_set_exception(CPUX86State *env, int mask)
 {
     env->fpus |= mask;
@@ -674,20 +704,20 @@ void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
 
 void helper_f2xm1(CPUX86State *env)
 {
-    double val = floatx80_to_double(env, ST0);
+    long double val = floatx80_to_long_double(env, ST0);
 
-    val = pow(2.0, val) - 1.0;
-    ST0 = double_to_floatx80(env, val);
+    val = powl(2.0, val) - 1.0L;
+    ST0 = long_double_to_floatx80(env, val);
 }
 
 void helper_fyl2x(CPUX86State *env)
 {
-    double fptemp = floatx80_to_double(env, ST0);
+    long double fptemp = floatx80_to_long_double(env, ST0);
 
     if (fptemp > 0.0) {
-        fptemp = log(fptemp) / log(2.0); /* log2(ST) */
-        fptemp *= floatx80_to_double(env, ST1);
-        ST1 = double_to_floatx80(env, fptemp);
+        fptemp = logl(fptemp) / logl(2.0); /* log2(ST) */
+        fptemp *= floatx80_to_long_double(env, ST1);
+        ST1 = long_double_to_floatx80(env, fptemp);
         fpop(env);
     } else {
         env->fpus &= ~0x4700;
@@ -697,13 +727,13 @@ void helper_fyl2x(CPUX86State *env)
 
 void helper_fptan(CPUX86State *env)
 {
-    double fptemp = floatx80_to_double(env, ST0);
+    long double fptemp = floatx80_to_long_double(env, ST0);
 
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
-        fptemp = tan(fptemp);
-        ST0 = double_to_floatx80(env, fptemp);
+        fptemp = tanl(fptemp);
+        ST0 = long_double_to_floatx80(env, fptemp);
         fpush(env);
         ST0 = floatx80_one;
         env->fpus &= ~0x400; /* C2 <-- 0 */
@@ -713,11 +743,11 @@ void helper_fptan(CPUX86State *env)
 
 void helper_fpatan(CPUX86State *env)
 {
-    double fptemp, fpsrcop;
+    long double fptemp, fpsrcop;
 
-    fpsrcop = floatx80_to_double(env, ST1);
-    fptemp = floatx80_to_double(env, ST0);
-    ST1 = double_to_floatx80(env, atan2(fpsrcop, fptemp));
+    fpsrcop = floatx80_to_long_double(env, ST1);
+    fptemp = floatx80_to_long_double(env, ST0);
+    ST1 = long_double_to_floatx80(env, atan2l(fpsrcop, fptemp));
     fpop(env);
 }
 
@@ -891,14 +921,14 @@ void helper_fsqrt(CPUX86State *env)
 
 void helper_fsincos(CPUX86State *env)
 {
-    double fptemp = floatx80_to_double(env, ST0);
+    long double fptemp = floatx80_to_long_double(env, ST0);
 
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
-        ST0 = double_to_floatx80(env, sin(fptemp));
+        ST0 = long_double_to_floatx80(env, sinl(fptemp));
         fpush(env);
-        ST0 = double_to_floatx80(env, cos(fptemp));
+        ST0 = long_double_to_floatx80(env, cosl(fptemp));
         env->fpus &= ~0x400;  /* C2 <-- 0 */
         /* the above code is for |arg| < 2**63 only */
     }
@@ -921,12 +951,12 @@ void helper_fscale(CPUX86State *env)
 
 void helper_fsin(CPUX86State *env)
 {
-    double fptemp = floatx80_to_double(env, ST0);
+    long double fptemp = floatx80_to_long_double(env, ST0);
 
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
-        ST0 = double_to_floatx80(env, sin(fptemp));
+        ST0 = long_double_to_floatx80(env, sinl(fptemp));
         env->fpus &= ~0x400;  /* C2 <-- 0 */
         /* the above code is for |arg| < 2**53 only */
     }
@@ -934,12 +964,12 @@ void helper_fsin(CPUX86State *env)
 
 void helper_fcos(CPUX86State *env)
 {
-    double fptemp = floatx80_to_double(env, ST0);
+    long double fptemp = floatx80_to_long_double(env, ST0);
 
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
-        ST0 = double_to_floatx80(env, cos(fptemp));
+        ST0 = long_double_to_floatx80(env, cosl(fptemp));
         env->fpus &= ~0x400;  /* C2 <-- 0 */
         /* the above code is for |arg| < 2**63 only */
     }
