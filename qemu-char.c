@@ -2416,8 +2416,6 @@ static int win_chr_pipe_client_init(CharDriverState *chr, const char *filename,
                                     Error **errp)
 {
     WinCharState *s = chr->opaque;
-    BOOL   fSuccess = FALSE;
-    DWORD  dwMode;
     char openname[256];
 
     s->fpipe = TRUE;
