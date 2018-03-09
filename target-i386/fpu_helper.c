@@ -701,10 +701,28 @@ void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
     }
 }
 
+/* This is a workaround for powl and logl which are wrongly behaving
+ * under mingw. The precision in the FPU control register is wrong and
+ * the result is not accurate.
+ * Lets drop that when we have a fix for MinGW.
+ */
+#if defined(_WIN32) || defined(_WIN64)
+static inline void finit(void)
+{
+    asm("finit");
+}
+#else
+static inline void finit(void)
+{
+    /* Nothing to do here */
+}
+#endif
+
 void helper_f2xm1(CPUX86State *env)
 {
     long double val = floatx80_to_long_double(env, ST0);
 
+    finit();
     val = powl(2.0, val) - 1.0L;
     ST0 = long_double_to_floatx80(env, val);
 }
@@ -713,6 +731,7 @@ void helper_fyl2x(CPUX86State *env)
 {
     long double fptemp = floatx80_to_long_double(env, ST0);
 
+    finit();
     if (fptemp > 0.0) {
         fptemp = logl(fptemp) / logl(2.0); /* log2(ST) */
         fptemp *= floatx80_to_long_double(env, ST1);
