@@ -702,20 +702,46 @@ void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
     }
 }
 
+/* This is a workaround for powl and logl which are wrongly behaving
+ * under mingw. The precision in the FPU control register is wrong and
+ * the result is not accurate.
+ * Lets drop that when we have a fix for MinGW.
+ */
+#if defined(_WIN32) || defined(_WIN64)
+
+static void fp_mingw_workaround(void)
+{
+    __asm__ __volatile__ ("finit");
+}
+
+#else
+
+static void fp_mingw_workaround(void)
+{
+}
+
+#endif
+
 void helper_f2xm1(CPUX86State *env)
 {
-    long double val = floatx80_to_long_double(env, ST0);
+    volatile long double val;
+    /* Careful about the placement here */
+    fp_mingw_workaround();
 
-    val = powl(2.0, val) - 1.0L;
+    val = floatx80_to_long_double(env, ST0);
+    val = powl(2.0L, val) - 1.0L;
     ST0 = long_double_to_floatx80(env, val);
 }
 
 void helper_fyl2x(CPUX86State *env)
 {
-    long double fptemp = floatx80_to_long_double(env, ST0);
+    volatile long double fptemp;
+    /* Careful about the placement here */
+    fp_mingw_workaround();
 
-    if (fptemp > 0.0) {
-        fptemp = logl(fptemp) / logl(2.0); /* log2(ST) */
+    fptemp = floatx80_to_long_double(env, ST0);
+    if (fptemp > 0.0L) {
+        fptemp = logl(fptemp) / logl(2.0L); /* log2(ST) */
         fptemp *= floatx80_to_long_double(env, ST1);
         ST1 = long_double_to_floatx80(env, fptemp);
         fpop(env);
