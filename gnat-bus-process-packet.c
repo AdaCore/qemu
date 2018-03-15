@@ -139,6 +139,7 @@ static int gnatbus_init_device(SysBusDevice *dev)
     GnatBus_SysBusDevice *pdev  = GNATBUS_DEVICE(dev);
     GnatBus_Device       *qbdev = pdev->qbdev;
     int                   i;
+    int fd;
 
     /* Copy default io ops */
     memcpy(&qbdev->io_ops, &gnatbus_io_ops, sizeof(MemoryRegionOps));
@@ -163,6 +164,48 @@ static int gnatbus_init_device(SysBusDevice *dev)
                                             qbdev->info.iomem[i].base,
                                             &qbdev->io_region[i].mr, 1);
         memory_region_transaction_commit();
+    }
+
+    for (i = 0; i < qbdev->info.nr_shared_mem; i++) {
+#if defined(_WIN32) || defined(_WIN64)
+        /*
+         * Windows target doesn't support SHM. We need to implement that
+         * with Microsoft API.
+         */
+        fprintf(stderr, "%s: shared memory isn't supported under windows,"
+                        " ignoring..\n", qbdev->info.shared_mem[i].name);
+#else /* Linux */
+        fd = shm_open(qbdev->info.shared_mem[i].name, O_RDWR,
+                      S_IRUSR | S_IWUSR);
+        if (fd < 0) {
+            fprintf(stderr, "shm_open(\"%s\") failed",
+                    qbdev->info.shared_mem[i].name);
+            perror("\n");
+            return -1;
+        }
+
+        qbdev->mmap_ptr[i] = mmap(NULL, qbdev->info.shared_mem[i].size,
+                                  PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+        if (qbdev->mmap_ptr[i] == MAP_FAILED) {
+            fprintf(stderr, "mmap(%s) failed",
+                    qbdev->info.shared_mem[i].name);
+            perror("\n");
+            close(fd);
+            return -1;
+        }
+
+        memory_region_transaction_begin();
+        memory_region_init_ram_ptr(&qbdev->shared_mr[i],
+                                   OBJECT(pdev),
+                                   qbdev->info.shared_mem[i].name,
+                                   qbdev->info.shared_mem[i].size,
+                                   qbdev->mmap_ptr[i]);
+        memory_region_add_subregion_overlap(get_system_memory(),
+                                       qbdev->info.shared_mem[i].base,
+                                       &qbdev->shared_mr[i], 1);
+        memory_region_transaction_commit();
+#endif /* Linux */
     }
 
     return 0;

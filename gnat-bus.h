@@ -50,6 +50,10 @@ struct GnatBus_Device {
     MemoryRegionOps  io_ops;
     GnatBus_IORegion io_region[MAX_IOMEM];
 
+    /* Shared Memories */
+    void *mmap_ptr[GNATBUS_MAX_SHARED_MEM];
+    MemoryRegion shared_mr[GNATBUS_MAX_SHARED_MEM];
+
     /* Chardev */
     GnatBusPacket   *curr_packet;
     uint32_t         curr_packet_size;

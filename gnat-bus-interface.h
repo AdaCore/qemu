@@ -4,7 +4,7 @@
  *                                                                          *
  *                                  S p e c                                 *
  *                                                                          *
- *                     Copyright (C) 2011-2014, AdaCore                     *
+ *                     Copyright (C) 2011-2018, AdaCore                     *
  *                                                                          *
  * This program is free software;  you can redistribute it and/or modify it *
  * under terms of  the GNU General Public License as  published by the Free *
@@ -29,7 +29,7 @@
 
 #include <stdint.h>
 
-#define GNATBUS_VERSION 5
+#define GNATBUS_VERSION 6
 
 /* Packet types */
 
@@ -202,6 +202,8 @@ GnatBusPacket_Init((packet), GnatBus_Request, GnatBusRequest_Write)
 #define NAME_LENGTH 64
 #define DESC_LENGTH 256
 #define MAX_IOMEM   32
+#define GNATBUS_MAX_SHARED_MEM 1
+#define GNATBUS_SHARED_MEM_NAME_MAX (255)
 
 typedef struct PACKED GnatBusPacket_Register {
     GnatBusPacket_Request parent;
@@ -218,6 +220,12 @@ typedef struct PACKED GnatBusPacket_Register {
         uint64_t size;
     } iomem[MAX_IOMEM];
 
+    uint32_t nr_shared_mem;
+    struct PACKED SharedMemory {
+      uint64_t base;
+      uint64_t size;
+      char name[GNATBUS_SHARED_MEM_NAME_MAX];
+    } shared_mem[GNATBUS_MAX_SHARED_MEM];
 } GnatBusPacket_Register;
 
 #define GnatBusPacket_Register_Init(packet)                             \
