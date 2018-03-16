@@ -260,9 +260,14 @@ static void grlib_irqmp_write(void *opaque, hwaddr addr,
         return;
 
     case CLEAR_OFFSET:
+    {
+        int cpu;
         value &= ~1; /* clean up the value */
-        grlib_irqmp_ack_mask(state, value);
+        for (cpu = 0; cpu < irqmp->nr_cpus; cpu++) {
+            grlib_irqmp_ack_mask(state, cpu, value);
+        }
         return;
+    }
 
     case MP_STATUS_OFFSET:
 	value &= 0xffff;
