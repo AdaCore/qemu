@@ -22,8 +22,6 @@
 
 #include "qemu/osdep.h"
 #include "hw/sysbus.h"
-#include "sysemu/char.h"
-
 #include "trace.h"
 
 #define APBPNP_REG_SIZE 4096     /* Size of memory mapped registers */
@@ -35,8 +33,6 @@
 typedef struct APBPNP {
     SysBusDevice parent_obj;
     MemoryRegion iomem;
-    CharBackend  chr;
-
 } APBPNP;
 
 static uint64_t grlib_apbpnp_read(void *opaque, hwaddr addr,
@@ -110,7 +106,6 @@ static void grlib_apbpnp_reset(DeviceState *d)
 }
 
 static Property grlib_apbpnp_properties[] = {
-    DEFINE_PROP_CHR("chrdev", APBPNP, chr),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -150,8 +145,6 @@ type_init(grlib_apbpnp_register_types)
 typedef struct AHBPNP {
     SysBusDevice parent_obj;
     MemoryRegion iomem;
-    CharBackend  chr;
-
 } AHBPNP;
 
 static uint64_t grlib_ahbpnp_read(void *opaque, hwaddr addr,
@@ -209,7 +202,6 @@ static void grlib_ahbpnp_reset(DeviceState *d)
 }
 
 static Property grlib_ahbpnp_properties[] = {
-    DEFINE_PROP_CHR("chrdev", AHBPNP, chr),
     DEFINE_PROP_END_OF_LIST(),
 };
 
