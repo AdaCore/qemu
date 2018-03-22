@@ -29,6 +29,10 @@ typedef struct QemuPlugin_IORegion {
     MemoryRegion             mr;
 } QemuPlugin_IORegion;
 
+typedef struct QemuPlugin_SharedMemRegion {
+    MemoryRegion mr;
+} QemuPlugin_SharedMemRegion;
+
 struct QemuPlugin_SysBusDevice {
     SysBusDevice busdev;
 
@@ -37,6 +41,7 @@ struct QemuPlugin_SysBusDevice {
     QemuPlugin_DeviceInfo *info;
 
     QemuPlugin_IORegion io_region[MAX_IOMEM];
+    QemuPlugin_SharedMemRegion shm_region[QEMU_PLUGIN_MAX_SHARED_MEM];
 
     QLIST_ENTRY(QemuPlugin_SysBusDevice) list;
 };
@@ -297,6 +302,18 @@ static int plugin_init_device(SysBusDevice *dev)
         memory_region_add_subregion_overlap(get_system_memory(),
                                             pdev->info->iomem[i].base,
                                             &pdev->io_region[i].mr, 1);
+        memory_region_transaction_commit();
+    }
+
+    for (i = 0; i < pdev->info->nr_shared_mem; i++) {
+        struct QemuPlugin_SharedMemory *shm = &pdev->info->shared_mem[i];
+        MemoryRegion *mr = &pdev->shm_region[i].mr;
+
+        memory_region_transaction_begin();
+        memory_region_init_ram_ptr(mr, OBJECT(pdev), shm->name,
+                                   shm->size, shm->mmap_ptr);
+        memory_region_add_subregion_overlap(get_system_memory(),
+                                            shm->base, mr, 1);
         memory_region_transaction_commit();
     }
 

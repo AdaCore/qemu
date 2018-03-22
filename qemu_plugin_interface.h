@@ -4,7 +4,7 @@
  *                                                                          *
  *                                  S p e c                                 *
  *                                                                          *
- *                     Copyright (C) 2012-2014, AdaCore                     *
+ *                     Copyright (C) 2012-2018, AdaCore                     *
  *                                                                          *
  * This program is free software;  you can redistribute it and/or modify it *
  * under terms of  the GNU General Public License as  published by the Free *
@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define QEMU_PLUGIN_INTERFACE_VERSION   (5)
+#define QEMU_PLUGIN_INTERFACE_VERSION   (6)
 
 #define QP_ERROR   (-1)
 #define QP_NOERROR ( 0)
@@ -56,6 +56,8 @@ typedef void exit_fn(void *opaque);
 #define NAME_LENGTH 64
 #define DESC_LENGTH 256
 #define MAX_IOMEM   32
+#define QEMU_PLUGIN_MAX_SHARED_MEM        1
+#define QEMU_PLUGIN_SHARED_MEM_NAME_MAX 255
 
 typedef enum DeviceEndianness {
     DeviceEndianness_NativeEndian = 0,
@@ -85,11 +87,19 @@ typedef struct QemuPlugin_DeviceInfo {
     DeviceEndianness device_endianness;
 
     uint32_t nr_iomem;
-    struct QemuPlugin_IOMemory
-    {
+    struct QemuPlugin_IOMemory {
         uint64_t base;
         uint64_t size;
     } iomem[MAX_IOMEM];
+
+    uint32_t nr_shared_mem;
+    struct QemuPlugin_SharedMemory {
+        uint64_t base;
+        uint64_t size;
+        int shared_memory_fd;
+        void *mmap_ptr;
+        char *name;
+    } shared_mem[QEMU_PLUGIN_MAX_SHARED_MEM];
 } QemuPlugin_DeviceInfo;
 
 /* Emulator interface */
