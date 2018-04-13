@@ -707,33 +707,40 @@ void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
  * Lets drop that when we have a fix for MinGW.
  */
 #if defined(_WIN32) || defined(_WIN64)
-static inline void finit(void)
+
+static void fp_mingw_workaround(void)
 {
-    asm("finit");
+    __asm__ __volatile__ ("finit");
 }
+
 #else
-static inline void finit(void)
+
+static void fp_mingw_workaround(void)
 {
-    /* Nothing to do here */
 }
+
 #endif
 
 void helper_f2xm1(CPUX86State *env)
 {
-    long double val = floatx80_to_long_double(env, ST0);
+    volatile long double val;
+    /* Careful about the placement here */
+    fp_mingw_workaround();
 
-    finit();
-    val = powl(2.0, val) - 1.0L;
+    val = floatx80_to_long_double(env, ST0);
+    val = powl(2.0L, val) - 1.0L;
     ST0 = long_double_to_floatx80(env, val);
 }
 
 void helper_fyl2x(CPUX86State *env)
 {
-    long double fptemp = floatx80_to_long_double(env, ST0);
+    volatile long double fptemp;
+    /* Careful about the placement here */
+    fp_mingw_workaround();
 
-    finit();
-    if (fptemp > 0.0) {
-        fptemp = logl(fptemp) / logl(2.0); /* log2(ST) */
+    fptemp = floatx80_to_long_double(env, ST0);
+    if (fptemp > 0.0L) {
+        fptemp = logl(fptemp) / logl(2.0L); /* log2(ST) */
         fptemp *= floatx80_to_long_double(env, ST1);
         ST1 = long_double_to_floatx80(env, fptemp);
         fpop(env);
