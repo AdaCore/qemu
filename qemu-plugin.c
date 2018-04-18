@@ -14,6 +14,7 @@
 #include "qemu-plugin.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
+#include "qom/cpu.h"
 
 #include "qemu_plugin_interface.h"
 
@@ -82,14 +83,71 @@ typedef struct QemuPlugin {
 
 static QemuPlugin *g_plugin;
 
+/* Calling qemu_set_irq outside the VCPU thread is not safe.. We need to
+ * ensure that QEMU will actually get the IRQ. Hence we need to use an
+ * async_safe_work which will:
+ *   * execute directly when we are outside the execution loop.
+ *   * make the CPU exiting the execution loop checking for IRQ.
+ * In any case we won't miss the IRQ.
+ */
+
+#define MAX_IRQ_JOB_SIZE 32
+
+struct IRQ_job {
+    uint32_t line;
+    uint32_t level;
+    int allocated;
+    int busy;
+};
+
+struct IRQ_job irq_jobs_pool[MAX_IRQ_JOB_SIZE];
+
+static void plugin_set_irq_job(CPUState *cs, run_on_cpu_data arg)
+{
+    struct IRQ_job *job = (struct IRQ_job *)arg.host_ptr;
+
+    assert(job);
+
+    /* Do the work here when the CPU is outside the execution loop. */
+    qemu_set_irq(g_plugin->cpu_irqs[job->line], job->level);
+    if (job->allocated) {
+        g_free(job);
+    } else {
+        /* No need for an atomic_dec here */
+        job->busy--;
+    }
+}
+
 static uint32_t plugin_set_irq(uint32_t line, uint32_t level)
 {
+    struct IRQ_job *job = NULL;
+    uint32_t i;
+
     if (line > g_plugin->nr_irq) {
         fprintf(stderr, "QEMU plug-in error: Invalid IRQ line: %d\n", line);
         return QP_ERROR;
     }
 
-    qemu_set_irq(g_plugin->cpu_irqs[line], level);
+    for (i = 0; i < MAX_IRQ_JOB_SIZE; i++) {
+        if (!atomic_fetch_inc(&irq_jobs_pool[i].busy)) {
+            job = &irq_jobs_pool[i];
+            break;
+        }
+    }
+
+    if (!job) {
+        /* We failed to get a job.. */
+        job = g_malloc0(sizeof(struct IRQ_job));
+        job->allocated = true;
+    }
+
+    assert(job);
+
+    job->level = level;
+    job->line = line;
+    
+    async_safe_run_on_cpu(first_cpu, plugin_set_irq_job,
+                          RUN_ON_CPU_HOST_PTR(job));
     return QP_NOERROR;
 }
 
