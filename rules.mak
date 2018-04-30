@@ -108,7 +108,11 @@ modules:
 	$(call LINK,$(filter %.o %.a %.mo, $^))
 
 %.a:
+ifeq ($(shell uname),Darwin)
+	$(call quiet-command,rm -f $@ && libtool -static -o $@ $^," libtool $(TARGET_DIR)$@")
+else
 	$(call quiet-command,rm -f $@ && $(AR) rcs $@ $^,"AR","$(TARGET_DIR)$@")
+endif
 
 # Usage: $(call quiet-command,command and args,"NAME","args to print")
 # This will run "command and args", and either:

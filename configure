@@ -618,8 +618,8 @@ Darwin)
   darwin="yes"
   LDFLAGS_SHARED="-bundle -undefined dynamic_lookup"
   if [ "$cpu" = "x86_64" ] ; then
-    QEMU_CFLAGS="$QEMU_CFLAGS"
-    LDFLAGS="$LDFLAGS"
+    QEMU_CFLAGS="-arch x86_64 $QEMU_CFLAGS"
+    LDFLAGS="-arch x86_64 $LDFLAGS"
   fi
 # Disable Cocoa
 #  cocoa="yes"
