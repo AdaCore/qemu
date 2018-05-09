@@ -126,8 +126,9 @@ static uint32_t rti_read_counter(rti_state *s, int cnt_id)
     if (CNT_IS_ENABLED(s, cnt_id)) {
 	int64_t sc = rti_get_prescaler(s, cnt_id);
 	uint64_t el;
+
 	el = (qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) - s->ns_start[cnt_id]);
-	el = (el * s->freq) / 1000000000ULL;
+	el = muldiv64(el, s->freq, 1000000000ULL);
 	s->UPC[cnt_id] = el % sc;
 	return el / sc;
     } else {
