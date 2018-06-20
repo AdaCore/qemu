@@ -844,6 +844,7 @@ Darwin)
     QEMU_CFLAGS="$QEMU_CFLAGS"
     QEMU_LDFLAGS="$QEMU_LDFLAGS"
   fi
+  LDFLAGS="-framework CoreFoundation -framework IOKit $LDFLAGS"
   # Disable attempts to use ObjectiveC features in os/object.h since they
   # won't work when we're compiling with gcc as a C compiler.
   QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
