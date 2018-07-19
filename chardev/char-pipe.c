@@ -115,21 +115,6 @@ static int win_chr_pipe_init(Chardev *chr, const char *filename,
             CloseHandle(ov.hEvent);
             ov.hEvent = NULL;
         }
-    } else {
-        /* The pipe connected; change to message-read mode. */
-        dwMode = PIPE_READMODE_MESSAGE;
-        fSuccess = SetNamedPipeHandleState(
-            s->hcom, /* pipe handle */
-            &dwMode, /* new pipe mode */
-            NULL,    /* don't set maximum bytes */
-            NULL);   /* don't set maximum time */
-        
-        if (!fSuccess) {
-            error_setg(errp, "Failed SetNamedPipeHandleState (%lu)",
-                       GetLastError());
-            s->file = NULL;
-            goto fail;
-        }
     }
 
     qemu_add_polling_cb(win_chr_pipe_poll, chr);

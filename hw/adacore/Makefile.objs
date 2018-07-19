@@ -1,1 +1,4 @@
 obj-y += hostfs.o
+common-obj-y += gnat-bus.o
+common-obj-y += gnat-bus-process-packet.o
+common-obj-y += qemu-plugin.o

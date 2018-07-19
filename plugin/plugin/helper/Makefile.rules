@@ -1,0 +1,13 @@
+SRC+=$(HELPER_DIR)/init.c $(HELPER_DIR)/bus_interface.c
+C_FLAGS+=-I$(HELPER_DIR)
+
+OBJS=$(SRC:.c=.o)
+DEPS=$(SRC:.c=.d)
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) -shared $(LD_FLAGS) -o $@ $(OBJS)
+
+%.o: %.c
+	$(CC) -fPIC -MD $(C_FLAGS) -c -o $@ $<

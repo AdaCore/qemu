@@ -34,3 +34,24 @@ hostfs_read(uint32_t fd, char *buf, uint32_t size, int ret) "0x%08x, %p, 0x%08x 
 hostfs_write(uint32_t fd, char *buf, uint32_t size, int ret) "0x%08x, %p, 0x%08x = %d;"
 hostfs_open_flags(uint32_t hostfs_flags, uint32_t flags) "hostfs_flags:0x%08x -> flags:0x%08x"
 hostfs_do_syscall(uint32_t id, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) "syscall_id:0x%08x 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x"
+
+# gnat-bus-process-packet.c
+gnatbus_setirq(uint8_t line, uint8_t level) "Process SetIRQ line:0x%x level:0x%x"
+gnatbus_registerevent(uint64_t expire_time, uint64_t event) "Process Register Event expire_time:0x%016"PRIx64" event:0x%016"PRIx64
+gnatbus_resp_error(uint32_t request_id, uint32_t error_code) "Send Error Response request_id:0x%x error_code:0x%x"
+gnatbus_process_read(uint64_t addr, uint64_t len) "Process Read Request addr:0x%016"PRIx64" len:0x%016"PRIx64
+gnatbus_process_write(uint64_t addr, uint64_t len) "Process Write Request addr:0x%016"PRIx64" len:0x%016"PRIx64
+gnatbus_process_register(const char *name) "Process Register Request device_name:'%s'"
+gnatbus_process_gettime(uint64_t time) "Process GetTime Request time:0x%016"PRIx64
+
+# gnat-bus.c
+gnatbus_receive_packet_sync(void) "Wait for packet"
+gnatbus_receive_packet_async(int size) "%d bytes received"
+gnatbus_send_and_wait_resp(void) "Send and wait for response"
+gnatbus_device_init(void) "Broadcast init event"
+gnatbus_device_exit(void) "Broadcast exit event"
+gnatbus_device_reset(void) "Broadcast reset event"
+gnatbus_trigger_event(uint64_t event, uint64_t expire_time, uint64_t now) "Send TriggerEvent event:0x%016"PRIx64" expire_time:0x%016"PRIx64" now:0x%016"PRIx64
+gnatbus_send_read(uint64_t addr, uint64_t len) "Send Read Request addr:0x%016"PRIx64" len:0x%016"PRIx64
+gnatbus_send_write(uint64_t addr, uint64_t len) "Send Write Request addr:0x%016"PRIx64" len:0x%016"PRIx64
+gnatbus_set_blocking(bool enable) "Set IO blocking: %i"

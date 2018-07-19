@@ -923,7 +923,16 @@ static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
 
     memset(&un, 0, sizeof(un));
     un.sun_family = AF_UNIX;
-    strncpy(un.sun_path, saddr->path, sizeof(un.sun_path));
+
+    if (saddr->path[0] == '@') {
+        /* Abstract UDS */
+        snprintf(un.sun_path + 1,
+                 sizeof(un.sun_path) - 1,
+                 "%s",
+                 saddr->path + 1);
+    } else {
+        strncpy(un.sun_path, saddr->path, sizeof(un.sun_path));
+    }
 
     /* connect to peer */
     do {
