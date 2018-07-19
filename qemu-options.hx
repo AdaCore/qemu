@@ -5020,4 +5020,22 @@ SRST
 ERST
 
 
+DEF("gnatbus", HAS_ARG, QEMU_OPTION_gnatbus, \
+    "-gnatbus device_host:device_port[,device_host:device_port]\n"
+    "                Connect GnatBus Devices.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-gnatbus socket:device_host:device_port``
+    Connect a GnatBus Device
+ERST
+
+DEF("gnatbus-timeout", HAS_ARG, QEMU_OPTION_gnatbus_timeout, \
+    "-gnatbus-timeout value\n"
+    "                Timeout to connect GNATBus devices.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-gnatbus-timeout value``
+    Timeout to connect GNATBus devices.
+ERST
+
 HXCOMM This is the last statement. Insert new options before this line!
