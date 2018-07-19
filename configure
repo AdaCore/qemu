@@ -891,6 +891,7 @@ Linux)
   QEMU_INCLUDES="-I\$(SRC_PATH)/linux-headers -I$PWD/linux-headers $QEMU_INCLUDES"
   supported_os="yes"
   libudev="yes"
+  LIBS="$LIBS -ldl"
 ;;
 esac
 
