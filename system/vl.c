@@ -145,6 +145,7 @@
 #include "qemu/keyval.h"
 
 #include "adacore/qemu-traces.h"
+#include "hw/adacore/gnat-bus.h"
 
 #define MAX_VIRTIO_CONSOLES 1
 
@@ -3812,6 +3813,12 @@ void qemu_init(int argc, char **argv)
                 break;
             case QEMU_OPTION_exec_trace_limit:
                 exec_trace_limit(optarg);
+                break;
+            case QEMU_OPTION_gnatbus:
+                gnatbus_save_optargs(optarg);
+                break;
+            case QEMU_OPTION_gnatbus_timeout:
+                gnatbus_save_timeout_optargs(optarg);
                 break;
 #if defined(CONFIG_POSIX) && !defined(EMSCRIPTEN)
             case QEMU_OPTION_daemonize:
