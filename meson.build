@@ -339,6 +339,7 @@ pam = not_found
 if 'CONFIG_AUTH_PAM' in config_host
   pam = cc.find_library('pam')
 endif
+rt = cc.find_library('rt')
 libaio = cc.find_library('aio', required: false)
 if 'CONFIG_STATIC_ZLIB' in config_host
   zlib = dependency('zlib', required: true, static: true,
