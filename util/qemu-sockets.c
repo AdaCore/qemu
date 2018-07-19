@@ -1026,7 +1026,13 @@ static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
     un.sun_family = AF_UNIX;
     addrlen = sizeof(un);
 
-    if (abstract) {
+    if (saddr->path[0] == '@') {
+        /* Abstract UDS */
+        snprintf(un.sun_path + 1,
+                 sizeof(un.sun_path) - 1,
+                 "%s",
+                 saddr->path + 1);
+    } else if (abstract) {
         un.sun_path[0] = '\0';
         memcpy(&un.sun_path[1], saddr->path, pathlen);
         if (saddr_is_tight(saddr)) {
