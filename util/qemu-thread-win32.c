@@ -24,6 +24,13 @@
 
 static bool name_threads;
 
+/*
+ * MINGW has a bug as it doesn't export _imp__TryAcquireSRWLockExclusive@4
+ * This workaround just fix the issue.
+ */
+WINBASEAPI BOOLEAN WINAPI TryAcquireSRWLockExclusive (PSRWLOCK SRWLock)
+    __asm__ ("TryAcquireSRWLockExclusive");
+
 void qemu_thread_naming(bool enable)
 {
     /* But note we don't actually name them on Windows yet */
