@@ -533,6 +533,13 @@ typedef struct CPUARMState {
         uint32_t scr[M_REG_NUM_BANKS];
         uint32_t msplim[M_REG_NUM_BANKS];
         uint32_t psplim[M_REG_NUM_BANKS];
+        uint32_t actlr;
+
+        struct {
+            uint32_t fpccr;
+            uint32_t fpcar;         /* reserved stack area */
+            uint32_t fpdscr; /* Default Status Control Register */
+        } fpu;
     } v7m;
 
     /* Information associated with an exception about to be taken:
@@ -1769,6 +1776,7 @@ enum arm_features {
     ARM_FEATURE_STRONGARM,
     ARM_FEATURE_VAPA, /* cp15 VA to PA lookups */
     ARM_FEATURE_VFP4, /* VFPv4 (implies that NEON is v2) */
+    ARM_FEATURE_VFP4_SP, /* VFPv4 single precision only */
     ARM_FEATURE_GENERIC_TIMER,
     ARM_FEATURE_MVFR, /* Media and VFP Feature Registers 0 and 1 */
     ARM_FEATURE_DUMMY_C15_REGS, /* RAZ/WI all of cp15 crn=15 */

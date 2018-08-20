@@ -11722,6 +11722,11 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                 }
                 /* Just NOP since FP support is not implemented */
                 break;
+            } else if (arm_dc_feature(s, ARM_FEATURE_V7)) {
+                if (disas_vfp_insn(s, insn)) {
+                    goto illegal_op;
+                }
+                break;
             }
             /* All other insns: NOCP */
             gen_exception_insn(s, 4, EXCP_NOCP, syn_uncategorized(),

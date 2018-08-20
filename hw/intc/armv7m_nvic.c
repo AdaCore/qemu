@@ -792,10 +792,73 @@ static void nvic_nmi_trigger(void *opaque, int n, int level)
     }
 }
 
+static bool nvic_is_fpu_register(uint32_t offset)
+{
+    return (offset == 0xd88) || ((offset >= 0xf34) && (offset <= 0xf3c));
+}
+
+static uint32_t nvic_fpu_readl(ARMCPU *cpu, uint32_t offset)
+{
+    uint32_t ret = 0;
+
+    if (arm_feature(&cpu->env, ARM_FEATURE_VFP4_SP)) {
+        switch (offset) {
+        case 0xd88:
+            /* Coprocessor Access Control Register */
+            ret = cpu->env.cp15.cpacr_el1;
+            break;
+        case 0xf34:
+            /* Floating-point Context Control Register */
+            ret = cpu->env.v7m.fpu.fpccr;
+        case 0xf38:
+            /* Floating-point Context Address Register */
+            ret = cpu->env.v7m.fpu.fpcar;
+        case 0xf3c:
+            /* Floating-point Default Status Control Register */
+            ret = cpu->env.v7m.fpu.fpdscr;
+        default:
+            abort();
+            break;
+        }
+    }
+    return ret;
+}
+
+static void nvic_fpu_writel(ARMCPU *cpu, uint32_t offset, uint32_t value)
+{
+    if (arm_feature(&cpu->env, ARM_FEATURE_VFP4_SP)) {
+        switch (offset) {
+        case 0xd88: /* Coprocessor Access Control Register */
+            /* Coprocessor Access Control Register */
+            cpu->env.cp15.cpacr_el1 = value & 0xF00000;
+            break;
+        case 0xf34:
+            /* Floating-point Context Control Register */
+            cpu->env.v7m.fpu.fpccr = value & 0xC00003FF;
+            break;
+        case 0xf38:
+            /* Floating-point Context Address Register */
+            cpu->env.v7m.fpu.fpcar = value & 0x00000007;
+            break;
+        case 0xf3c:
+            /* Floating-point Default Status Control Register */
+            cpu->env.v7m.fpu.fpdscr = value & 0x7C00000;
+            break;
+        default:
+            abort();
+            break;
+        }
+    }
+}
+
 static uint32_t nvic_readl(NVICState *s, uint32_t offset, MemTxAttrs attrs)
 {
     ARMCPU *cpu = s->cpu;
     uint32_t val;
+
+    if (nvic_is_fpu_register(offset)) {
+        return nvic_fpu_readl(cpu, offset);
+    }
 
     switch (offset) {
     case 4: /* Interrupt Control Type.  */
@@ -1233,6 +1296,11 @@ static void nvic_writel(NVICState *s, uint32_t offset, uint32_t value,
                         MemTxAttrs attrs)
 {
     ARMCPU *cpu = s->cpu;
+
+    if (nvic_is_fpu_register(offset)) {
+        nvic_fpu_writel(cpu, offset, value);
+        return;
+    }
 
     switch (offset) {
     case 0xc: /* CPPWR */

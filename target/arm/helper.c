@@ -12945,6 +12945,10 @@ void cpu_get_tb_cpu_state(CPUARMState *env, target_ulong *pc,
         if (env->vfp.xregs[ARM_VFP_FPEXC] & (1 << 30)
             || arm_el_is_aa64(env, 1)) {
             flags = FIELD_DP32(flags, TBFLAG_A32, VFPEN, 1);
+        } else if (arm_feature(env, ARM_FEATURE_VFP4_SP)
+                   && extract32(env->cp15.cpacr_el1, 20, 2)) {
+            /* ARMv7m FPU */
+            flags = FIELD_DP32(flags, TBFLAG_A32, VFPEN, 1);
         }
         flags = FIELD_DP32(flags, TBFLAG_A32, XSCALE_CPAR, env->cp15.c15_cpar);
     }
