@@ -850,6 +850,11 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
     if (arm_feature(env, ARM_FEATURE_ARM_DIV)) {
         set_feature(env, ARM_FEATURE_THUMB_DIV);
     }
+
+    if (arm_feature(env, ARM_FEATURE_VFP4_SP)) {
+        set_feature(env, ARM_FEATURE_VFP4);
+    }
+
     if (arm_feature(env, ARM_FEATURE_VFP4)) {
         set_feature(env, ARM_FEATURE_VFP3);
         set_feature(env, ARM_FEATURE_VFP_FP16);
