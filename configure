@@ -7052,6 +7052,7 @@ case "$target_name" in
     TARGET_BASE_ARCH=riscv
     TARGET_ABI_DIR=riscv
     mttcg=yes
+    gdb_xml_files="riscv64-core.xml"
     target_compiler=$cross_cc_riscv64
   ;;
   sh4|sh4eb)

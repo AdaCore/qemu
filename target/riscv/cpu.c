@@ -346,6 +346,7 @@ static void riscv_cpu_class_init(ObjectClass *c, void *data)
     cc->gdb_num_core_regs = 65;
     cc->gdb_stop_before_watchpoint = true;
     cc->disas_set_info = riscv_cpu_disas_set_info;
+    cc->gdb_core_xml_file = "riscv64-core.xml";
 #ifdef CONFIG_USER_ONLY
     cc->handle_mmu_fault = riscv_cpu_handle_mmu_fault;
 #else
