@@ -33,7 +33,14 @@ int riscv_cpu_gdb_read_register(CPUState *cs, uint8_t *mem_buf, int n)
     } else if (n < 65) {
         return gdb_get_reg64(mem_buf, env->fpr[n - 33]);
     } else if (n < 4096 + 65) {
-        return gdb_get_regl(mem_buf, csr_read_helper(env, n - 65));
+        int ret = 0;
+        target_ulong val = csr_read_helper(env, n - 65, &ret);
+
+        if (ret < 0) {
+            return 0;
+        } else {
+            return gdb_get_regl(mem_buf, val);
+        }
     }
     return 0;
 }

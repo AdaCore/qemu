@@ -315,6 +315,7 @@ static void riscv_cpu_init(Object *obj)
     RISCVCPU *cpu = RISCV_CPU(obj);
 
     cs->env_ptr = &cpu->env;
+    cs->gdb_num_g_regs = 65;
 }
 
 static const VMStateDescription vmstate_riscv_cpu = {
@@ -343,7 +344,7 @@ static void riscv_cpu_class_init(ObjectClass *c, void *data)
     cc->synchronize_from_tb = riscv_cpu_synchronize_from_tb;
     cc->gdb_read_register = riscv_cpu_gdb_read_register;
     cc->gdb_write_register = riscv_cpu_gdb_write_register;
-    cc->gdb_num_core_regs = 65;
+    cc->gdb_num_core_regs = 4096 + 65;
     cc->gdb_stop_before_watchpoint = true;
     cc->disas_set_info = riscv_cpu_disas_set_info;
     cc->gdb_core_xml_file = "riscv64-core.xml";
