@@ -180,6 +180,7 @@ static void spike_board_init(MachineState *machine)
     MemoryRegion *system_memory = get_system_memory();
     MemoryRegion *main_mem = g_new(MemoryRegion, 1);
     MemoryRegion *mask_rom = g_new(MemoryRegion, 1);
+    MemoryRegion *hack = g_new(MemoryRegion, 1);
     target_ulong firmware_end_addr, kernel_start_addr;
     uint32_t fdt_load_addr;
     uint64_t kernel_entry;
@@ -237,6 +238,16 @@ static void spike_board_init(MachineState *machine)
                            machine->ram_size, &error_fatal);
     memory_region_add_subregion(system_memory, memmap[SPIKE_DRAM].base,
         main_mem);
+
+    /*
+     * GDB writes some data @0xffffffffffffffe0 to break the execution flow
+     * when we issue a 'call foo(1234)' command.. So we need to cover this
+     * area with a ram region because we can't execute from there without a
+     * ram region..
+     */
+    memory_region_init_ram(hack, NULL, "riscv.spike.hack", 0x10000,
+                           &error_fatal);
+    memory_region_add_subregion(system_memory, 0xffffffffffff0000, hack);
 
     /* create device tree */
     create_fdt(s, memmap, machine->ram_size, machine->kernel_cmdline,
