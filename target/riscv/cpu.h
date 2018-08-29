@@ -284,7 +284,8 @@ static inline void cpu_get_tb_cpu_state(CPURISCVState *env, target_ulong *pc,
 
 void csr_write_helper(CPURISCVState *env, target_ulong val_to_write,
         target_ulong csrno);
-target_ulong csr_read_helper(CPURISCVState *env, target_ulong csrno);
+target_ulong csr_read_helper(CPURISCVState *env, target_ulong csrno,
+                             int *exception);
 
 #ifndef CONFIG_USER_ONLY
 void riscv_set_local_interrupt(RISCVCPU *cpu, target_ulong mask, int value);
