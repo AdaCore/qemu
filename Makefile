@@ -31,6 +31,8 @@ git_module_status := $(shell \
   echo $$?; \
 )
 
+# We absolutely don't want to have random git checkout..
+ifeq (0, 1)
 ifeq (1,$(git_module_status))
 ifeq (no,$(GIT_UPDATE))
 git-submodule-update:
@@ -48,6 +50,7 @@ git-submodule-update:
           "GIT","$(GIT_SUBMODULES)")
 endif
 endif
+endif # 0 == 1
 
 .git-submodule-status: git-submodule-update config-host.mak
 
