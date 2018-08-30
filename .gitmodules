@@ -19,9 +19,6 @@
 [submodule "roms/sgabios"]
 	path = roms/sgabios
 	url = https://git.qemu.org/git/sgabios.git
-[submodule "dtc"]
-	path = dtc
-	url = https://git.qemu.org/git/dtc.git
 [submodule "roms/u-boot"]
 	path = roms/u-boot
 	url = https://git.qemu.org/git/u-boot.git

@@ -4058,9 +4058,9 @@ EOF
     fdt=system
   else
       # have GIT checkout, so activate dtc submodule
-      if test -e "${source_path}/.git" ; then
-          git_submodules="${git_submodules} dtc"
-      fi
+#      if test -e "${source_path}/.git" ; then
+#          git_submodules="${git_submodules} dtc"
+#      fi
       if test -d "${source_path}/dtc/libfdt" || test -e "${source_path}/.git" ; then
           fdt=git
           mkdir -p dtc
