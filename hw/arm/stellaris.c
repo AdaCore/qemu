@@ -34,6 +34,10 @@
 #include "qapi/qmp/qlist.h"
 #include "ui/input.h"
 
+
+#include "hw/adacore/hostfs.h"
+#include "hw/adacore/gnat-bus.h"
+
 #define GPIO_A 0
 #define GPIO_B 1
 #define GPIO_C 2
@@ -1049,6 +1053,7 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
     MemoryRegion *sram = g_new(MemoryRegion, 1);
     MemoryRegion *flash = g_new(MemoryRegion, 1);
     MemoryRegion *system_memory = get_system_memory();
+    qemu_irq *pic = g_new(qemu_irq, NUM_IRQ_LINES);
 
     flash_size = (((board->dc0 & 0xffff) + 1) << 1) * 1024;
     sram_size = ((board->dc0 >> 18) + 1) * 1024;
@@ -1367,6 +1372,17 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
     create_unimplemented_device("flash-control", 0x400fd000, 0x1000);
 
     armv7m_load_kernel(ARM_CPU(first_cpu), ms->kernel_filename, 0, flash_size);
+
+    /* HostFS */
+    hostfs_create(0x80001000, system_memory);
+
+    for (i = 0; i < NUM_IRQ_LINES; i++) {
+        pic[i] = qdev_get_gpio_in(nvic, i);
+    }
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(pic, 128);
+    gnatbus_device_init();
 }
 
 /* FIXME: Figure out how to generate these from stellaris_boards.  */
