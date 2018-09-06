@@ -142,7 +142,6 @@ static int gnatbus_init_device(SysBusDevice *dev)
     GnatBus_SysBusDevice *pdev  = GNATBUS_DEVICE(dev);
     GnatBus_Device       *qbdev = pdev->qbdev;
     int                   i;
-    int fd;
 
     /* Copy default io ops */
     memcpy(&qbdev->io_ops, &gnatbus_io_ops, sizeof(MemoryRegionOps));
@@ -169,15 +168,20 @@ static int gnatbus_init_device(SysBusDevice *dev)
         memory_region_transaction_commit();
     }
 
-    for (i = 0; i < qbdev->info.nr_shared_mem; i++) {
 #if defined(_WIN32) || defined(_WIN64)
+    if (qbdev->info.nr_shared_mem) {
         /*
          * Windows target doesn't support SHM. We need to implement that
          * with Microsoft API.
          */
-        fprintf(stderr, "%s: shared memory isn't supported under windows,"
-                        " ignoring..\n", qbdev->info.shared_mem[i].name);
+        fprintf(stderr, "shared memory isn't supported under windows,"
+                        " ignoring..\n");
+    }
 #else /* Linux */
+    int fd;
+
+    for (i = 0; i < qbdev->info.nr_shared_mem; i++) {
+
         fd = shm_open(qbdev->info.shared_mem[i].name, O_RDWR,
                       S_IRUSR | S_IWUSR);
         if (fd < 0) {
@@ -208,8 +212,8 @@ static int gnatbus_init_device(SysBusDevice *dev)
                                        qbdev->info.shared_mem[i].base,
                                        &qbdev->shared_mr[i], 1);
         memory_region_transaction_commit();
-#endif /* Linux */
     }
+#endif /* Linux */
 
     return 0;
 }
