@@ -46,6 +46,8 @@ struct GnatBus_Device {
     GnatBus_Master *master;
 
     int is_pipe;
+    /* A shutdown has been requested during a write or a read. */
+    bool shutdown_requested;
 
     MemoryRegionOps  io_ops;
     GnatBus_IORegion io_region[MAX_IOMEM];
@@ -68,6 +70,7 @@ typedef struct GnatBus_SysBusDevice {
     GnatBus_Device *qbdev;
 } GnatBus_SysBusDevice;
 
+void gnatbus_shutdown_vm(void);
 
 void gnatbus_save_optargs(const char *optarg);
 

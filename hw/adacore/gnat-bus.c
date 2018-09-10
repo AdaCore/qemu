@@ -220,6 +220,13 @@ GnatBusPacket_Response *send_and_wait_resp(GnatBus_Device        *qbdev,
         }
     }
 
+    /* We don't expect any response at this point.. If a shutdown has been
+     * asked just proceed it.
+     */
+    if (qbdev->shutdown_requested) {
+        gnatbus_shutdown_vm();
+    }
+
     resp = (GnatBusPacket_Response *)packet;
 
     if (resp->id != request->id) {
@@ -612,6 +619,7 @@ static int gnatbus_init(const char *optarg)
     qbdev         = g_malloc0(sizeof *qbdev);
     qbdev->master = g_qbmaster;
     qbdev->status = CHR_EVENT_OPENED;
+    qbdev->shutdown_requested = false;
 
     if (optarg[0] == '@') {
         qbdev->is_pipe = 1;
@@ -716,4 +724,10 @@ void gnatbus_save_timeout_optargs(const char *optarg)
         fprintf(stderr, "gnatbus: wrong timeout parameter\n");
         exit(1);
     }
+}
+
+void gnatbus_shutdown_vm(void)
+{
+    pause_all_vcpus();
+    qemu_system_shutdown_request(SHUTDOWN_CAUSE_GUEST_SHUTDOWN);
 }

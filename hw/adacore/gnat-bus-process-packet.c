@@ -49,7 +49,6 @@ int gnatbus_process_registerevent(GnatBus_Device              *qbdev,
     return 0;
 }
 
-
 static inline int gnatbus_process_event(GnatBus_Device      *qbdev,
                                         GnatBusPacket_Event *event)
 {
@@ -64,8 +63,16 @@ static inline int gnatbus_process_event(GnatBus_Device      *qbdev,
         break;
 
     case GnatBusEvent_Shutdown:
-        pause_all_vcpus();
-        qemu_system_shutdown_request(SHUTDOWN_CAUSE_GUEST_SHUTDOWN);
+        if (qemu_in_vcpu_thread()) {
+            /* This basically means that we are waiting for a reply for
+             * example a read or a write to a gnatbus register.. So we can't
+             * process the pause_all_vcpus(..) yet or we will have the reply
+             * packet in the io-thread.
+             */
+            qbdev->shutdown_requested = true;
+        } else {
+            gnatbus_shutdown_vm();
+        }
         return 0;
         break;
 
