@@ -17,6 +17,7 @@ struct qht {
     struct qht_map *map;
     qht_cmp_func_t cmp;
     QemuMutex lock; /* serializes setters of ht->map */
+    int locked;
     unsigned int mode;
 };
 
