@@ -64,19 +64,6 @@ void qemu_mutex_lock_impl(QemuMutex *mutex, const char *file, const int line)
     qemu_mutex_post_lock(mutex, file, line);
 }
 
-int qemu_mutex_trylock_impl(QemuMutex *mutex, const char *file, const int line)
-{
-    int owned;
-
-    assert(mutex->initialized);
-    owned = TryAcquireSRWLockExclusive(&mutex->lock);
-    if (owned) {
-        qemu_mutex_post_lock(mutex, file, line);
-        return 0;
-    }
-    return -EBUSY;
-}
-
 void qemu_mutex_unlock_impl(QemuMutex *mutex, const char *file, const int line)
 {
     assert(mutex->initialized);
