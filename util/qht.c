@@ -133,6 +133,23 @@ struct qht_map {
 /* trigger a resize when n_added_buckets > n_buckets / div */
 #define QHT_NR_ADDED_BUCKETS_THRESHOLD_DIV 8
 
+static int qht_is_locked(struct qht *ht)
+{
+    return ht->locked;
+}
+
+static void qht_lock(struct qht *ht)
+{
+    atomic_inc(&ht->locked);
+    qemu_mutex_lock(&ht->lock);
+}
+
+static void qht_unlock(struct qht *ht)
+{
+    atomic_dec(&ht->locked);
+    qemu_mutex_unlock(&ht->lock);
+}
+
 static void qht_do_resize_reset(struct qht *ht, struct qht_map *new,
                                 bool reset);
 static void qht_grow_maybe(struct qht *ht);
@@ -254,10 +271,10 @@ void qht_map_lock_buckets__no_stale(struct qht *ht, struct qht_map **pmap)
     qht_map_unlock_buckets(map);
 
     /* we raced with a resize; acquire ht->lock to see the updated ht->map */
-    qemu_mutex_lock(&ht->lock);
+    qht_lock(ht);
     map = ht->map;
     qht_map_lock_buckets(map);
-    qemu_mutex_unlock(&ht->lock);
+    qht_unlock(ht);
     *pmap = map;
     return;
 }
@@ -288,11 +305,11 @@ struct qht_bucket *qht_bucket_lock__no_stale(struct qht *ht, uint32_t hash,
     qemu_spin_unlock(&b->lock);
 
     /* we raced with a resize; acquire ht->lock to see the updated ht->map */
-    qemu_mutex_lock(&ht->lock);
+    qht_lock(ht);
     map = ht->map;
     b = qht_map_to_bucket(map, hash);
     qemu_spin_lock(&b->lock);
-    qemu_mutex_unlock(&ht->lock);
+    qht_unlock(ht);
     *pmap = map;
     return b;
 }
@@ -360,6 +377,7 @@ void qht_init(struct qht *ht, qht_cmp_func_t cmp, size_t n_elems,
     g_assert(cmp);
     ht->cmp = cmp;
     ht->mode = mode;
+    ht->locked = 0;
     qemu_mutex_init(&ht->lock);
     map = qht_map_create(n_buckets);
     atomic_rcu_set(&ht->map, map);
@@ -430,13 +448,13 @@ bool qht_reset_size(struct qht *ht, size_t n_elems)
 
     n_buckets = qht_elems_to_buckets(n_elems);
 
-    qemu_mutex_lock(&ht->lock);
+    qht_lock(ht);
     map = ht->map;
     if (n_buckets != map->n_buckets) {
         new = qht_map_create(n_buckets);
     }
     qht_do_resize_and_reset(ht, new);
-    qemu_mutex_unlock(&ht->lock);
+    qht_unlock(ht);
 
     return !!new;
 }
@@ -565,9 +583,10 @@ static __attribute__((noinline)) void qht_grow_maybe(struct qht *ht)
      * If the lock is taken it probably means there's an ongoing resize,
      * so bail out.
      */
-    if (qemu_mutex_trylock(&ht->lock)) {
+    if (qht_is_locked(ht)) {
         return;
     }
+    qht_lock(ht);
     map = ht->map;
     /* another thread might have just performed the resize we were after */
     if (qht_map_needs_resize(map)) {
@@ -575,7 +594,7 @@ static __attribute__((noinline)) void qht_grow_maybe(struct qht *ht)
 
         qht_do_resize(ht, new);
     }
-    qemu_mutex_unlock(&ht->lock);
+    qht_unlock(ht);
 }
 
 bool qht_insert(struct qht *ht, void *p, uint32_t hash, void **existing)
@@ -788,7 +807,7 @@ bool qht_resize(struct qht *ht, size_t n_elems)
     size_t n_buckets = qht_elems_to_buckets(n_elems);
     size_t ret = false;
 
-    qemu_mutex_lock(&ht->lock);
+    qht_lock(ht);
     if (n_buckets != ht->map->n_buckets) {
         struct qht_map *new;
 
@@ -796,7 +815,7 @@ bool qht_resize(struct qht *ht, size_t n_elems)
         qht_do_resize(ht, new);
         ret = true;
     }
-    qemu_mutex_unlock(&ht->lock);
+    qht_unlock(ht);
 
     return ret;
 }
