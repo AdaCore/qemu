@@ -102,31 +102,31 @@ struct qht_iter {
     enum qht_iter_type type;
 };
 
-/*
- * Do _not_ use qemu_mutex_[try]lock directly! Use these macros, otherwise
- * the profiler (QSP) will deadlock.
- */
-static inline void qht_lock(struct qht *ht)
+static int qht_is_locked(struct qht *ht)
 {
-    if (ht->mode & QHT_MODE_RAW_MUTEXES) {
-        qemu_mutex_lock__raw(&ht->lock);
-    } else {
-        qemu_mutex_lock(&ht->lock);
-    }
+    return ht->locked;
+}
+
+static void qht_lock(struct qht *ht)
+{
+    atomic_inc(&ht->locked);
+    qemu_mutex_lock(&ht->lock);
+}
+
+static void qht_unlock(struct qht *ht)
+{
+    atomic_dec(&ht->locked);
+    qemu_mutex_unlock(&ht->lock);
 }
 
 static inline int qht_trylock(struct qht *ht)
 {
-    if (ht->mode & QHT_MODE_RAW_MUTEXES) {
-        return qemu_mutex_trylock__raw(&(ht)->lock);
+    if (qht_is_locked(ht)) {
+        return 1;
+    } else {
+        qht_lock(ht);
+        return 0;
     }
-    return qemu_mutex_trylock(&(ht)->lock);
-}
-
-/* this inline is not really necessary, but it helps keep code consistent */
-static inline void qht_unlock(struct qht *ht)
-{
-    qemu_mutex_unlock(&ht->lock);
 }
 
 /*
@@ -401,6 +401,7 @@ void qht_init(struct qht *ht, qht_cmp_func_t cmp, size_t n_elems,
     g_assert(cmp);
     ht->cmp = cmp;
     ht->mode = mode;
+    ht->locked = 0;
     qemu_mutex_init(&ht->lock);
     map = qht_map_create(n_buckets);
     atomic_rcu_set(&ht->map, map);
