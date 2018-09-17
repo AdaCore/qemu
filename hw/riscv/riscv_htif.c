@@ -131,8 +131,13 @@ static void htif_handle_tohost_write(HTIFState *htifstate, uint64_t val_written)
         if (cmd == 0x0) {
             if (payload & 0x1) {
                 /* exit code */
-                int exit_code = payload >> 1;
-                exit(exit_code);
+
+                /* int exit_code = payload >> 1;
+                 * Shutdown request is a clean way to stop the QEMU, compared to
+                 * a direct call to exit(). But we can't use the exit code with
+                 * a shutdown request.
+                 */
+                qemu_system_shutdown_request(SHUTDOWN_CAUSE_HOST_ERROR);
             } else {
                 qemu_log_mask(LOG_UNIMP, "pk syscall proxy not supported\n");
             }
