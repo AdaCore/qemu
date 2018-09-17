@@ -29,6 +29,7 @@
 #include "chardev/char-fe.h"
 #include "qemu/timer.h"
 #include "qemu/error-report.h"
+#include "sysemu/runstate.h"
 
 #define RISCV_DEBUG_HTIF 0
 #define HTIF_DEBUG(fmt, ...)                                                   \
@@ -161,9 +162,12 @@ static void htif_handle_tohost_write(HTIFState *s, uint64_t val_written)
         /* frontend syscall handler, shutdown and exit code support */
         if (cmd == HTIF_SYSTEM_CMD_SYSCALL) {
             if (payload & 0x1) {
-                /* exit code */
-                int exit_code = payload >> 1;
-                exit(exit_code);
+                /* int exit_code = payload >> 1;
+                 * Shutdown request is a clean way to stop the QEMU, compared to
+                 * a direct call to exit(). But we can't use the exit code with
+                 * a shutdown request.
+                 */
+                qemu_system_shutdown_request(SHUTDOWN_CAUSE_HOST_ERROR);
             } else {
                 uint64_t syscall[8];
                 cpu_physical_memory_read(payload, syscall, sizeof(syscall));
