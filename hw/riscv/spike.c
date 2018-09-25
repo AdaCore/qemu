@@ -38,6 +38,7 @@
 #include "chardev/char.h"
 #include "sysemu/device_tree.h"
 #include "sysemu/sysemu.h"
+#include "hw/adacore/gnat-bus.h"
 
 #include <libfdt.h>
 
@@ -340,6 +341,10 @@ static void spike_board_init(MachineState *machine)
     /* initialize HTIF using symbols found in load_kernel */
     htif_mm_init(system_memory, serial_hd(0), memmap[SPIKE_HTIF].base,
                  htif_custom_base);
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(NULL, 0);
+    gnatbus_device_init();
 }
 
 static void spike_set_signature(Object *obj, const char *val, Error **errp)
