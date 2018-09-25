@@ -110,6 +110,16 @@ static void gen_exception_inst_addr_mis(DisasContext *ctx)
     generate_exception_mbadaddr(ctx, RISCV_EXCP_INST_ADDR_MIS);
 }
 
+/* Wrapper around tcg_gen_exit_tb that handles single stepping */
+static void exit_tb(DisasContext *ctx, TranslationBlock *tb, unsigned idx)
+{
+    if (ctx->base.singlestep_enabled) {
+        gen_exception_debug();
+    } else {
+        tcg_gen_exit_tb(tb, idx);
+    }
+}
+
 static inline bool use_goto_tb(DisasContext *ctx, target_ulong dest)
 {
     if (unlikely(ctx->base.singlestep_enabled)) {
@@ -129,14 +139,10 @@ static void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
         /* chaining is only allowed when the jump is to the same page */
         tcg_gen_goto_tb(n);
         tcg_gen_movi_tl(cpu_pc, dest);
-        tcg_gen_exit_tb(ctx->base.tb, n);
+        exit_tb(ctx, ctx->base.tb, n);
     } else {
         tcg_gen_movi_tl(cpu_pc, dest);
-        if (ctx->base.singlestep_enabled) {
-            gen_exception_debug();
-        } else {
-            tcg_gen_exit_tb(NULL, 0);
-        }
+        exit_tb(ctx, NULL, 0);
     }
 }
 
@@ -548,7 +554,7 @@ static void gen_jalr(CPURISCVState *env, DisasContext *ctx, uint32_t opc,
         if (rd != 0) {
             tcg_gen_movi_tl(cpu_gpr[rd], ctx->pc_succ_insn);
         }
-        tcg_gen_exit_tb(NULL, 0);
+        exit_tb(ctx, NULL, 0);
 
         if (misaligned) {
             gen_set_label(misaligned);
@@ -1303,12 +1309,12 @@ static void gen_system(CPURISCVState *env, DisasContext *ctx, uint32_t opc,
         case 0x0: /* ECALL */
             /* always generates U-level ECALL, fixed in do_interrupt handler */
             generate_exception(ctx, RISCV_EXCP_U_ECALL);
-            tcg_gen_exit_tb(NULL, 0); /* no chaining */
+            exit_tb(ctx, NULL, 0); /* no chaining */
             ctx->base.is_jmp = DISAS_NORETURN;
             break;
         case 0x1: /* EBREAK */
             generate_exception(ctx, RISCV_EXCP_BREAKPOINT);
-            tcg_gen_exit_tb(NULL, 0); /* no chaining */
+            exit_tb(ctx, NULL, 0); /* no chaining */
             ctx->base.is_jmp = DISAS_NORETURN;
             break;
 #ifndef CONFIG_USER_ONLY
@@ -1318,7 +1324,7 @@ static void gen_system(CPURISCVState *env, DisasContext *ctx, uint32_t opc,
         case 0x102: /* SRET */
             if (riscv_has_ext(env, RVS)) {
                 gen_helper_sret(cpu_pc, cpu_env, cpu_pc);
-                tcg_gen_exit_tb(NULL, 0); /* no chaining */
+                exit_tb(ctx, NULL, 0); /* no chaining */
                 ctx->base.is_jmp = DISAS_NORETURN;
             } else {
                 gen_exception_illegal(ctx);
@@ -1329,7 +1335,7 @@ static void gen_system(CPURISCVState *env, DisasContext *ctx, uint32_t opc,
             break;
         case 0x302: /* MRET */
             gen_helper_mret(cpu_pc, cpu_env, cpu_pc);
-            tcg_gen_exit_tb(NULL, 0); /* no chaining */
+            exit_tb(ctx, NULL, 0); /* no chaining */
             ctx->base.is_jmp = DISAS_NORETURN;
             break;
         case 0x7b2: /* DRET */
@@ -1378,7 +1384,7 @@ static void gen_system(CPURISCVState *env, DisasContext *ctx, uint32_t opc,
         gen_set_gpr(rd, dest);
         /* end tb since we may be changing priv modes, to get mmu_index right */
         tcg_gen_movi_tl(cpu_pc, ctx->pc_succ_insn);
-        tcg_gen_exit_tb(NULL, 0); /* no chaining */
+        exit_tb(ctx, NULL, 0); /* no chaining */
         ctx->base.is_jmp = DISAS_NORETURN;
         break;
     }
@@ -1771,7 +1777,7 @@ static void decode_RV32_64G(CPURISCVState *env, DisasContext *ctx)
             /* FENCE_I is a no-op in QEMU,
              * however we need to end the translation block */
             tcg_gen_movi_tl(cpu_pc, ctx->pc_succ_insn);
-            tcg_gen_exit_tb(NULL, 0);
+            exit_tb(ctx, NULL, 0); /* no chaining */
             ctx->base.is_jmp = DISAS_NORETURN;
         } else {
             /* FENCE is a full memory barrier. */
@@ -1869,11 +1875,7 @@ static void riscv_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     switch (ctx->base.is_jmp) {
     case DISAS_TOO_MANY:
         tcg_gen_movi_tl(cpu_pc, ctx->base.pc_next);
-        if (ctx->base.singlestep_enabled) {
-            gen_exception_debug();
-        } else {
-            tcg_gen_exit_tb(NULL, 0);
-        }
+        exit_tb(ctx, NULL, 0);
         break;
     case DISAS_NORETURN:
         break;
