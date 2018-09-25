@@ -41,6 +41,7 @@
 #include "sysemu/arch_init.h"
 #include "sysemu/device_tree.h"
 #include "sysemu/sysemu.h"
+#include "hw/adacore/gnat-bus.h"
 
 static const MemMapEntry spike_memmap[] = {
     [SPIKE_MROM] =     {     0x1000,     0xf000 },
@@ -314,6 +315,10 @@ static void spike_board_init(MachineState *machine)
     /* initialize HTIF using symbols found in load_kernel */
     htif_mm_init(system_memory, mask_rom,
                  &s->soc[0].harts[0].env, serial_hd(0));
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(NULL, 0);
+    gnatbus_device_init();
 }
 
 static void spike_machine_instance_init(Object *obj)
