@@ -702,7 +702,8 @@ static void riscv_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
 
     switch (ctx->base.is_jmp) {
     case DISAS_TOO_MANY:
-        gen_goto_tb(ctx, 0, ctx->base.pc_next);
+        tcg_gen_movi_tl(cpu_pc, ctx->base.pc_next);
+        exit_tb(ctx);
         break;
     case DISAS_NORETURN:
         break;
