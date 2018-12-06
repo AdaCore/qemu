@@ -3008,17 +3008,14 @@ static int foreach_add_memory(void *opaque, QemuOpts *opts, Error **errp)
     return 0;
 }
 
-/***********************************************************/
-/* rLimit */
-static uint64_t rlimit;
-
-static void rlimit_timer_tick(void *opaque)
+void qemu_exit_with_debug(const char *fmt, ...)
 {
-    Error      *local_err = NULL;
-    Error     **errp      = &local_err;
-    char       *retval    = NULL;
-    int         i;
-    const char *cmds[]    = {
+    va_list ap;
+    Error *local_err = NULL;
+    Error **errp = &local_err;
+    char *retval = NULL;
+    int i;
+    const char *cmds[] = {
         "info version",
         "info status",
         "info registers",
@@ -3034,7 +3031,9 @@ static void rlimit_timer_tick(void *opaque)
         NULL,
     };
 
-    fprintf(stderr, "\nQEMU rlimit exceeded (%"PRId64"s)\n", rlimit);
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
 
     for (i = 0; cmds[i] != NULL; i++) {
         retval = qmp_human_monitor_command(cmds[i],
@@ -3046,6 +3045,15 @@ static void rlimit_timer_tick(void *opaque)
     }
 
     exit(1);
+}
+
+/***********************************************************/
+/* rLimit */
+static uint64_t rlimit;
+
+static void rlimit_timer_tick(void *opaque)
+{
+    qemu_exit_with_debug("\nQEMU rlimit exceeded (%"PRId64"s)\n", rlimit);
 }
 
 
