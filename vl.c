@@ -4171,6 +4171,9 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_exec_trace:
                 exec_trace_init(optarg);
                 break;
+            case QEMU_OPTION_exec_trace_limit:
+                exec_trace_limit(optarg);
+                break;
             case QEMU_OPTION_rlimit:
                 rlimit_set_value(optarg);
                 break;

@@ -4476,12 +4476,21 @@ e.g to launch a SEV guest
 ETEXI
 
 DEF("exec-trace", HAS_ARG, QEMU_OPTION_exec_trace, \
-    "-exec-trace filename"
+    "-exec-trace filename\n"
     "                Enable execution traces generation to filename.\n",
     QEMU_ARCH_ALL)
 STEXI
 @item -exec-trace filename
 Write execution traces to filename.
+ETEXI
+
+DEF("exec-trace-limit", HAS_ARG, QEMU_OPTION_exec_trace_limit, \
+    "-exec-trace-limit size\n"
+    "                Enable execution traces limit.\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -exec-trace-limit size
+Limit the size of the execution traces.
 ETEXI
 
 DEF("plug-in", HAS_ARG, QEMU_OPTION_plugin, \

@@ -115,6 +115,7 @@ extern struct trace_entry *trace_current;
 extern int                 tracefile_enabled;
 
 void exec_trace_init(const char *optarg);
+void exec_trace_limit(const char *optarg);
 void exec_trace_cleanup(void);
 void exec_trace_push_entry(void);
 void exec_trace_special(uint16_t subop, uint32_t data);

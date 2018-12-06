@@ -30,6 +30,7 @@
 #include "qemu-traces.h"
 #include "qemu-decision_map.h"
 #include "elf.h"
+#include "qemu/option.h"
 
 /* #define DEBUG_TRACE */
 
@@ -53,6 +54,7 @@
 #error "Unknown architecture"
 #endif
 
+static uint64_t tracefile_limit = 0;
 static FILE *tracefile;
 
 #define MAX_TRACE_ENTRIES 1024
@@ -98,7 +100,19 @@ void tracefile_history_for_tb_search(TranslationBlock *tb)
 
 static void exec_trace_flush(void)
 {
+    /* The header has already been written to the file.. So just take it in
+     * account here.
+     */
+    static uint64_t written = sizeof(struct trace_header);
     size_t len = (trace_current - trace_entries) * sizeof(trace_entries[0]);
+
+    if (tracefile_limit) {
+        written += len;
+        if (tracefile_limit < written) {
+            qemu_exit_with_debug("\nQEMU exec-trace limit exceeded (%u)"
+                                 "\n", tracefile_limit);
+        }
+    }
 
     fwrite(trace_entries, len, 1, tracefile);
     trace_current = trace_entries;
@@ -284,6 +298,11 @@ void exec_trace_init(const char *optarg)
 
     atexit(exec_trace_cleanup);
     tracefile_enabled = 1;
+}
+
+void exec_trace_limit(const char *optarg)
+{
+    parse_option_size("maxsize", optarg, &tracefile_limit, NULL);
 }
 
 void exec_trace_push_entry(void)
