@@ -180,6 +180,23 @@ static const MemoryRegionOps mcm_ops = {
     },
 };
 
+/* QEMUBH is used here to reset the board as the end of the translation block
+ * might be executed after qemu_system_reset_request(..). So let the IO thread
+ * kick off the CPU thread in order to execute the reset request.
+ *
+ * Code example:
+ *
+ * _exit:
+ *   write 2 @GUR_BASE + 0xb0
+ * loop:
+ *   branch loop 
+ */
+static QEMUBH *board_reset_bh = NULL;
+static void board_reset_cb(void *opaque)
+{
+    qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
+}
+
 static void write_gur(void *opaque, hwaddr addr, uint64_t value, unsigned size)
 {
     DPRINTF("write_gur : write to Global Utility Register : 0x%08x\n",
@@ -190,7 +207,7 @@ static void write_gur(void *opaque, hwaddr addr, uint64_t value, unsigned size)
     case 0xb0: /* Reset Control Register - RSTCR */
         DPRINTF("%s: Writing RSTCR\n", __func__);
         if (value & 2) {
-            qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
+            qemu_bh_schedule(board_reset_bh);
         }
         break;
     default:
@@ -585,6 +602,8 @@ static void wrsbc8641d_init(MachineState *args)
         memory_region_add_subregion(get_system_memory(), list[i].start_addr,
                                     iomem);
     }
+
+    board_reset_bh = qemu_bh_new(board_reset_cb, NULL);
 
     /* MPIC */
     qemu_irq *pic;
