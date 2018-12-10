@@ -3019,7 +3019,7 @@ void qemu_exit_with_debug(const char *fmt, ...)
         "info version",
         "info status",
         "info registers",
-        "print $pc",
+        "print/x $pc",
         "x/16i $pc - 32",
         "info roms",
 
