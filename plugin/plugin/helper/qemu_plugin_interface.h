@@ -1,1 +1,1 @@
-../../../qemu_plugin_interface.h
+../../../include/hw/adacore/qemu_plugin_interface.h
