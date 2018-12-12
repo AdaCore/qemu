@@ -364,7 +364,7 @@ static void xlnx_zynqmp_init(Object *obj)
     qdev_set_parent_bus(DEVICE(&s->crl), sysbus_get_default());
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
-        object_initialize(&s->ttc[i], sizeof(s->ttc[i]), TYPE_CADENCE_TTC);
+        object_initialize(&s->ttc[i], sizeof(s->ttc[i]), TYPE_ZYNQMP_TTC);
         qdev_set_parent_bus(DEVICE(&s->ttc[i]), sysbus_get_default());
     }
 
