@@ -339,7 +339,7 @@ static void xlnx_zynqmp_create_ttc(XlnxZynqMPState *s, qemu_irq *gic)
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
         object_initialize_child(OBJECT(s), "ttc[*]", &s->ttc[i],
-                                TYPE_CADENCE_TTC);
+                                TYPE_ZYNQMP_TTC);
         sbd = SYS_BUS_DEVICE(&s->ttc[i]);
 
         sysbus_realize(sbd, &error_fatal);
