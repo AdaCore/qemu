@@ -423,7 +423,7 @@ static void xlnx_zynqmp_init(Object *obj)
                             &s->qspi_irq_orgate, TYPE_OR_IRQ);
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
-        object_initialize_child(obj, "ttc[*]", &s->ttc[i], TYPE_CADENCE_TTC);
+        object_initialize_child(obj, "ttc[*]", &s->ttc[i], TYPE_ZYNQMP_TTC);
     }
 }
 
