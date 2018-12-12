@@ -36,12 +36,13 @@ struct CadenceTimerState {
     uint32_t reg_clock;
     uint32_t reg_count;
     uint32_t reg_value;
-    uint16_t reg_interval;
-    uint16_t reg_match[3];
+    uint32_t reg_interval;
+    uint32_t reg_match[3];
     uint32_t reg_intr;
     uint32_t reg_intr_en;
     uint32_t reg_event_ctrl;
     uint32_t reg_event;
+    int reg_is_32bits;
 
     uint64_t cpu_time;
     unsigned int cpu_time_valid;
@@ -64,5 +65,9 @@ typedef struct CadenceTTCState CadenceTTCState;
 #define TYPE_CADENCE_TTC "cadence_ttc"
 #define CADENCE_TTC(obj) \
     OBJECT_CHECK(CadenceTTCState, (obj), TYPE_CADENCE_TTC)
+
+#define TYPE_ZYNQMP_TTC "zynqmp_ttc"
+#define ZYNQMP_TTC(obj) \
+    OBJECT_CHECK(CadenceTTCState, (obj), TYPE_ZYNQMP_TTC)
 
 #endif /* CADENCE_TTC_H */
