@@ -31,12 +31,13 @@ typedef struct {
     uint32_t reg_clock;
     uint32_t reg_count;
     uint32_t reg_value;
-    uint16_t reg_interval;
-    uint16_t reg_match[3];
+    uint32_t reg_interval;
+    uint32_t reg_match[3];
     uint32_t reg_intr;
     uint32_t reg_intr_en;
     uint32_t reg_event_ctrl;
     uint32_t reg_event;
+    int reg_is_32bits;
 
     uint64_t cpu_time;
     unsigned int cpu_time_valid;
@@ -46,6 +47,10 @@ typedef struct {
 
 #define TYPE_CADENCE_TTC "cadence_ttc"
 OBJECT_DECLARE_SIMPLE_TYPE(CadenceTTCState, CADENCE_TTC)
+
+#define TYPE_ZYNQMP_TTC "zynqmp_ttc"
+#define ZYNQMP_TTC(obj) \
+    OBJECT_CHECK(CadenceTTCState, (obj), TYPE_ZYNQMP_TTC)
 
 struct CadenceTTCState {
     SysBusDevice parent_obj;

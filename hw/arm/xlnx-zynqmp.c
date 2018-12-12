@@ -303,7 +303,7 @@ static void xlnx_zynqmp_init(Object *obj)
     object_initialize_child(obj, "qspi-dma", &s->qspi_dma, TYPE_XLNX_CSU_DMA);
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
-        object_initialize_child(obj, "ttc[*]", &s->ttc[i], TYPE_CADENCE_TTC);
+        object_initialize_child(obj, "ttc[*]", &s->ttc[i], TYPE_ZYNQMP_TTC);
     }
 }
 
