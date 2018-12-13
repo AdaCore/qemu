@@ -165,16 +165,16 @@ static void xlnx_crl_update_rpll(XlnxCRL *s)
                 break;
             }
 
+            /* Feedback divisor */
             rate_in *= extract32(ctrl_reg, 8, 7);
-
-            if (extract32(ctrl_reg, 16, 1)) {
-                rate_in = rate_in >> 1;
-            }
 
             if (extract32(frac_reg, 31, 1)) {
                 /* Fractional mode */
-                rate_in = muldiv64(rate_in, extract32(frac_reg, 0, 16),
-                                   1 << 16);
+                rate_in += (rate_in * extract32(frac_reg, 0, 16)) >> 16;
+            }
+
+            if (extract32(ctrl_reg, 16, 1)) {
+                rate_in = rate_in >> 1;
             }
         }
     }
@@ -221,8 +221,6 @@ static uint64_t lpd_lsbus_update_rate(void *opaque, uint64_t input_rate)
                     ? input_rate / extract32(ctrl_reg, 8, 6)
                     : 0;
     }
-//    printf("lsbus divisor update rate: %" PRIX64 " %" PRIu64 " -> %" PRIu64 "\n",
-//           ctrl_reg, input_rate, output_rate);
 
     return output_rate;
 }
