@@ -111,15 +111,16 @@ config ROCKER
 
 config CAN_BUS
     bool
+    default n
 
 config CAN_PCI
     bool
-    default y if PCI_DEVICES
+    default n
     depends on PCI
     select CAN_BUS
 
 config CAN_SJA1000
     bool
-    default y if PCI_DEVICES
+    default n
     depends on PCI
     select CAN_BUS
