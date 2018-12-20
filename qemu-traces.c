@@ -104,13 +104,25 @@ static void exec_trace_flush(void)
      * account here.
      */
     static uint64_t written = sizeof(struct trace_header);
+    static int limit_hit = 0;
     size_t len = (trace_current - trace_entries) * sizeof(trace_entries[0]);
 
     if (tracefile_limit) {
         written += len;
-        if (tracefile_limit < written) {
-            qemu_exit_with_debug("\nQEMU exec-trace limit exceeded (%u)"
-                                 "\n", tracefile_limit);
+        if ((tracefile_limit < written)) {
+            if (!limit_hit) {
+                /* Don't throw the debug message more than one time.. in
+                 * particular this code can be triggered from the atexit
+                 * handler and we are calling exit(..) in
+                 * qemu_exit_with_debug(..).
+                 */
+                limit_hit++;
+                qemu_exit_with_debug("\nQEMU exec-trace limit exceeded (%u)"
+                                     "\n", tracefile_limit);
+            } else {
+                /* Don't write anything we already reached the limit. */
+                return;
+            }
         }
     }
 
