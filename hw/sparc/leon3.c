@@ -67,6 +67,46 @@
 #define LEON3_APB_PNP_OFFSET (0x800FF000)
 #define LEON3_AHB_PNP_OFFSET (0xFFFFF000)
 
+/*
+ * In order to make some aspect of this board configurable this device is
+ * created in order to add some properties to the machine.
+ */
+#define TYPE_LEON3_CONF "leon3-conf"
+#define LEON3_CONF(obj) OBJECT_CHECK(Leon3ConfState, (obj), TYPE_LEON3_CONF)
+
+typedef struct Leon3ConfState {
+    DeviceState parent;
+
+    uint32_t gptimer_irq_base;
+} Leon3ConfState;
+
+static Property leon3_conf_properties[] = {
+    DEFINE_PROP_UINT32("gptimer-irq-base", Leon3ConfState, gptimer_irq_base,
+                       LEON3_TIMER_IRQ),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
+static void leon3_conf_class_init(ObjectClass *oc, void *data)
+{
+    DeviceClass *dc = DEVICE_CLASS(oc);
+
+    device_class_set_props(dc, leon3_conf_properties);
+}
+
+static const TypeInfo leon3_conf_info = {
+    .name          = TYPE_LEON3_CONF,
+    .parent        = TYPE_DEVICE,
+    .instance_size = sizeof(Leon3ConfState),
+    .class_init    = leon3_conf_class_init,
+};
+
+static void leon3_conf_register_types(void)
+{
+    type_register_static(&leon3_conf_info);
+}
+
+type_init(leon3_conf_register_types)
+
 typedef struct ResetData {
     struct CPUResetData {
         int id;
@@ -268,6 +308,10 @@ static void leon3_generic_hw_init(MachineState *machine)
     int i;
     AHBPnp *ahb_pnp;
     APBPnp *apb_pnp;
+    Leon3ConfState *leon3_conf = LEON3_CONF(object_new(TYPE_LEON3_CONF));
+    /* This must be realized in order to have the options value set. */
+    object_property_set_bool(OBJECT(leon3_conf), "realized", true,
+                             &error_fatal);
 
     reset_info = g_malloc0(sizeof(ResetData));
 
@@ -410,7 +454,7 @@ static void leon3_generic_hw_init(MachineState *machine)
     dev = qdev_new(TYPE_GRLIB_GPTIMER);
     qdev_prop_set_uint32(dev, "nr-timers", LEON3_TIMER_COUNT);
     qdev_prop_set_uint32(dev, "frequency", CPU_CLK);
-    qdev_prop_set_uint32(dev, "irq-line", LEON3_TIMER_IRQ);
+    qdev_prop_set_uint32(dev, "irq-line", leon3_conf->gptimer_irq_base);
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
 
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, LEON3_TIMER_OFFSET);
