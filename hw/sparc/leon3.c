@@ -42,6 +42,45 @@
 
 #include "hw/sparc/grlib.h"
 
+/*
+ * In order to make some aspect of this board configurable this device is
+ * created in order to add some properties to the machine.
+ */
+#define TYPE_LEON3_CONF "leon3-conf"
+#define LEON3_CONF(obj) OBJECT_CHECK(Leon3ConfState, (obj), TYPE_LEON3_CONF)
+
+typedef struct Leon3ConfState {
+    DeviceState parent;
+
+    uint32_t gptimer_irq_base;
+} Leon3ConfState;
+
+static Property leon3_conf_properties[] = {
+    DEFINE_PROP_UINT32("gptimer-irq-base", Leon3ConfState, gptimer_irq_base, 6),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
+static void leon3_conf_class_init(ObjectClass *oc, void *data)
+{
+    DeviceClass *dc = DEVICE_CLASS(oc);
+
+    dc->props = leon3_conf_properties;
+}
+
+static const TypeInfo leon3_conf_info = {
+    .name          = TYPE_LEON3_CONF,
+    .parent        = TYPE_DEVICE,
+    .instance_size = sizeof(Leon3ConfState),
+    .class_init    = leon3_conf_class_init,
+};
+
+static void leon3_conf_register_types(void)
+{
+    type_register_static(&leon3_conf_info);
+}
+
+type_init(leon3_conf_register_types)
+
 /* Default system clock.  */
 #define CPU_CLK (40 * 1000 * 1000)
 
@@ -146,7 +185,10 @@ static void leon3_generic_hw_init(MachineState *machine)
     qemu_irq   *cpu_irqs = NULL;
     int         bios_size;
     int         prom_size;
-
+    Leon3ConfState *leon3_conf = LEON3_CONF(object_new(TYPE_LEON3_CONF));
+    /* This must be realized in order to have the options value set. */
+    object_property_set_bool(OBJECT(leon3_conf), true, "realized",
+                             &error_fatal);
     /* Init CPU */
     b = g_new(BoardData, 1);
 
@@ -242,7 +284,8 @@ static void leon3_generic_hw_init(MachineState *machine)
     grlib_apbpnp_create(0x800FF000);
 
     /* Allocate timers */
-    grlib_gptimer_create(0x80000300, 4, CPU_CLK, cpu_irqs, 6);
+    grlib_gptimer_create(0x80000300, 4, CPU_CLK, cpu_irqs,
+                         leon3_conf->gptimer_irq_base);
 
     /* Allocate uart */
     if (serial_hd(0)) {
