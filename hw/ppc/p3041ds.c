@@ -33,6 +33,8 @@
 #include "hw/net/fsl_etsec/etsec.h"
 #include "exec/memory.h"
 #include "hw/char/serial.h"
+#include "sysemu/device_tree.h"
+#include <libfdt.h>
 
 #include "hw/adacore/qemu-plugin.h"
 #include "hw/adacore/gnat-bus.h"
@@ -42,6 +44,7 @@
 
 /* #define DEBUG_P3041 */
 
+#define EPAPR_MAGIC  (0x45504150)
 #define UIMAGE_LOAD_BASE           0
 #define DTC_LOAD_PAD               0x500000
 #define DTC_PAD_MASK               0xFFFFF
@@ -127,7 +130,6 @@ typedef struct ResetData {
 } ResetData;
 
 typedef struct fsl_e500_config {
-    uint32_t ccsr_init_addr;
     const char *cpu_model;
     uint32_t freq;
 
@@ -137,7 +139,352 @@ typedef struct fsl_e500_config {
 } fsl_e500_config;
 
 static MemoryRegion *ccsr_space;
-static uint64_t      ccsr_addr = P3041DS_CCSRBAR_BASE;
+static hwaddr ccsr_addr = P3041DS_CCSRBAR_BASE;
+
+struct epapr_data {
+    hwaddr dtb_entry_ea;
+    hwaddr boot_ima_sz;
+    hwaddr entry;
+};
+
+/* No device tree provided we need to create one from scratch... */
+static void *p3041ds_create_dtb(uint64_t ram_size, uint64_t load_addr,
+                                int *size)
+{
+    void *fdt;
+    const char *cur_node;
+    int i;
+    int sysclk_phandle;
+    int pic_phandle;
+    int platform_phandle;
+    int phy_phandle[2];
+    uint8_t mac[6] = {0x00, 0xA0, 0x1E, 0x10, 0x20, 0x30};
+    uint32_t ccsrbarh = extract64(ccsr_addr, 32, 4);
+    uint32_t ccsrbarl = extract64(ccsr_addr, 0, 32);
+
+    fdt = create_device_tree(size);
+    if (fdt == NULL) {
+        return NULL;
+    }
+
+    pic_phandle = qemu_fdt_alloc_phandle(fdt);
+    sysclk_phandle = qemu_fdt_alloc_phandle(fdt);
+    platform_phandle = qemu_fdt_alloc_phandle(fdt);
+    phy_phandle[0] = qemu_fdt_alloc_phandle(fdt);
+    phy_phandle[1] = qemu_fdt_alloc_phandle(fdt);
+
+    /*
+     * One important stuff here is that everything is done in reverse in the
+     * device tree within a node.
+     */
+
+    qemu_fdt_setprop_string(fdt, "/", "model", "Freescale P3041DS");
+    qemu_fdt_setprop_cell(fdt, "/", "interrupt-parent", pic_phandle);
+    qemu_fdt_setprop_cell(fdt, "/", "#size-cells", 0x2);
+    qemu_fdt_setprop_cell(fdt, "/", "#address-cells", 0x2);
+    qemu_fdt_setprop_string(fdt, "/", "compatible", "fsl,p3041ds");
+
+    cur_node = "/socp3041";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    const char soc_compat[] = "simple-bus\0fsl,immr";
+    qemu_fdt_setprop(fdt, cur_node, "compatible", soc_compat,
+                     sizeof(soc_compat));
+    qemu_fdt_setprop_string(fdt, cur_node, "device_type", "soc");
+    qemu_fdt_setprop_cell(fdt, cur_node, "#size-cells", 1);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#address-cells", 1);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", ccsrbarh, ccsrbarl, 0x0,
+                           0x1000);
+    qemu_fdt_setprop_cells(fdt, cur_node, "ranges", 0, ccsrbarh, ccsrbarl,
+                           0x1000000);
+
+    cur_node = "/socp3041/serial@11c500";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cell(fdt, cur_node, "interrupt-parent", pic_phandle);
+    qemu_fdt_setprop_cells(fdt, cur_node, "interrupts", 0x24, 0x2, 0x0, 0x0);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-names", "platform-div2");
+    qemu_fdt_setprop_cells(fdt, cur_node, "clocks", platform_phandle, 0x1);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0x11c500, 0x100);
+    const char serial_compat[] = "fsl,ns16550\0ns16550";
+    qemu_fdt_setprop(fdt, cur_node, "compatible", serial_compat,
+                     sizeof(serial_compat));
+    qemu_fdt_setprop_string(fdt, cur_node, "device_type", "serial");
+    qemu_fdt_setprop_cell(fdt, cur_node, "cell-index", 0x0);
+
+    cur_node = "/socp3041/fman@400000";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cells(fdt, cur_node, "interrupts", 0x60, 0x2, 0x0, 0x0,
+                           0x10, 0x2, 0x1, 0x1);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-names", "platform");
+    qemu_fdt_setprop_cells(fdt, cur_node, "clocks", platform_phandle, 0x0);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0x400000, 0x100000);
+    qemu_fdt_setprop_cells(fdt, cur_node, "ranges", 0x0, 0x400000, 0x100000);
+    const char fman_compat[] = "fsl,fman\0simple-bus";
+    qemu_fdt_setprop(fdt, cur_node, "compatible", fman_compat,
+                     sizeof(fman_compat));
+    qemu_fdt_setprop_cell(fdt, cur_node, "cell-index", 0x0);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#size-cells", 0x1);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#address-cells", 0x1);
+
+    cur_node = "/socp3041/fman@400000/ethernet@e8000";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0xe8000, 0x1000);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible", "fsl,fman-dtsec");
+    qemu_fdt_setprop(fdt, cur_node, "local-mac-address", mac, 6);
+    qemu_fdt_setprop_cell(fdt, cur_node, "cell-index", 0x0);
+    qemu_fdt_setprop_string(fdt, cur_node, "phy-connection-type", "rgmii");
+    qemu_fdt_setprop_cell(fdt, cur_node, "phy-handle", phy_phandle[1]);
+
+    cur_node = "/socp3041/fman@400000/ethernet@e6000";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0xe6000, 0x1000);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible", "fsl,fman-dtsec");
+    qemu_fdt_setprop(fdt, cur_node, "local-mac-address", mac, 6);
+    qemu_fdt_setprop_cell(fdt, cur_node, "cell-index", 0x0);
+    qemu_fdt_setprop_string(fdt, cur_node, "phy-connection-type", "rgmii");
+    qemu_fdt_setprop_cell(fdt, cur_node, "phy-handle", phy_phandle[0]);
+
+    cur_node = "/socp3041/fman@400000/mdio@e1000";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cells(fdt, cur_node, "interrupts", 0x64, 0x1, 0x0, 0x0);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0xe1000, 0x1000);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,fman-dtsec-mdio");
+    qemu_fdt_setprop_cell(fdt, cur_node, "#size-cells", 0x0);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#address-cells", 0x1);
+
+    cur_node = "/socp3041/fman@400000/mdio@e1000/ethernet-phy@1";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cell(fdt, cur_node, "phandle", phy_phandle[1]);
+    qemu_fdt_setprop_cell(fdt, cur_node, "linux,phandle", phy_phandle[1]);
+    qemu_fdt_setprop_cell(fdt, cur_node, "reg", 0x1);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible", "generic-phy");
+
+    cur_node = "/socp3041/fman@400000/mdio@e1000/ethernet-phy@0";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cell(fdt, cur_node, "phandle", phy_phandle[0]);
+    qemu_fdt_setprop_cell(fdt, cur_node, "linux,phandle", phy_phandle[0]);
+    qemu_fdt_setprop_cell(fdt, cur_node, "reg", 0x0);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible", "generic-phy");
+
+    cur_node = "/socp3041/global-utilities@e0000";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop(fdt, cur_node, "fsl,has-rstcr", NULL, 0);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0xe0000, 0x1000);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible", "fsl,qoriq-guts");
+
+    cur_node = "/socp3041/pic-timer@420f0";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cells(fdt, cur_node, "interrupts", 0x4, 0x0, 0x3, 0x0,
+                           0x5, 0x0, 0x3, 0x0, 0x6, 0x0, 0x3, 0x0, 0x7, 0x0,
+                           0x3, 0x0);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-names", "platform-div2");
+    qemu_fdt_setprop_cells(fdt, cur_node, "clocks", platform_phandle, 0x1);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0x420f0, 0x400);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,mpic-global-timer");
+
+    cur_node = "/socp3041/pic-timer@410f0";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cells(fdt, cur_node, "interrupts", 0x0, 0x0, 0x3, 0x0,
+                           0x1, 0x0, 0x3, 0x0, 0x2, 0x0, 0x3, 0x0, 0x3, 0x0,
+                           0x3, 0x0);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-names", "platform-div2");
+    qemu_fdt_setprop_cells(fdt, cur_node, "clocks", platform_phandle, 0x1);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0x410f0, 0x400);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,mpic-global-timer");
+
+    cur_node = "/socp3041/clockgen@e1000";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0xe1000, 0x1000);
+    qemu_fdt_setprop_cell(fdt, cur_node, "clock-frequency", 0x0);
+    const char clockgen_compat[] = "fsl,p3041-clockgen\0"
+                                   "fsl,qoriq-clockgen-2.0";
+    qemu_fdt_setprop(fdt, cur_node, "compatible", clockgen_compat,
+                     sizeof(clockgen_compat));
+
+    cur_node = "/socp3041/clockgen@e1000/platform";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cell(fdt, cur_node, "phandle", platform_phandle);
+    qemu_fdt_setprop_cell(fdt, cur_node, "linux,phandle", platform_phandle);
+    const char platform_out_name[] = "platform\0platform-div2";
+    qemu_fdt_setprop(fdt, cur_node, "clock-output-names", platform_out_name,
+                     sizeof(platform_out_name));
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,qoriq-platform-clk");
+    qemu_fdt_setprop_cell(fdt, cur_node, "clocks", sysclk_phandle);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#clock-cells", 0x1);
+
+    cur_node = "/socp3041/clockgen@e1000/core-clk3";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-output-names", "core-clk3");
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,qoriq-core-clk");
+    qemu_fdt_setprop_cell(fdt, cur_node, "clocks", sysclk_phandle);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#clock-cells", 0x0);
+    qemu_fdt_setprop_cell(fdt, cur_node, "cell-index", 0x3);
+
+    cur_node = "/socp3041/clockgen@e1000/core-clk2";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-output-names", "core-clk2");
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,qoriq-core-clk");
+    qemu_fdt_setprop_cell(fdt, cur_node, "clocks", sysclk_phandle);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#clock-cells", 0x0);
+    qemu_fdt_setprop_cell(fdt, cur_node, "cell-index", 0x2);
+
+    cur_node = "/socp3041/clockgen@e1000/core-clk1";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-output-names", "core-clk1");
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,qoriq-core-clk");
+    qemu_fdt_setprop_cell(fdt, cur_node, "clocks", sysclk_phandle);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#clock-cells", 0x0);
+    qemu_fdt_setprop_cell(fdt, cur_node, "cell-index", 0x1);
+
+    cur_node = "/socp3041/clockgen@e1000/core-clk0";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-output-names", "core-clk0");
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,qoriq-core-clk");
+    qemu_fdt_setprop_cell(fdt, cur_node, "clocks", sysclk_phandle);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#clock-cells", 0x0);
+    qemu_fdt_setprop_cell(fdt, cur_node, "cell-index", 0x0);
+
+    cur_node = "/socp3041/clockgen@e1000/sysclk";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_cell(fdt, cur_node, "phandle", sysclk_phandle);
+    qemu_fdt_setprop_cell(fdt, cur_node, "linux,phandle", sysclk_phandle);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-output-names", "sysclk");
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible", "fsl,qoriq-sysclk");
+    qemu_fdt_setprop_cell(fdt, cur_node, "#clock-cells", 0x0);
+
+    cur_node = "/socp3041/pic@40000";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    const char pic_compat[] = "fsl,mpic\0chrp,open-pic";
+    qemu_fdt_setprop_cell(fdt, cur_node, "phandle", pic_phandle);
+    qemu_fdt_setprop_cell(fdt, cur_node, "linux,phandle", pic_phandle);
+    qemu_fdt_setprop_string(fdt, cur_node, "device_type", "open-pic");
+    qemu_fdt_setprop(fdt, cur_node, "compatible", pic_compat,
+                     sizeof(pic_compat));
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0x40000, 0x40000);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#interrupt-cells", 0x4);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#address-cells", 0x0);
+    qemu_fdt_setprop(fdt, cur_node, "interrupt-controller", NULL, 0);
+
+    cur_node = "/localbus";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    const char localbus_compat[] = "fsl,ifc\0simple-bus";
+    qemu_fdt_setprop(fdt, cur_node, "compatible", localbus_compat,
+                     sizeof(localbus_compat));
+    qemu_fdt_setprop_cell(fdt, cur_node, "#size-cells", 0x1);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#address-cells", 0x1);
+    qemu_fdt_setprop_cells(fdt, cur_node, "ranges", 0x0, ccsrbarh, ccsrbarl +
+                           0x1df0000, 0x8000);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", ccsrbarh, ccsrbarl +
+                           0x124000, 0x0, 0x2000);
+
+    cur_node = "/localbus/board-control@0";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    const char board_ctrl_compat[] = "fsl,fpga-pixis\0fsl,fpga-ngpixis";
+    qemu_fdt_setprop_cells(fdt, cur_node, "sysclk-tbl", 0x3f940ab, 0x4f790d5,
+                           0x5f5e100, 0x7735940, 0x7f28155, 0x8f0d180,
+                           0x9896800, 0x9ef21ab);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0x0, 0x300);
+    qemu_fdt_setprop(fdt, cur_node, "compatible",
+                     board_ctrl_compat, sizeof(board_ctrl_compat));
+    qemu_fdt_setprop_cell(fdt, cur_node, "#size-cells", 0x1);
+    qemu_fdt_setprop_cell(fdt, cur_node, "#address-cells", 0x1);
+
+    cur_node = "/timer@0";
+    qemu_fdt_add_subnode(fdt, cur_node);
+    qemu_fdt_setprop_string(fdt, cur_node, "clock-names", "platform");    
+    qemu_fdt_setprop_cells(fdt, cur_node, "clocks", platform_phandle, 0);
+    qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0, 0, 0, 0);
+    qemu_fdt_setprop_string(fdt, cur_node, "compatible",
+                            "fsl,p5020-booke-timer");
+
+    qemu_fdt_add_subnode(fdt, "/chosen");
+    qemu_fdt_setprop_string(fdt, "/chosen", "bootargs",
+                            "dtsec(0,0)host:vxWorks"
+                            " h=10.10.0.1 e=10.10.0.2:ffffff00 g=10.10.0.1"
+                            " u=vxworks pw=vxworks f=0x0");
+
+    qemu_fdt_add_subnode(fdt, "/cpus");
+    qemu_fdt_setprop_cell(fdt, "/cpus", "#address-cells", 1);
+    qemu_fdt_setprop_cell(fdt, "/cpus", "#size-cells", 0);
+
+    for (i = smp_cpus - 1; i >= 0; i--) {
+        char cpu_node[128];
+        sprintf(cpu_node, "/cpus/cpu@%d", i);
+
+        qemu_fdt_add_subnode(fdt, cpu_node);
+        if (i) {
+            qemu_fdt_setprop_string(fdt, cpu_node, "enable-method",
+                                    "fsl,spin-table");
+            qemu_fdt_setprop_cells(fdt, cpu_node, "cpu-release-addr", 0, 0);
+        }
+        qemu_fdt_setprop_cells(fdt, cpu_node, "reg", i);
+        qemu_fdt_setprop_string(fdt, cpu_node, "device_type", "cpu");
+    }
+
+    return fdt;
+}
+
+/*
+ * The DTB need to be patched in some case because u-boot does that before
+ * jumping in the vxworks kernel.
+ */
+static void p3041ds_compute_dtb(char *filename, uint64_t ram_size,
+                                uint64_t load_addr, int *size)
+{
+    void *fdt;
+    Error *err = NULL;
+    uint32_t acells, scells;
+
+    if (!filename) {
+        /* Create the dtb */
+        fdt = p3041ds_create_dtb(ram_size, load_addr, size);
+    } else {
+        /* Load it */
+        fdt = load_device_tree(filename, size);
+    }
+    
+    if (!fdt) {
+        fprintf(stderr, "Can't load the dtb.\n");
+        exit(1);
+    }
+
+    acells = qemu_fdt_getprop_cell(fdt, "/", "#address-cells",
+                                   NULL, &error_fatal);
+    scells = qemu_fdt_getprop_cell(fdt, "/", "#size-cells",
+                                   NULL, &error_fatal);
+    if (acells == 0 || scells == 0) {
+        fprintf(stderr, "dtb file invalid"
+                        " (#address-cells or #size-cells 0)\n");
+        exit(1);
+    }
+
+    if (fdt_path_offset(fdt, "/memory") < 0) {
+        qemu_fdt_add_subnode(fdt, "/memory");
+    }
+
+    if (!qemu_fdt_getprop(fdt, "/memory", "device_type", NULL, &err)) {
+        qemu_fdt_setprop_string(fdt, "/memory", "device_type", "memory");
+    }
+
+    if(qemu_fdt_setprop_sized_cells(fdt, "/memory", "reg",
+                                    acells, 0x00,
+                                    scells, ram_size) < 0) {
+        fprintf(stderr, "Can't set memory prop\n");
+        exit(1);
+    }
+
+    qemu_fdt_dumpdtb(fdt, *size);
+    rom_add_blob_fixed("dtb", fdt, *size, load_addr);
+
+    g_free(fdt);
+}
 
 static void sec_cpu_reset(void *opaque)
 {
@@ -178,7 +525,7 @@ static void main_cpu_reset(void *opaque)
     tlb1->mas7_3 |= MAS3_UR | MAS3_UW | MAS3_UX | MAS3_SR | MAS3_SW | MAS3_SX;
 
     /* Init tlb1 entry 1 (p3041ds)*/
-    size = 0xb << MAS1_TSIZE_SHIFT; /* 4Gbytes */
+    size = 0xa << MAS1_TSIZE_SHIFT; /* 4Gbytes */
     size <<= 1;                     /* Shift because MAS2's TSIZE field is
                                      * implemented as PowerISA MAV=2.0
                                      * compliant.
@@ -1113,8 +1460,7 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
         irqs[i][OPENPIC_OUTPUT_INT] = input[PPCE500_INPUT_INT];
         irqs[i][OPENPIC_OUTPUT_CINT] = input[PPCE500_INPUT_CINT];
         env->spr[SPR_BOOKE_PIR] = cs->cpu_index = i;
-        env->mpic_iack = config->ccsr_init_addr +
-            P3041DS_MPIC_REGS_BASE + 0xa0;
+        env->mpic_iack = ccsr_addr + P3041DS_MPIC_REGS_BASE + 0xa0;
 
         ppc_booke_timers_init(cpu, config->freq, PPC_TIMER_E500);
 
@@ -1142,8 +1488,6 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
                            0x1000000 /* 512 * 1024 */, &error_abort);
     memory_region_add_subregion(get_system_memory(),
                                 0xf8000000 /* 0xf8b00000 */, ram);
-
-    ccsr_addr = config->ccsr_init_addr;
 
     /* Configuration, Control, and Status Registers */
     ccsr_space = g_malloc0(sizeof(*ccsr_space));
@@ -1234,6 +1578,8 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
 
     /* Load kernel. */
     if (kernel_filename) {
+        int dtb_size;
+
         kernel_size = load_elf(kernel_filename, NULL, NULL, &elf_entry,
                                &elf_lowaddr, NULL, 1, PPC_ELF_MACHINE, 0, 0);
 
@@ -1243,17 +1589,19 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
                     kernel_filename);
             exit(1);
         }
-    }
 
-    /* If we're loading a kernel directly, we must load the device tree
-     * too.
-     */
-    if (kernel_filename) {
-        dt_base = (kernel_size + DTC_LOAD_PAD) & ~DTC_PAD_MASK;
+        dt_base = (elf_lowaddr + kernel_size + DTC_LOAD_PAD) & ~DTC_PAD_MASK;
 
+        p3041ds_compute_dtb(args->dtb, ram_size, dt_base, &dtb_size);
+        if (dtb_size < 0) {
+            fprintf(stderr, "device tree error\n");
+            exit(1);
+        }
         /* Set initial guest state. */
         env->gpr[1] = elf_lowaddr + 4 * 1024 * 1024; /* FIXME: sp? */
         env->gpr[3] = dt_base;
+        env->gpr[6] = EPAPR_MAGIC;
+        env->gpr[7] = dt_base + dtb_size - elf_lowaddr;
         env->nip = elf_entry;    /* FIXME: entry? */
         reset_info->entry = elf_entry;
     }
@@ -1295,7 +1643,6 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *args)
 
 
 static fsl_e500_config p3041ds_config = {
-    .ccsr_init_addr = 0xfe000000,
     .freq = 700000000UL >> 3,
     .serial_irq = 16 + 20,
     .cfi01_flash = FALSE,
