@@ -20,6 +20,7 @@
 #define HW_SIFIVE_U_H
 
 #include "hw/net/cadence_gem.h"
+#include "hw/riscv/sifive_gpio.h"
 
 #define TYPE_RISCV_U_SOC "riscv.sifive.u.soc"
 #define RISCV_U_SOC(obj) \
@@ -33,6 +34,7 @@ typedef struct SiFiveUSoCState {
     RISCVHartArrayState cpus;
     DeviceState *plic;
     CadenceGEMState gem;
+    SIFIVEGPIOState gpio;
 } SiFiveUSoCState;
 
 typedef struct SiFiveUState {
@@ -48,22 +50,25 @@ typedef struct SiFiveUState {
 enum {
     SIFIVE_U_DEBUG,
     SIFIVE_U_MROM,
+    SIFIVE_U_TEST,
     SIFIVE_U_CLINT,
     SIFIVE_U_PLIC,
     SIFIVE_U_UART0,
     SIFIVE_U_UART1,
+    SIFIVE_U_GPIO0,
     SIFIVE_U_DRAM,
     SIFIVE_U_GEM
 };
 
 enum {
-    SIFIVE_U_UART0_IRQ = 3,
-    SIFIVE_U_UART1_IRQ = 4,
-    SIFIVE_U_GEM_IRQ = 0x35
+    SIFIVE_U_UART0_IRQ  = 3,
+    SIFIVE_U_UART1_IRQ  = 4,
+    SIFIVE_U_GPIO0_IRQ0 = 7,
+    SIFIVE_U_GEM_IRQ    = 0x35
 };
 
 enum {
-    SIFIVE_U_CLOCK_FREQ = 1000000000,
+    SIFIVE_U_CLOCK_FREQ    = 1000000000,
     SIFIVE_U_GEM_CLOCK_FREQ = 125000000
 };
 

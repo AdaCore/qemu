@@ -40,6 +40,7 @@
 #include "hw/riscv/sifive_clint.h"
 #include "hw/riscv/sifive_uart.h"
 #include "hw/riscv/sifive_prci.h"
+#include "hw/riscv/sifive_test.h"
 #include "hw/riscv/sifive_u.h"
 #include "chardev/char.h"
 #include "sysemu/arch_init.h"
@@ -55,10 +56,12 @@ static const struct MemmapEntry {
 } sifive_u_memmap[] = {
     [SIFIVE_U_DEBUG] =    {        0x0,      0x100 },
     [SIFIVE_U_MROM] =     {     0x1000,    0x11000 },
+    [SIFIVE_U_TEST] =     {   0x100000,     0x1000 },
     [SIFIVE_U_CLINT] =    {  0x2000000,    0x10000 },
     [SIFIVE_U_PLIC] =     {  0xc000000,  0x4000000 },
     [SIFIVE_U_UART0] =    { 0x10013000,     0x1000 },
     [SIFIVE_U_UART1] =    { 0x10023000,     0x1000 },
+    [SIFIVE_U_GPIO0] =    { 0x10060000,     0x1000 },
     [SIFIVE_U_DRAM] =     { 0x80000000,        0x0 },
     [SIFIVE_U_GEM] =      { 0x100900FC,     0x2000 },
 };
@@ -332,6 +335,10 @@ static void riscv_sifive_u_soc_init(Object *obj)
 
     sysbus_init_child_obj(obj, "gem", &s->gem, sizeof(s->gem),
                           TYPE_CADENCE_GEM);
+
+    sysbus_init_child_obj(obj, "riscv.sifive.u.gpio0",
+                          &s->gpio, sizeof(s->gpio),
+                          TYPE_SIFIVE_GPIO);
 }
 
 static void riscv_sifive_u_soc_realize(DeviceState *dev, Error **errp)
@@ -392,6 +399,29 @@ static void riscv_sifive_u_soc_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->gem), 0, memmap[SIFIVE_U_GEM].base);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->gem), 0,
                        plic_gpios[SIFIVE_U_GEM_IRQ]);
+
+    /* GPIO */
+
+    object_property_set_bool(OBJECT(&s->gpio), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+
+    /* Map GPIO registers */
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gpio), 0, memmap[SIFIVE_U_GPIO0].base);
+
+    /* Pass all GPIOs to the SOC layer so they are available to the board */
+    qdev_pass_gpios(DEVICE(&s->gpio), dev, NULL);
+
+    /* Connect GPIO interrupts to the PLIC */
+    for (int i = 0; i < 16; i++) {
+        sysbus_connect_irq(SYS_BUS_DEVICE(&s->gpio), i,
+                           qdev_get_gpio_in(DEVICE(s->plic),
+                                            SIFIVE_U_GPIO0_IRQ0 + i));
+    }
+
+    sifive_test_create(memmap[SIFIVE_U_TEST].base);
 }
 
 static void riscv_sifive_u_machine_init(MachineClass *mc)
