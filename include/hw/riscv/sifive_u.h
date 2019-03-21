@@ -24,6 +24,7 @@
 #include "hw/riscv/sifive_cpu.h"
 #include "hw/riscv/sifive_u_prci.h"
 #include "hw/riscv/sifive_u_otp.h"
+#include "hw/riscv/sifive_gpio.h"
 
 #define TYPE_RISCV_U_SOC "riscv.sifive.u.soc"
 #define RISCV_U_SOC(obj) \
@@ -42,6 +43,7 @@ typedef struct SiFiveUSoCState {
     SiFiveUPRCIState prci;
     SiFiveUOTPState otp;
     CadenceGEMState gem;
+    SIFIVEGPIOState gpio;
 } SiFiveUSoCState;
 
 #define TYPE_RISCV_U_MACHINE MACHINE_TYPE_NAME("sifive_u")
@@ -64,6 +66,7 @@ typedef struct SiFiveUState {
 enum {
     SIFIVE_U_DEBUG,
     SIFIVE_U_MROM,
+    SIFIVE_U_TEST,
     SIFIVE_U_CLINT,
     SIFIVE_U_L2LIM,
     SIFIVE_U_PLIC,
@@ -72,6 +75,7 @@ enum {
     SIFIVE_U_UART1,
     SIFIVE_U_OTP,
     SIFIVE_U_FLASH0,
+    SIFIVE_U_GPIO0,
     SIFIVE_U_DRAM,
     SIFIVE_U_GEM,
     SIFIVE_U_GEM_MGMT
@@ -80,7 +84,8 @@ enum {
 enum {
     SIFIVE_U_UART0_IRQ = 4,
     SIFIVE_U_UART1_IRQ = 5,
-    SIFIVE_U_GEM_IRQ = 0x35
+    SIFIVE_U_GEM_IRQ = 0x35,
+    SIFIVE_U_GPIO0_IRQ0 = 7,
 };
 
 enum {

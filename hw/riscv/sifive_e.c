@@ -42,6 +42,7 @@
 #include "hw/riscv/sifive_plic.h"
 #include "hw/riscv/sifive_clint.h"
 #include "hw/riscv/sifive_uart.h"
+#include "hw/riscv/sifive_test.h"
 #include "hw/riscv/sifive_e.h"
 #include "hw/riscv/sifive_e_prci.h"
 #include "hw/riscv/boot.h"
@@ -57,6 +58,7 @@ static const struct MemmapEntry {
     [SIFIVE_E_DEBUG] =    {        0x0,      0x100 },
     [SIFIVE_E_MROM] =     {     0x1000,     0x2000 },
     [SIFIVE_E_OTP] =      {    0x20000,     0x2000 },
+    [SIFIVE_E_TEST] =     {   0x100000,     0x1000 },
     [SIFIVE_E_CLINT] =    {  0x2000000,    0x10000 },
     [SIFIVE_E_PLIC] =     {  0xc000000,  0x4000000 },
     [SIFIVE_E_AON] =      { 0x10000000,     0x8000 },
@@ -206,6 +208,8 @@ static void riscv_sifive_e_soc_realize(DeviceState *dev, Error **errp)
         memmap[SIFIVE_E_QSPI2].base, memmap[SIFIVE_E_QSPI2].size);
     create_unimplemented_device("riscv.sifive.e.pwm2",
         memmap[SIFIVE_E_PWM2].base, memmap[SIFIVE_E_PWM2].size);
+
+    sifive_test_create(memmap[SIFIVE_E_TEST].base);
 
     /* Flash memory */
     memory_region_init_rom(&s->xip_mem, OBJECT(dev), "riscv.sifive.e.xip",
