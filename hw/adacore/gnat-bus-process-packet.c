@@ -44,7 +44,9 @@ static inline
 int gnatbus_process_registerevent(GnatBus_Device              *qbdev,
                                   GnatBusPacket_RegisterEvent *event)
 {
-    trace_gnatbus_registerevent(event->expire_time, event->event);
+    trace_gnatbus_register_event(event->expire_time,
+                                 event->event_id,
+                                 event->event);
 
     gnatbus_add_event(qbdev, event->expire_time, event->event_id, event->event);
     return 0;

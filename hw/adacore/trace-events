@@ -37,7 +37,7 @@ hostfs_do_syscall(uint32_t id, uint32_t arg1, uint32_t arg2, uint32_t arg3, uint
 
 # gnat-bus-process-packet.c
 gnatbus_setirq(uint8_t line, uint8_t level) "Process SetIRQ line:0x%x level:0x%x"
-gnatbus_registerevent(uint64_t expire_time, uint64_t event) "Process Register Event expire_time:0x%016"PRIx64" event:0x%016"PRIx64
+gnatbus_register_event(uint64_t expire_time, uint32_t event_id, uint64_t event) "Process Register Event expire_time:0x%016"PRIx64" id:%d callback:0x%016"PRIx64
 gnatbus_resp_error(uint32_t request_id, uint32_t error_code) "Send Error Response request_id:0x%x error_code:0x%x"
 gnatbus_process_read(uint64_t addr, uint64_t len) "Process Read Request addr:0x%016"PRIx64" len:0x%016"PRIx64
 gnatbus_process_write(uint64_t addr, uint64_t len) "Process Write Request addr:0x%016"PRIx64" len:0x%016"PRIx64
@@ -51,7 +51,7 @@ gnatbus_send_and_wait_resp(void) "Send and wait for response"
 gnatbus_device_init(void) "Broadcast init event"
 gnatbus_device_exit(void) "Broadcast exit event"
 gnatbus_device_reset(void) "Broadcast reset event"
-gnatbus_trigger_event(uint64_t event, uint64_t expire_time, uint64_t now) "Send TriggerEvent event:0x%016"PRIx64" expire_time:0x%016"PRIx64" now:0x%016"PRIx64
+gnatbus_trigger_event(uint32_t event_id, uint64_t event, uint64_t expire_time, uint64_t now) "Send TriggerEvent id:%d callback:0x%016"PRIx64" expire_time:0x%016"PRIx64" now:0x%016"PRIx64
 gnatbus_send_read(uint64_t addr, uint64_t len) "Send Read Request addr:0x%016"PRIx64" len:0x%016"PRIx64
 gnatbus_send_write(uint64_t addr, uint64_t len) "Send Write Request addr:0x%016"PRIx64" len:0x%016"PRIx64
 gnatbus_set_blocking(bool enable) "Set IO blocking: %i"
