@@ -421,7 +421,10 @@ static void gnatbus_timer_tick_bh(void *opaque)
             trig.event_id    = event->event_id;
             trig.expire_time = event->expire_time;
 
-            trace_gnatbus_trigger_event(trig.event, trig.expire_time, now);
+            trace_gnatbus_trigger_event(trig.event_id,
+                                        trig.event,
+                                        trig.expire_time,
+                                        now);
             gnatbus_send(event->qbdev, (uint8_t *)&trig, sizeof(trig));
 
             g_free(event);
