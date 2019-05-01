@@ -994,7 +994,7 @@ static int unix_connect_saddr(UnixSocketAddress *saddr, Error **errp,
                  "%s",
                  saddr->path + 1);
     } else {
-        strncpy(un.sun_path, saddr->path, sizeof(un.sun_path));
+        memcpy(un.sun_path, saddr->path, pathlen);
     }
 
     /* connect to peer */
