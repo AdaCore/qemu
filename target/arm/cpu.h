@@ -764,6 +764,8 @@ struct ARMCPU {
     QEMUTimer *pmu_timer;
     /* GPIO outputs for generic timer */
     qemu_irq gt_timer_outputs[NUM_GTIMERS];
+    /* Generic timer scale */
+    uint32_t gtimer_scale;
     /* GPIO output for GICv3 maintenance interrupt signal */
     qemu_irq gicv3_maintenance_interrupt;
     /* GPIO output for the PMU interrupt */

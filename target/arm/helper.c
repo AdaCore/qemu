@@ -2387,7 +2387,9 @@ static CPAccessResult gt_stimer_access(CPUARMState *env,
 
 static uint64_t gt_get_countervalue(CPUARMState *env)
 {
-    return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / GTIMER_SCALE;
+    ARMCPU *cpu = ARM_CPU(arm_env_get_cpu(env));
+
+    return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / cpu->gtimer_scale;
 }
 
 static void gt_recalc_timer(ARMCPU *cpu, int timeridx)
@@ -2423,8 +2425,8 @@ static void gt_recalc_timer(ARMCPU *cpu, int timeridx)
          * set the timer for as far in the future as possible. When the
          * timer expires we will reset the timer for any remaining period.
          */
-        if (nexttick > INT64_MAX / GTIMER_SCALE) {
-            nexttick = INT64_MAX / GTIMER_SCALE;
+        if (nexttick > INT64_MAX / cpu->gtimer_scale) {
+            nexttick = INT64_MAX / cpu->gtimer_scale;
         }
         timer_mod(cpu->gt_timer[timeridx], nexttick);
         trace_arm_gt_recalc(timeridx, irqstate, nexttick);
@@ -2658,7 +2660,7 @@ void arm_gt_stimer_cb(void *opaque)
     gt_recalc_timer(cpu, GTIMER_SEC);
 }
 
-static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
+static ARMCPRegInfo generic_timer_cp_reginfo[] = {
     /* Note that CNTFRQ is purely reads-as-written for the benefit
      * of software; writing it doesn't actually change the timer frequency.
      * Our reset value matches the fixed frequency we implement the timer at.
@@ -2855,10 +2857,12 @@ static uint64_t gt_virt_cnt_read(CPUARMState *env, const ARMCPRegInfo *ri)
      * can't call gt_get_countervalue(env), instead we directly
      * call the lower level functions.
      */
-    return cpu_get_clock() / GTIMER_SCALE;
+    ARMCPU *cpu = ARM_CPU(arm_env_get_cpu(env));
+
+    return cpu_get_clock() / cpu->gtimer_scale;
 }
 
-static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
+static ARMCPRegInfo generic_timer_cp_reginfo[] = {
     { .name = "CNTFRQ_EL0", .state = ARM_CP_STATE_AA64,
       .opc0 = 3, .opc1 = 3, .crn = 14, .crm = 0, .opc2 = 0,
       .type = ARM_CP_CONST, .access = PL0_R /* no PL1_RW in linux-user */,
@@ -6359,6 +6363,15 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         define_arm_cp_regs(cpu, t2ee_cp_reginfo);
     }
     if (arm_feature(env, ARM_FEATURE_GENERIC_TIMER)) {
+        ARMCPRegInfo *info;
+        /* Fixup the frequency register.. */
+        for (info = generic_timer_cp_reginfo;
+             info && info->type != ARM_CP_SENTINEL; info++) {
+            if (!strcmp("CNTFRQ_EL0", info->name)) {
+                info->resetvalue = 1000 * 1000 * 1000 / cpu->gtimer_scale;
+                break;
+            }
+        }
         define_arm_cp_regs(cpu, generic_timer_cp_reginfo);
     }
     if (arm_feature(env, ARM_FEATURE_VAPA)) {
