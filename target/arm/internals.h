@@ -51,7 +51,7 @@ static inline bool excp_is_internal(int excp)
         || excp == EXCP_SEMIHOST;
 }
 
-/* Scale factor for generic timers, ie number of ns per tick.
+/* Default scale factor for generic timers, ie number of ns per tick.
  * This gives a 62.5MHz timer.
  */
 #define GTIMER_SCALE 16
