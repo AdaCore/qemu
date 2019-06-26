@@ -1,0 +1,1 @@
+system_ss.add(when: 'CONFIG_PHY', if_true: files('qemu-phy.c'))
