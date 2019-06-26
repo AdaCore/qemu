@@ -87,6 +87,8 @@ config IMX_FEC
 
 config CADENCE
     bool
+    select MARVELL
+    select DP83667
 
 config STELLARIS_ENET
     bool
