@@ -1,2 +1,6 @@
 config PHY
     bool
+
+config DP83667
+    bool
+    select PHY
