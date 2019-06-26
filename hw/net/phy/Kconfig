@@ -4,3 +4,7 @@ config PHY
 config DP83667
     bool
     select PHY
+
+config MARVELL
+    bool
+    select PHY
