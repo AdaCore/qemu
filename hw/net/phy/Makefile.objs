@@ -1,0 +1,2 @@
+common-obj-$(CONFIG_CADENCE) += qemu-phy.o
+
