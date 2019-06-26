@@ -71,3 +71,4 @@ system_ss.add(when: 'CONFIG_ROCKER', if_true: files(
 system_ss.add(files('rocker/rocker-hmp-cmds.c'))
 
 subdir('can')
+subdir('phy')
