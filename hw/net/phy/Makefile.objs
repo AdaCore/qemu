@@ -1,2 +1,2 @@
-common-obj-$(CONFIG_CADENCE) += qemu-phy.o
+common-obj-$(CONFIG_CADENCE) += qemu-phy.o marvell.o
 

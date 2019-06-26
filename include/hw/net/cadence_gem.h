@@ -29,6 +29,7 @@
 
 #include "net/net.h"
 #include "hw/sysbus.h"
+#include "hw/net/phy/marvell.h"
 
 #define CADENCE_GEM_MAXREG        (0x00000800 / 4) /* Last valid GEM address */
 
@@ -68,10 +69,8 @@ typedef struct CadenceGEMState {
     /* Mask of register bits which are write 1 to clear */
     uint32_t regs_w1c[CADENCE_GEM_MAXREG];
 
-    /* PHY registers backing store */
-    uint16_t phy_regs[32];
-
-    uint8_t phy_loop; /* Are we in phy loopback? */
+    QEMUPhy *phy;
+    char *phy_type;
 
     /* The current DMA descriptor pointers */
     uint32_t rx_desc_addr[MAX_PRIORITY_QUEUES];

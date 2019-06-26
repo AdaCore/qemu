@@ -239,44 +239,7 @@
 #define GEM_PHYMNTNC_REG       0x007C0000 /* register bits */
 #define GEM_PHYMNTNC_REG_SHIFT 18
 
-/* Marvell PHY definitions */
 #define BOARD_PHY_ADDRESS    23 /* PHY address we will emulate a device at */
-
-#define PHY_REG_CONTROL      0
-#define PHY_REG_STATUS       1
-#define PHY_REG_PHYID1       2
-#define PHY_REG_PHYID2       3
-#define PHY_REG_ANEGADV      4
-#define PHY_REG_LINKPABIL    5
-#define PHY_REG_ANEGEXP      6
-#define PHY_REG_NEXTP        7
-#define PHY_REG_LINKPNEXTP   8
-#define PHY_REG_100BTCTRL    9
-#define PHY_REG_1000BTSTAT   10
-#define PHY_REG_EXTSTAT      15
-#define PHY_REG_PHYSPCFC_CTL 16
-#define PHY_REG_PHYSPCFC_ST  17
-#define PHY_REG_INT_EN       18
-#define PHY_REG_INT_ST       19
-#define PHY_REG_EXT_PHYSPCFC_CTL  20
-#define PHY_REG_RXERR        21
-#define PHY_REG_EACD         22
-#define PHY_REG_LED          24
-#define PHY_REG_LED_OVRD     25
-#define PHY_REG_EXT_PHYSPCFC_CTL2 26
-#define PHY_REG_EXT_PHYSPCFC_ST   27
-#define PHY_REG_CABLE_DIAG   28
-
-#define PHY_REG_CONTROL_RST  0x8000
-#define PHY_REG_CONTROL_LOOP 0x4000
-#define PHY_REG_CONTROL_ANEG 0x1000
-
-#define PHY_REG_STATUS_LINK     0x0004
-#define PHY_REG_STATUS_ANEGCMPL 0x0020
-
-#define PHY_REG_INT_ST_ANEGCMPL 0x0800
-#define PHY_REG_INT_ST_LINKC    0x0400
-#define PHY_REG_INT_ST_ENERGY   0x0010
 
 /***********************************************************************/
 #define GEM_RX_REJECT                   (-1)
@@ -476,28 +439,6 @@ static void gem_init_register_masks(CadenceGEMState *s)
     s->regs_wo[GEM_NWCTRL]   = 0x00073E60;
     s->regs_wo[GEM_IER]      = 0x07FFFFFF;
     s->regs_wo[GEM_IDR]      = 0x07FFFFFF;
-}
-
-/*
- * phy_update_link:
- * Make the emulated PHY link state match the QEMU "interface" state.
- */
-static void phy_update_link(CadenceGEMState *s)
-{
-    DB_PRINT("down %d\n", qemu_get_queue(s->nic)->link_down);
-
-    /* Autonegotiation status mirrors link status.  */
-    if (qemu_get_queue(s->nic)->link_down) {
-        s->phy_regs[PHY_REG_STATUS] &= ~(PHY_REG_STATUS_ANEGCMPL |
-                                         PHY_REG_STATUS_LINK);
-        s->phy_regs[PHY_REG_INT_ST] |= PHY_REG_INT_ST_LINKC;
-    } else {
-        s->phy_regs[PHY_REG_STATUS] |= (PHY_REG_STATUS_ANEGCMPL |
-                                         PHY_REG_STATUS_LINK);
-        s->phy_regs[PHY_REG_INT_ST] |= (PHY_REG_INT_ST_LINKC |
-                                        PHY_REG_INT_ST_ANEGCMPL |
-                                        PHY_REG_INT_ST_ENERGY);
-    }
 }
 
 static int gem_can_receive(NetClientState *nc)
@@ -1218,7 +1159,7 @@ static void gem_transmit(CadenceGEMState *s)
                 gem_transmit_updatestats(s, tx_packet, total_bytes);
 
                 /* Send the packet somewhere */
-                if (s->phy_loop || (s->regs[GEM_NWCTRL] &
+                if (qemu_phy_loopback(s->phy) || (s->regs[GEM_NWCTRL] &
                                     GEM_NWCTRL_LOCALLOOP)) {
                     gem_receive(qemu_get_queue(s->nic), tx_packet,
                                 total_bytes);
@@ -1251,31 +1192,6 @@ static void gem_transmit(CadenceGEMState *s)
             gem_update_int_status(s);
         }
     }
-}
-
-static void gem_phy_reset(CadenceGEMState *s)
-{
-    memset(&s->phy_regs[0], 0, sizeof(s->phy_regs));
-    s->phy_regs[PHY_REG_CONTROL] = 0x1140;
-    s->phy_regs[PHY_REG_STATUS] = 0x7969;
-    s->phy_regs[PHY_REG_PHYID1] = 0x0141;
-    s->phy_regs[PHY_REG_PHYID2] = 0x0CC2;
-    s->phy_regs[PHY_REG_ANEGADV] = 0x01E1;
-    s->phy_regs[PHY_REG_LINKPABIL] = 0xCDE1;
-    s->phy_regs[PHY_REG_ANEGEXP] = 0x000F;
-    s->phy_regs[PHY_REG_NEXTP] = 0x2001;
-    s->phy_regs[PHY_REG_LINKPNEXTP] = 0x40E6;
-    s->phy_regs[PHY_REG_100BTCTRL] = 0x0300;
-    s->phy_regs[PHY_REG_1000BTSTAT] = 0x7C00;
-    s->phy_regs[PHY_REG_EXTSTAT] = 0x3000;
-    s->phy_regs[PHY_REG_PHYSPCFC_CTL] = 0x0078;
-    s->phy_regs[PHY_REG_PHYSPCFC_ST] = 0x7C00;
-    s->phy_regs[PHY_REG_EXT_PHYSPCFC_CTL] = 0x0C60;
-    s->phy_regs[PHY_REG_LED] = 0x4100;
-    s->phy_regs[PHY_REG_EXT_PHYSPCFC_CTL2] = 0x000A;
-    s->phy_regs[PHY_REG_EXT_PHYSPCFC_ST] = 0x848B;
-
-    phy_update_link(s);
 }
 
 static void gem_reset(DeviceState *d)
@@ -1316,43 +1232,9 @@ static void gem_reset(DeviceState *d)
         s->sar_active[i] = false;
     }
 
-    gem_phy_reset(s);
+    qemu_phy_reset(s->phy);
 
     gem_update_int_status(s);
-}
-
-static uint16_t gem_phy_read(CadenceGEMState *s, unsigned reg_num)
-{
-    DB_PRINT("reg: %d value: 0x%04x\n", reg_num, s->phy_regs[reg_num]);
-    return s->phy_regs[reg_num];
-}
-
-static void gem_phy_write(CadenceGEMState *s, unsigned reg_num, uint16_t val)
-{
-    DB_PRINT("reg: %d value: 0x%04x\n", reg_num, val);
-
-    switch (reg_num) {
-    case PHY_REG_CONTROL:
-        if (val & PHY_REG_CONTROL_RST) {
-            /* Phy reset */
-            gem_phy_reset(s);
-            val &= ~(PHY_REG_CONTROL_RST | PHY_REG_CONTROL_LOOP);
-            s->phy_loop = 0;
-        }
-        if (val & PHY_REG_CONTROL_ANEG) {
-            /* Complete autonegotiation immediately */
-            val &= ~PHY_REG_CONTROL_ANEG;
-            s->phy_regs[PHY_REG_STATUS] |= PHY_REG_STATUS_ANEGCMPL;
-        }
-        if (val & PHY_REG_CONTROL_LOOP) {
-            DB_PRINT("PHY placed in loopback\n");
-            s->phy_loop = 1;
-        } else {
-            s->phy_loop = 0;
-        }
-        break;
-    }
-    s->phy_regs[reg_num] = val;
 }
 
 /*
@@ -1383,7 +1265,7 @@ static uint64_t gem_read(void *opaque, hwaddr offset, unsigned size)
             if (phy_addr == BOARD_PHY_ADDRESS || phy_addr == 0) {
                 reg_num = (retval & GEM_PHYMNTNC_REG) >> GEM_PHYMNTNC_REG_SHIFT;
                 retval &= 0xFFFF0000;
-                retval |= gem_phy_read(s, reg_num);
+                retval |= qemu_phy_read(s->phy, reg_num);
             } else {
                 retval |= 0xFFFF; /* No device at this address */
             }
@@ -1502,7 +1384,7 @@ static void gem_write(void *opaque, hwaddr offset, uint64_t val,
             phy_addr = (val & GEM_PHYMNTNC_ADDR) >> GEM_PHYMNTNC_ADDR_SHFT;
             if (phy_addr == BOARD_PHY_ADDRESS || phy_addr == 0) {
                 reg_num = (val & GEM_PHYMNTNC_REG) >> GEM_PHYMNTNC_REG_SHIFT;
-                gem_phy_write(s, reg_num, val);
+                qemu_phy_write(s->phy, reg_num, val);
             }
         }
         break;
@@ -1522,7 +1404,7 @@ static void gem_set_link(NetClientState *nc)
     CadenceGEMState *s = qemu_get_nic_opaque(nc);
 
     DB_PRINT("\n");
-    phy_update_link(s);
+    qemu_phy_update_link(s->phy, qemu_get_queue(s->nic)->link_down);
     gem_update_int_status(s);
 }
 
@@ -1563,6 +1445,11 @@ static void gem_realize(DeviceState *dev, Error **errp)
 
     qemu_macaddr_default_if_unset(&s->conf.macaddr);
 
+    if (!s->phy_type) {
+        s->phy = QEMU_PHY(object_new(TYPE_MARVELL_PHY));
+    } else {
+        s->phy = QEMU_PHY(object_new(s->phy_type));
+    }
     s->nic = qemu_new_nic(&net_gem_info, &s->conf,
                           object_get_typename(OBJECT(dev)), dev->id, s);
 }
@@ -1593,8 +1480,6 @@ static const VMStateDescription vmstate_cadence_gem = {
     .minimum_version_id = 4,
     .fields = (VMStateField[]) {
         VMSTATE_UINT32_ARRAY(regs, CadenceGEMState, CADENCE_GEM_MAXREG),
-        VMSTATE_UINT16_ARRAY(phy_regs, CadenceGEMState, 32),
-        VMSTATE_UINT8(phy_loop, CadenceGEMState),
         VMSTATE_UINT32_ARRAY(rx_desc_addr, CadenceGEMState,
                              MAX_PRIORITY_QUEUES),
         VMSTATE_UINT32_ARRAY(tx_desc_addr, CadenceGEMState,
@@ -1606,6 +1491,7 @@ static const VMStateDescription vmstate_cadence_gem = {
 
 static Property gem_properties[] = {
     DEFINE_NIC_PROPERTIES(CadenceGEMState, conf),
+    DEFINE_PROP_STRING("phy-type", CadenceGEMState, phy_type),
     DEFINE_PROP_UINT32("revision", CadenceGEMState, revision,
                        GEM_MODID_VALUE),
     DEFINE_PROP_UINT8("num-priority-queues", CadenceGEMState,
