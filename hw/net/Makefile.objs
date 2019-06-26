@@ -24,6 +24,8 @@ common-obj-$(CONFIG_ALLWINNER_EMAC) += allwinner_emac.o
 common-obj-$(CONFIG_IMX_FEC) += imx_fec.o
 
 common-obj-$(CONFIG_CADENCE) += cadence_gem.o
+common-obj-$(CONFIG_CADENCE) += phy/
+
 common-obj-$(CONFIG_STELLARIS_ENET) += stellaris_enet.o
 common-obj-$(CONFIG_LANCE) += lance.o
 common-obj-$(CONFIG_SUNHME) += sunhme.o
