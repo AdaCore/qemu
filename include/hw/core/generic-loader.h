@@ -33,6 +33,7 @@ typedef struct GenericLoaderState {
     uint32_t cpu_num;
 
     char *file;
+    char *ascii;
 
     bool force_raw;
     bool data_be;
