@@ -102,12 +102,35 @@ static void generic_loader_realize(DeviceState *dev, Error **errp)
         } else if (s->data_len > 8) {
             error_setg(errp, "data-len cannot be greater then 8 bytes");
             return;
+        } else if (s->ascii) {
+            error_setg(errp, "Specifying ascii is not supported when "
+                       "loading memory values");
+            return;
+        }
+    } else if (s->ascii) {
+        /* User is loading an ascii string. */
+        if (s->file) {
+            error_setg(errp, "Specifying a file is not supported when loading"
+                       " ascii strings");
+            return;
+        } else if (s->force_raw) {
+            error_setg(errp, "Specifying force-raw is not supported when "
+                       "loading ascii strings");
+            return;
+        } else if (s->data_len) {
+            error_setg(errp, "Specifying data-len is not supported when "
+                       "loading ascii strings");
+            return;
+        } else if (s->data) {
+            error_setg(errp, "Specifying data is not supported when "
+                       "loading ascii strings");
+            return;
         }
     } else if (s->file || s->force_raw)  {
         /* User is loading an image */
-        if (s->data || s->data_len || s->data_be) {
-            error_setg(errp, "data can not be specified when loading an "
-                       "image");
+        if (s->data || s->data_len || s->data_be || s->ascii) {
+            error_setg(errp, "data or ascii can not be specified when loading"
+                       " an image");
             return;
         }
         /* The user specified a file, only set the PC if they also specified
@@ -118,9 +141,9 @@ static void generic_loader_realize(DeviceState *dev, Error **errp)
         }
     } else if (s->addr) {
         /* User is setting the PC */
-        if (s->data || s->data_len || s->data_be) {
-            error_setg(errp, "data can not be specified when setting a "
-                       "program counter");
+        if (s->data || s->data_len || s->data_be || s->ascii) {
+            error_setg(errp, "data or ascii can not be specified when setting"
+                       " a program counter");
             return;
         } else if (s->cpu_num == CPU_NONE) {
             error_setg(errp, "cpu_num must be specified when setting a "
@@ -216,6 +239,7 @@ static Property generic_loader_props[] = {
     DEFINE_PROP_UINT32("cpu-num", GenericLoaderState, cpu_num, CPU_NONE),
     DEFINE_PROP_BOOL("force-raw", GenericLoaderState, force_raw, false),
     DEFINE_PROP_STRING("file", GenericLoaderState, file),
+    DEFINE_PROP_STRING("ascii", GenericLoaderState, ascii),
     DEFINE_PROP_END_OF_LIST(),
 };
 
