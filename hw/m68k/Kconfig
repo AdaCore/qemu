@@ -22,3 +22,6 @@ config Q800
     select ESCC
     select ESP
     select DP8393X
+
+config MVME
+    bool
