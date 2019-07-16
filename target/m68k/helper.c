@@ -1372,6 +1372,7 @@ void HELPER(pflush)(CPUM68KState *env, uint32_t addr, uint32_t opmode)
 
 void HELPER(reset)(CPUM68KState *env)
 {
+    exit(0);
     /* FIXME: reset all except CPU */
 }
 #endif
