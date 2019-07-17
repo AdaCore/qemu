@@ -153,6 +153,8 @@ struct XlnxZynqMPState {
 
     /* CAN bus. */
     CanBusState *canbus[XLNX_ZYNQMP_NUM_CAN];
+    /* GTIMER scale */
+    uint32_t gtimer_scale;
 };
 
 #endif
