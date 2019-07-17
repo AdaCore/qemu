@@ -29,6 +29,11 @@
 #include "hw/adacore/qemu-plugin.h"
 #include "hw/adacore/gnat-bus.h"
 
+/* This has no meaning in the HW.. But the current gtimer model requires a
+   value for that. With our current runtimes setting that to 10 is correct
+   and produce the correct delays. (eg: 100MHz ticks for gtimer) */
+#define XLNX_ZYNQMP_DEFAULT_GTIMER_SCALE (10)
+
 #define GIC_NUM_SPI_INTR 160
 
 #define ARM_PHYS_TIMER_PPI  30
@@ -412,8 +417,13 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
                                 "reset-cbar", &error_abort);
         object_property_set_int(OBJECT(&s->apu_cpu[i]), num_apus,
                                 "core-count", &error_abort);
+        /* Forward the gtimer scale to the APUs. */
+        object_property_set_int(OBJECT(&s->apu_cpu[i]),
+                                s->gtimer_scale ? s->gtimer_scale : 1,
+                                "gtimer-scale", &error_abort);
         object_property_set_bool(OBJECT(&s->apu_cpu[i]), true, "realized",
                                  &err);
+
         if (err) {
             error_propagate(errp, err);
             return;
@@ -722,6 +732,8 @@ static Property xlnx_zynqmp_props[] = {
      */
     DEFINE_PROP_UINT32("apu-gic-revision", XlnxZynqMPState,
                        apu_gic_revision, 2),
+    DEFINE_PROP_UINT32("gtimer-scale", XlnxZynqMPState,
+                       gtimer_scale, XLNX_ZYNQMP_DEFAULT_GTIMER_SCALE),
     DEFINE_PROP_END_OF_LIST()
 };
 

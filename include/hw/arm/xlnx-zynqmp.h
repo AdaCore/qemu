@@ -124,6 +124,8 @@ typedef struct XlnxZynqMPState {
     bool has_rpu;
     /* GIC revision */
     uint32_t apu_gic_revision;
+    /* GTIMER scale */
+    uint32_t gtimer_scale;
 }  XlnxZynqMPState;
 
 #define XLNX_ZYNQMP_H
