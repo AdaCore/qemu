@@ -3213,6 +3213,27 @@ int main(int argc, char **argv, char **envp)
 #ifndef _WIN32
     signal(SIGTTOU, SIG_IGN);
 #endif
+#if defined(_WIN32)
+    /* When executing live idle loop an issue which might arrive is that the
+     * scheduler is not able to run the main-thread anymore because it get
+     * preempted by the VCPU thread. A solution for this problem is to put
+     * this thread in a higher priority so it preempt everybody to eg:
+     * trigger an IRQ from a timer or something along those lines. */
+    {
+        HANDLE handle = OpenThread(THREAD_SET_LIMITED_INFORMATION, FALSE,
+                                   GetCurrentThreadId());
+
+        if (!handle) {
+            printf("Can't get a thread handle: %d\n", GetLastError());
+            abort();
+        }
+
+        if (!SetThreadPriority(handle, THREAD_PRIORITY_ABOVE_NORMAL)) {
+            printf("Can't set thread priority: %d\n", GetLastError());
+            abort();
+        }
+    }
+#endif
 
     atexit(qemu_run_exit_notifiers);
     error_set_progname(argv[0]);
