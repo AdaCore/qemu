@@ -1233,7 +1233,7 @@ static void gem_reset(DeviceState *d)
     }
 
     qemu_phy_reset(s->phy);
-
+    qemu_phy_update_link(s->phy, qemu_get_queue(s->nic)->link_down);
     gem_update_int_status(s);
 }
 
