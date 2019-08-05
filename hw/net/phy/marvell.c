@@ -135,7 +135,12 @@ static void marvell_phy_write(QEMUPhy *phy, unsigned int reg_num,
     case PHY_REG_CONTROL:
         if (val & PHY_REG_CONTROL_RST) {
             /* Phy reset */
+            /* Keep the state of the link by looking at the LINK bit! */
+            int link_down =
+                (s->regs[PHY_REG_STATUS] & PHY_REG_STATUS_LINK) == 0;
+
             marvell_phy_reset(phy);
+            marvell_phy_update_link(phy, link_down);
             val &= ~(PHY_REG_CONTROL_RST | PHY_REG_CONTROL_LOOP);
             s->phy_loop = 0;
         }
