@@ -26,6 +26,7 @@
 #include "qapi/error.h"
 #include "hw/sysbus.h"
 #include "chardev/char-fe.h"
+#include "qemu/log.h"
 
 /* #define DEBUG_SCI */
 
@@ -71,6 +72,13 @@ typedef struct {
     uint32_t BRS;
 
     uint32_t SCIPIO0;
+    uint32_t SCIPIO1;
+    uint32_t SCIPIO2;
+    uint32_t SCIPIO3;
+    uint32_t SCIPIO4;
+    uint32_t SCIPIO5;
+    uint32_t SCIPIO6;
+    uint32_t SCIPIO7;
     uint32_t SCIPIO8;
 
 } sci_state;
@@ -244,10 +252,25 @@ static uint64_t sci_read(void *opaque, hwaddr offset, unsigned size)
         return 0;
     case 0x3C:
         return s->SCIPIO0;
+    case 0x40:
+        return s->SCIPIO1;
+    case 0x44:
+        return s->SCIPIO2;
+    case 0x48:
+        return s->SCIPIO3;
+    case 0x4C:
+        return s->SCIPIO4;
+    case 0x50:
+        return s->SCIPIO5;
+    case 0x54:
+        return s->SCIPIO6;
+    case 0x58:
+        return s->SCIPIO7;
     case 0x5C:
         return s->SCIPIO8;
     default:
-        hw_error("sci_read: Bad offset 0x%x\n", (int)offset);
+        qemu_log_mask(LOG_GUEST_ERROR, "sci_read: Bad offset 0x%x\n",
+                      (int)offset);
         return 0;
     }
 }
@@ -317,11 +340,33 @@ static void sci_write(void *opaque, hwaddr offset, uint64_t val, unsigned size)
     case 0x3C:
         s->SCIPIO0 = val & 0x3;
         break;
+    case 0x40:
+        s->SCIPIO1 = val & 0x3;
+        break;
+    case 0x44:
+        s->SCIPIO2 = val & 0x3;
+        break;
+    case 0x48:
+        s->SCIPIO3 = val & 0x3;
+        break;
+    case 0x4C:
+        s->SCIPIO4 = val & 0x3;
+        break;
+    case 0x50:
+        s->SCIPIO5 = val & 0x3;
+        break;
+    case 0x54:
+        s->SCIPIO6 = val & 0x3;
+        break;
+    case 0x58:
+        s->SCIPIO7 = val & 0x3;
+        break;
     case 0x5C:
         s->SCIPIO8 = val & 0x3;
         break;
     default:
-        hw_error("sci_write: Bad offset 0x%x\n", (int)offset);
+        qemu_log_mask(LOG_GUEST_ERROR,
+                      "sci_write: Bad offset 0x%x\n", (int)offset);
         return;
     }
 }
