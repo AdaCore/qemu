@@ -1,0 +1,6 @@
+Code-Review+2: Frédéric Konrad <konrad@adacore.com>
+Submitted-by: Jerome Lambourg <lambourg@adacore.com>
+Submitted-at: Tue, 06 Aug 2019 15:52:01 +0200
+Reviewed-on: https://git.adacore.com/58419
+Project: qemu
+Branch: refs/heads/qemu-stable-3.0.0
