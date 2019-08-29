@@ -762,10 +762,19 @@ int64_t helper_cvtsd2sq(CPUX86State *env, ZMMReg *s)
 /* float to integer truncated */
 void helper_cvttps2dq(CPUX86State *env, ZMMReg *d, ZMMReg *s)
 {
-    d->ZMM_L(0) = float32_to_int32_round_to_zero(s->ZMM_S(0), &env->sse_status);
-    d->ZMM_L(1) = float32_to_int32_round_to_zero(s->ZMM_S(1), &env->sse_status);
-    d->ZMM_L(2) = float32_to_int32_round_to_zero(s->ZMM_S(2), &env->sse_status);
-    d->ZMM_L(3) = float32_to_int32_round_to_zero(s->ZMM_S(3), &env->sse_status);
+    float32 int_min = int32_to_float32(INT_MIN, &env->sse_status);
+    float32 int_max = int32_to_float32(INT_MAX, &env->sse_status);
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        if (float32_lt_quiet(s->ZMM_S(i), int_min, &env->sse_status) ||
+            float32_lt_quiet(int_max, s->ZMM_S(i), &env->sse_status)) {
+            d->ZMM_L(i) = 0x80000000;
+        } else {
+            d->ZMM_L(i) = float32_to_int32_round_to_zero(s->ZMM_S(i),
+                                                         &env->sse_status);
+        }
+    }
 }
 
 void helper_cvttpd2dq(CPUX86State *env, ZMMReg *d, ZMMReg *s)
