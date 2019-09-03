@@ -45,20 +45,7 @@ static void miim_read_cycle(eTSEC *etsec)
     (void)phy; /* Unreferenced */
     addr = etsec->regs[MIIMADD].value & 0x1F;
 
-    switch (addr) {
-    case MIIM_CONTROL:
-        value = etsec->phy_control;
-        break;
-    case MIIM_STATUS:
-        value = etsec->phy_status;
-        break;
-    case MIIM_T2_STATUS:
-        value = 0x1800;           /* Local and remote receivers OK */
-        break;
-    default:
-        value = 0x0;
-        break;
-    };
+    value = qemu_phy_read(etsec->phy, addr);
 
 #ifdef DEBUG_MIIM
     qemu_log("%s phy:%d addr:0x%x value:0x%x\n", __func__, phy, addr, value);
@@ -78,17 +65,10 @@ static void miim_write_cycle(eTSEC *etsec)
     addr  = etsec->regs[MIIMADD].value & 0x1F;
     value = etsec->regs[MIIMCON].value & 0xffff;
 
+    qemu_phy_write(etsec->phy, addr, value);
 #ifdef DEBUG_MIIM
     qemu_log("%s phy:%d addr:0x%x value:0x%x\n", __func__, phy, addr, value);
 #endif
-
-    switch (addr) {
-    case MIIM_CONTROL:
-        etsec->phy_control = value & ~(0x8100);
-        break;
-    default:
-        break;
-    };
 }
 
 void etsec_write_miim(eTSEC          *etsec,
@@ -134,14 +114,4 @@ void etsec_write_miim(eTSEC          *etsec,
         }
     }
 
-}
-
-void etsec_miim_link_status(eTSEC *etsec, NetClientState *nc)
-{
-    /* Set link status */
-    if (nc->link_down) {
-        etsec->phy_status &= ~MII_SR_LINK_STATUS;
-    } else {
-        etsec->phy_status |= MII_SR_LINK_STATUS;
-    }
 }
