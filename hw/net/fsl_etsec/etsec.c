@@ -333,13 +333,7 @@ static void etsec_reset(DeviceState *d)
     etsec->rx_buffer     = NULL;
     etsec->rx_buffer_len = 0;
 
-    etsec->phy_status =
-        MII_SR_EXTENDED_CAPS    | MII_SR_LINK_STATUS   | MII_SR_AUTONEG_CAPS  |
-        MII_SR_AUTONEG_COMPLETE | MII_SR_PREAMBLE_SUPPRESS |
-        MII_SR_EXTENDED_STATUS  | MII_SR_100T2_HD_CAPS | MII_SR_100T2_FD_CAPS |
-        MII_SR_10T_HD_CAPS      | MII_SR_10T_FD_CAPS   | MII_SR_100X_HD_CAPS  |
-        MII_SR_100X_FD_CAPS     | MII_SR_100T4_CAPS;
-
+    qemu_phy_reset(etsec->phy);
     etsec_update_irq(etsec);
 }
 
@@ -370,7 +364,7 @@ static void etsec_set_link_status(NetClientState *nc)
 {
     eTSEC *etsec = qemu_get_nic_opaque(nc);
 
-    etsec_miim_link_status(etsec, nc);
+    qemu_phy_update_link(etsec->phy, nc->link_down);
 }
 
 static NetClientInfo net_etsec_info = {
@@ -406,6 +400,8 @@ static void etsec_instance_init(Object *obj)
     sysbus_init_irq(sbd, &etsec->tx_irq);
     sysbus_init_irq(sbd, &etsec->rx_irq);
     sysbus_init_irq(sbd, &etsec->err_irq);
+
+    etsec->phy = QEMU_PHY(object_new(TYPE_DP83867_PHY));
 }
 
 static Property etsec_properties[] = {
