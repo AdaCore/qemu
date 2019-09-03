@@ -29,6 +29,7 @@
 #include "hw/sysbus.h"
 #include "net/net.h"
 #include "hw/ptimer.h"
+#include "hw/net/phy/dp83867.h"
 
 /* Buffer Descriptors */
 
@@ -137,9 +138,8 @@ typedef struct eTSEC {
     qemu_irq     rx_irq;
     qemu_irq     err_irq;
 
-
-    uint16_t phy_status;
-    uint16_t phy_control;
+    /* PHY */
+    QEMUPhy *phy;
 
     /* Polling */
     QEMUBH *bh;
