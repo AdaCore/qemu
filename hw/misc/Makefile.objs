@@ -97,3 +97,4 @@ obj-$(CONFIG_TMS570) += tms570_gio.o
 obj-y += qsp_sys_reg.o
 obj-y += fixed-clock.o
 obj-$(CONFIG_MVME) += mc68901.o
+obj-y += xilinx_ddrc.o
