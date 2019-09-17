@@ -123,6 +123,9 @@ config TZ_MSC
 config TZ_PPC
     bool
 
+config ZYNQ_DDRC
+    bool
+
 config IOTKIT_SECCTL
     bool
 
