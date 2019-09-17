@@ -274,6 +274,10 @@ static void zynq_slcr_reset(DeviceState *d)
     s->regs[DDRIOB + 4] = s->regs[DDRIOB + 5] = s->regs[DDRIOB + 6]
                         = 0x00000e00;
     s->regs[DDRIOB + 12] = 0x00000021;
+    /* This is probably not what happen in reality but since we don't model
+     * the registers properly and that it can hang the guest polling on this
+     * bit lets do it like that. */
+    s->regs[DDRIOB + 13] = 0x00002000;
 }
 
 
