@@ -152,6 +152,7 @@ DEF("accel", HAS_ARG, QEMU_OPTION_accel,
     "                split-wx=on|off (enable TCG split w^x mapping)\n"
     "                tb-size=n (TCG translation block cache size)\n"
     "                dirty-ring-size=n (KVM dirty ring GFN count, default 0)\n"
+    "                forbid-mmio-exec=on|off (Forbid the execution from MMIO)\n"
     "                thread=single|multi (enable multi-threaded TCG)\n", QEMU_ARCH_ALL)
 SRST
 ``-accel name[,prop=value[,...]]``
@@ -184,6 +185,10 @@ SRST
 
     ``tb-size=n``
         Controls the size (in MiB) of the TCG translation block cache.
+
+    ``forbid-mmio-exec=on|off``
+        Controls whether execution from non ROM or RAM region is allowed or
+        not.
 
     ``thread=single|multi``
         Controls number of TCG threads. When the TCG is multi-threaded

@@ -44,6 +44,7 @@ struct TCGState {
 
     bool mttcg_enabled;
     int splitwx_enabled;
+    bool forbid_mmio_exec;
     unsigned long tb_size;
 };
 typedef struct TCGState TCGState;
@@ -115,6 +116,7 @@ static void tcg_accel_instance_init(Object *obj)
 }
 
 bool mttcg_enabled;
+bool forbid_mmio_exec;
 
 static int tcg_init_machine(MachineState *ms)
 {
@@ -127,6 +129,7 @@ static int tcg_init_machine(MachineState *ms)
 
     tcg_allowed = true;
     mttcg_enabled = s->mttcg_enabled;
+    forbid_mmio_exec = s->forbid_mmio_exec;
 
     page_init();
     tb_htable_init();
@@ -180,6 +183,20 @@ static void tcg_set_thread(Object *obj, const char *value, Error **errp)
     }
 }
 
+static bool get_forbid_mmio_exec(Object *obj, Error **errp)
+{
+    TCGState *s = TCG_STATE(obj);
+
+    return s->forbid_mmio_exec;
+}
+
+static void set_forbid_mmio_exec(Object *obj, bool value, Error **errp)
+{
+    TCGState *s = TCG_STATE(obj);
+
+    s->forbid_mmio_exec = value;
+}
+
 static void tcg_get_tb_size(Object *obj, Visitor *v,
                             const char *name, void *opaque,
                             Error **errp)
@@ -226,6 +243,10 @@ static void tcg_accel_class_init(ObjectClass *oc, void *data)
     object_class_property_add_str(oc, "thread",
                                   tcg_get_thread,
                                   tcg_set_thread);
+
+    object_class_property_add_bool(oc, "forbid-mmio-exec",
+                                   get_forbid_mmio_exec,
+                                   set_forbid_mmio_exec);
 
     object_class_property_add(oc, "tb-size", "int",
         tcg_get_tb_size, tcg_set_tb_size,

@@ -1534,7 +1534,22 @@ tb_page_addr_t get_page_addr_code_hostp(CPUArchState *env, target_ulong addr,
         if (hostp) {
             *hostp = NULL;
         }
-        return -1;
+
+        if (unlikely(qemu_tcg_mmio_exec_forbidden())) {
+            /* We passed the "forbid_mmio_exec" option. */
+            error_report("Trying to execute code outside RAM or ROM at 0x"
+                         TARGET_FMT_lx, addr);
+            error_printf("This happen because forbid-mmio-exec option has"
+                         " been enabled.\n\n");
+            qemu_log_mask(LOG_GUEST_ERROR, "qemu: fatal: Trying to execute"
+                          " code outside RAM or ROM at 0x" TARGET_FMT_lx
+                          "\n", addr);
+            log_cpu_state_mask(LOG_GUEST_ERROR, env_cpu(env),
+                               CPU_DUMP_FPU | CPU_DUMP_CCOP);
+            exit(1);
+        } else {
+            return -1;
+        }
     }
 
     p = (void *)((uintptr_t)addr + entry->addend);
