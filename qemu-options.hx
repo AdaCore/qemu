@@ -118,11 +118,14 @@ Select CPU model (@code{-cpu help} for list and additional feature selection)
 ETEXI
 
 DEF("accel", HAS_ARG, QEMU_OPTION_accel,
-    "-accel [accel=]accelerator[,thread=single|multi]\n"
+    "-accel [accel=]accelerator[,thread=single|multi]"
+    "[,forbid-mmio-exec=on|off]\n"
     "                select accelerator (kvm, xen, hax, hvf, whpx or tcg; use 'help' for a list)\n"
-    "                thread=single|multi (enable multi-threaded TCG)\n", QEMU_ARCH_ALL)
+    "                thread=single|multi (enffable multi-threaded TCG)\n"
+    "                forbid-mmio-exec=on|off (Forbid the execution from MMIO)"
+    "\n", QEMU_ARCH_ALL)
 STEXI
-@item -accel @var{name}[,prop=@var{value}[,...]]
+@item -accel @var{name}[,prop=@var{value}][,forbid-mmio-exec=@var{value}]
 @findex -accel
 This is used to enable an accelerator. Depending on the target architecture,
 kvm, xen, hax, hvf, whpx or tcg can be available. By default, tcg is used. If there is
@@ -134,6 +137,8 @@ Controls number of TCG threads. When the TCG is multi-threaded there will be one
 thread per vCPU therefor taking advantage of additional host cores. The default
 is to enable multi-threading where both the back-end and front-ends support it and
 no incompatible TCG features have been enabled (e.g. icount/replay).
+@item forbid-mmio-exec=on|off
+Controls whether execution from non ROM or RAM region is allowed are not.
 @end table
 ETEXI
 

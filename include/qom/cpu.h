@@ -484,6 +484,15 @@ extern bool mttcg_enabled;
 #define qemu_tcg_mttcg_enabled() (mttcg_enabled)
 
 /**
+ * qemu_tcg_mmio_exec_forbidden:
+ * Check whether the execution from MMIO should be forbidden or not.
+ *
+ * Returns: %true if we can't execute code from MMIO %false otherwise.
+ */
+extern bool forbid_mmio_exec;
+#define qemu_tcg_mmio_exec_forbidden() (forbid_mmio_exec)
+
+/**
  * cpu_paging_enabled:
  * @cpu: The CPU whose state is to be inspected.
  *

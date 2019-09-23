@@ -1060,7 +1060,22 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
          *    than a target page, so we must redo the MMU check every insn
          *  - TLB_MMIO: region is not backed by RAM
          */
-        return -1;
+        if (unlikely(qemu_tcg_mmio_exec_forbidden()) &&
+            (entry->addr_code & TLB_MMIO)) {
+            /* We passed the "forbid_mmio_exec" option. */
+            error_report("Trying to execute code outside RAM or ROM at 0x"
+                         TARGET_FMT_lx, addr);
+            error_printf("This happen because forbid-mmio-exec option has"
+                         " been enabled.\n\n");
+            qemu_log_mask(LOG_GUEST_ERROR, "qemu: fatal: Trying to execute"
+                          " code outside RAM or ROM at 0x" TARGET_FMT_lx
+                          "\n", addr);
+            log_cpu_state_mask(LOG_GUEST_ERROR, ENV_GET_CPU(env),
+                               CPU_DUMP_FPU | CPU_DUMP_CCOP);
+            exit(1);
+        } else {
+            return -1;
+        }
     }
 
     p = (void *)((uintptr_t)addr + entry->addend);

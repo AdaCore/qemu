@@ -157,6 +157,7 @@ typedef struct TimersState {
 
 static TimersState timers_state;
 bool mttcg_enabled;
+bool forbid_mmio_exec;
 
 /*
  * We default to false if we know other options have been enabled
@@ -203,6 +204,7 @@ static bool default_mttcg_enabled(void)
 void qemu_tcg_configure(QemuOpts *opts, Error **errp)
 {
     const char *t = qemu_opt_get(opts, "thread");
+
     if (t) {
         if (strcmp(t, "multi") == 0) {
             if (TCG_OVERSIZED_GUEST) {
@@ -229,6 +231,8 @@ void qemu_tcg_configure(QemuOpts *opts, Error **errp)
     } else {
         mttcg_enabled = default_mttcg_enabled();
     }
+
+    forbid_mmio_exec = qemu_opt_get_bool(opts, "forbid-mmio-exec", false);
 }
 
 /* The current number of executed instructions is based on what we

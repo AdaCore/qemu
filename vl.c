@@ -311,6 +311,11 @@ static QemuOptsList qemu_accel_opts = {
             .type = QEMU_OPT_STRING,
             .help = "Enable/disable multi-threaded TCG",
         },
+        {
+            .name = "forbid-mmio-exec",
+            .type = QEMU_OPT_BOOL,
+            .help = "Enable/disable execution from MMIO",
+        },
         { /* end of list */ }
     },
 };
