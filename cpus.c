@@ -165,7 +165,7 @@ typedef struct TimersState {
 
 static TimersState timers_state;
 bool mttcg_enabled;
-
+bool forbid_mmio_exec;
 
 /* The current number of executed instructions is based on what we
  * originally budgeted minus the current state of the decrementing
