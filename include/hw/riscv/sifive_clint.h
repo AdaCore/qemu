@@ -48,7 +48,7 @@ enum {
 };
 
 enum {
-    SIFIVE_CLINT_TIMEBASE_FREQ = 10000000
+    SIFIVE_CLINT_TIMEBASE_FREQ = 1000000
 };
 
 #endif
