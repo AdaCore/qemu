@@ -1470,6 +1470,17 @@ static void *qemu_tcg_rr_cpu_thread_fn(void *arg)
 {
     CPUState *cpu = arg;
 
+    /* Special note for MinGW (at least for 6.0.0):
+     *
+     * beginthreadex configure the x87 FPU with a 53bits precision.  This
+     * breaks some of the long double operations which are required for some
+     * guest instructions.  eg: fmal, powl, etc..  So as a workaround let's
+     * reinitialize the FPU here until we have a correct fix for that in
+     * MinGW.  */
+    #ifdef __MINGW32__
+    __asm__ __volatile__ ("finit");
+    #endif
+
     assert(tcg_enabled());
     rcu_register_thread();
     tcg_register_thread();
@@ -1712,6 +1723,17 @@ static void CALLBACK dummy_apc_func(ULONG_PTR unused)
 static void *qemu_tcg_cpu_thread_fn(void *arg)
 {
     CPUState *cpu = arg;
+
+    /* Special note for MinGW (at least for 6.0.0):
+     *
+     * beginthreadex configure the x87 FPU with a 53bits precision.  This
+     * breaks some of the long double operations which are required for some
+     * guest instructions.  eg: fmal, powl, etc..  So as a workaround let's
+     * reinitialize the FPU here until we have a correct fix for that in
+     * MinGW.  */
+    #ifdef __MINGW32__
+    __asm__ __volatile__ ("finit");
+    #endif
 
     assert(tcg_enabled());
     g_assert(!use_icount);
