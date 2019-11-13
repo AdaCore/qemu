@@ -1,5 +1,5 @@
 [gerrit]
 host = git.adacore.com
 project = qemu
-defaultbranch = release-19.2
+defaultbranch = release-19-sustained
 defaultremote = origin
