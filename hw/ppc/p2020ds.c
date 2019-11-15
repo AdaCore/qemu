@@ -712,7 +712,7 @@ static void p2020ds_init(MachineState *machine)
     if (kernel_filename) {
         int dtb_size;
 
-        kernel_size = load_elf(kernel_filename, NULL, NULL, &elf_entry,
+        kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, &elf_entry,
                                &elf_lowaddr, NULL, 1, PPC_ELF_MACHINE, 0, 0);
 
         /* XXX try again as binary */
