@@ -218,7 +218,7 @@ static void mvme133_init(MachineState *machine)
     reset->pc = 0xffff0008;
 
     if (kernel_filename) {
-        kernel_size = load_elf(kernel_filename, NULL, NULL, &elf_entry,
+        kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, &elf_entry,
                                NULL, &kernel_end, 1, EM_68K, 0, 0);
 
         if (kernel_size < 0) {
