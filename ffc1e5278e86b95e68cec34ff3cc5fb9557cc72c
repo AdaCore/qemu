@@ -1,0 +1,6 @@
+Code-Review+2: Frédéric Konrad <konrad@adacore.com>
+Submitted-by: Fabien Chouteau <chouteau@adacore.com>
+Submitted-at: Tue, 10 Dec 2019 14:28:10 +0100
+Reviewed-on: https://git.adacore.com/64733
+Project: qemu
+Branch: refs/heads/release-lts-19
