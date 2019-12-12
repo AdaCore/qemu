@@ -42,7 +42,7 @@ static inline void gen_store_gpr64(int reg, TCGv_i64 t)
 #define GEN_SPE(name0, name1, opc2, opc3, inval0, inval1, type)         \
 static void glue(gen_, name0##_##name1)(DisasContext *ctx)                    \
 {                                                                             \
-    gen_update_nip(ctx, ctx->base.pc_next - 4);                               \
+    gen_update_nip(ctx, ctx->nip - 4);                                        \
     if (Rc(ctx->opcode))                                                      \
         gen_##name1(ctx);                                                     \
     else                                                                      \
