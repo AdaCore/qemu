@@ -1,0 +1,6 @@
+Code-Review+2: Patrick Bernardi <bernardi@adacore.com>
+Submitted-by: Patrick Bernardi <bernardi@adacore.com>
+Submitted-at: Thu, 09 Jan 2020 20:48:44 +0100
+Reviewed-on: https://git.adacore.com/65853
+Project: qemu
+Branch: refs/heads/qemu-stable-3.0.0
