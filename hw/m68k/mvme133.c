@@ -1,7 +1,7 @@
 /*
  * MVME133 QEMU Implementation
  *
- * Copyright (c) 2019 AdaCore
+ * Copyright (c) 2019-2020 AdaCore
  *
  *  Developed by :
  *  Frederic Konrad   <frederic.konrad@adacore.com>
@@ -142,6 +142,13 @@ typedef struct reset_data {
     uint32_t pc;
 } reset_data;
 
+static void mvme133_watchdog_expired(void *opaque, int n, int level)
+{
+    if (level) {
+        qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
+    }
+}
+
 static void mvme133_reset(void *opaque)
 {
     reset_data *data = opaque;
@@ -211,11 +218,34 @@ static void mvme133_init(MachineState *machine)
                                 &inter->IO);
     mc68901 = MC68901(object_new(TYPE_MC68901));
     qdev_prop_set_chr(DEVICE(mc68901), "chardev", serial_hd(0));
+    /* The MC68901 is apparently driven by a 1.23MHz XTAL according to the
+     * MVME133 Users Manual (1986) section 4.3.10.1.  */
+    qdev_prop_set_uint32(DEVICE(mc68901), "timer_freq", 1230000);
     object_property_set_bool(OBJECT(mc68901), true, "realized", &error_fatal);
 
     inter->A = sysbus_mmio_get_region(SYS_BUS_DEVICE(mc68901), 0);
 
     reset->pc = 0xffff0008;
+
+    /* Here is the layout of the different Timer output signals from the
+     * MC68901 (MVME133 UM (1986) section 4.3.10.2):
+     *
+     * TimerA output is capable of generating a periodic interrupt.  This is
+     * unimplemented for now.
+     *
+     * TimerB output is connected through the Watchdog Reset Enable jumper
+     * (J2) to the RESET signal.  Let's assume that this is always enabled
+     * and thus that the TimerB going up will always reset the board.
+     *
+     * TimerC output is used as a baudrate generator for the serial port, but
+     * we will simply ignore that since we won't do a cycle accurate modeling
+     * and the qemu_clock framework is not compatible with the GPIO framework.
+     *
+     * TimerD output is not bound.
+     */
+    qdev_connect_gpio_out(DEVICE(mc68901), MC68901_TBO,
+                          qemu_allocate_irq(&mvme133_watchdog_expired, NULL,
+                                            0));
 
     if (kernel_filename) {
         kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, &elf_entry,
