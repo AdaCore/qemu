@@ -1,7 +1,7 @@
 /*
  * MC68901 QEMU Implementation
  *
- * Copyright (c) 2019 AdaCore
+ * Copyright (c) 2019-2020 AdaCore
  *
  *  Developed by :
  *  Frederic Konrad   <frederic.konrad@adacore.com>
@@ -28,6 +28,14 @@
 #include "hw/sysbus.h"
 
 #define MC68901_TOTAL_REGS (0x30)
+#define MC68901_TIMER_COUNT (4)
+
+typedef enum MC68901TimerOutput {
+    MC68901_TAO = 0,
+    MC68901_TBO = 1,
+    MC68901_TC0 = 2,
+    MC68901_TD0 = 3,
+} MC68901TimerOutput;
 
 typedef struct MC68901State {
     SysBusDevice parent_obj;
@@ -42,6 +50,14 @@ typedef struct MC68901State {
     int buffer_full;
     uint8_t receive_buf;
     /* Transmiter */
+
+    /* Timers */
+    uint32_t timer_freq;
+    qemu_irq txo[MC68901_TIMER_COUNT];
+    struct MC68901Timer {
+        uint8_t id;
+        QEMUTimer qemu_timer;
+    } timers[MC68901_TIMER_COUNT];
 } MC68901State;
 
 #define TYPE_MC68901 "mc68901"

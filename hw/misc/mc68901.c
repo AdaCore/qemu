@@ -1,7 +1,7 @@
 /*
  * MC68901 QEMU Implementation
  *
- * Copyright (c) 2019 AdaCore
+ * Copyright (c) 2019-2020 AdaCore
  *
  *  Developed by :
  *  Frederic Konrad   <frederic.konrad@adacore.com>
@@ -25,6 +25,7 @@
 #include "hw/misc/mc68901.h"
 #include "qemu/log.h"
 #include "qemu/bitops.h"
+#include "qapi/error.h"
 
 /* This model is a multi-function peripheral used on the MVME133 board with
  * the M68020 chip.  For the moment only the USART part is implemented.  */
@@ -72,6 +73,161 @@
 #define MC68901_TSR_END_SHIFT (4)
 #define MC68901_TSR_TE_SHIFT  (0)
 #define MC68901_UDR_ADDR   (0x2F >> 1)
+
+static uint64_t mc68901_timer_prescaler(MC68901State *s, int id)
+{
+    const uint8_t prescaler[8] = {0, 4, 10, 16, 50, 64, 100, 200};
+
+    switch (id) {
+    case 0:
+    case 1:
+        return prescaler[extract32(s->regs[id == 0 ? MC68901_TACR_ADDR
+                                           : MC68901_TBCR_ADDR], 0, 3)];
+    case 2:
+    case 3:
+        return prescaler[extract32(s->regs[MC68901_TCDCR_ADDR],
+                                   id == 2 ? 4 : 0, 3)];
+    default:
+        abort();
+        return 0;
+    }
+}
+
+static int mc68901_timer_stopped(MC68901State *s, int id)
+{
+    return mc68901_timer_prescaler(s, id) == 0;
+}
+
+static uint64_t mc68901_timer_counter(MC68901State *s, int id)
+{
+    assert(id < 4);
+    /* A 0 loaded counter will goes through the 256 cycles.  */
+    return ((uint8_t)s->regs[MC68901_TADR_ADDR + id] - 1);
+}
+
+static uint64_t mc68901_timer_next_deadline(MC68901State *s, int id)
+{
+    return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL)
+        + muldiv64((mc68901_timer_counter(s, id) + 1)
+                    * mc68901_timer_prescaler(s, id),
+                   NANOSECONDS_PER_SECOND,
+                   s->timer_freq);
+}
+
+static void mc68901_timer_start(MC68901State *s, int id)
+{
+    timer_mod(&s->timers[id].qemu_timer, mc68901_timer_next_deadline(s, id));
+}
+
+static void mc68901_timer_expired(void *opaque)
+{
+    struct MC68901Timer *mc68901_timer = (struct MC68901Timer *)opaque;
+    uint8_t id = mc68901_timer->id;
+    MC68901State *s = MC68901(DO_UPCAST(MC68901State, timers[id],
+                                        mc68901_timer));
+    /* Better be carefull with the trick above.  */
+    assert(s);
+
+    if (mc68901_timer_stopped(s, id)) {
+        /* Timer has been stopped while running.  Do nothing.  */
+        return;
+    }
+
+    /* XXX: Implements interrupt.  */
+
+    /* Pulse the corresponding TXO GPIO line.  */
+    qemu_irq_pulse(s->txo[id]);
+
+    /* Restart the timer for next time.  */
+    mc68901_timer_start(s, id);
+}
+
+static void mc68901_timer_control_update(MC68901State *s, uint32_t offset,
+                                         uint8_t value)
+{
+    if ((offset == MC68901_TACR_ADDR) || (offset == MC68901_TBCR_ADDR)) {
+        value = value & 0x1F;
+    } else {
+        value = value & 0x77;
+    }
+
+    if (s->regs[offset] == value) {
+        /* The registers didn't change, nothing to do.  */
+        return;
+    }
+
+    switch (offset) {
+    case MC68901_TACR_ADDR:
+    case MC68901_TBCR_ADDR:
+        if (extract32(value, 3, 1) || extract32(value, 4, 1)) {
+            /* Pulse Width Mode is not implemented.  Let's ignore that.  */
+            qemu_log_mask(LOG_GUEST_ERROR, "mc68901: Pulse Width Modulation "
+                          "is not implemented (ignored).\n");
+            /* But write the anyway so we detect further changes on the
+             * register.  */
+            s->regs[offset] = value;
+            return;
+        }
+
+        if (!extract32(value, 0, 4)) {
+            /* Timer has been stopped, this will be handled at the next timer
+             * expiration so there is nothing to do.  */
+            s->regs[offset] = value;
+            return;
+        }
+
+        /* At this point this is either starting the timer, or just changing
+         * it's prescaler.  For the former just start the timer.  For the
+         * latter just ignore the side effect it will be handled at the next
+         * timer expiration.  */
+        if (extract32(s->regs[offset], 0, 4)) {
+            /* The timer was active.  Handle the change in the next timer
+             * expiration.  */
+            s->regs[offset] = value;
+            return;
+        }
+
+        s->regs[offset] = value;
+        mc68901_timer_start(s, offset == MC68901_TACR_ADDR ? 0 : 1);
+        break;
+    case MC68901_TCDCR_ADDR:
+    {
+        int i;
+
+        for (i = 0; i < 2; i++) {
+            int timer_bitshift = i << 2;
+
+            if ((s->regs[offset] ^ value) & (i == 0 ? 0x07 : 0x70)) {
+                /* Something changed for TimerC.  */
+                if (!extract32(value, timer_bitshift, 3)) {
+                    /* Timer has been stopped.  Update its control register
+                     * bits and do nothing more about it.  This will be
+                     * handled at next timer expiration.  */
+                    s->regs[offset] = deposit32(s->regs[offset],
+                                                timer_bitshift, 3, 0);
+                } else {
+                    /* Same process as above:  Either we are starting the
+                     * timer, or we are changing its prescaler.  The former
+                     * is handled here, the latter is handled at the next
+                     * timer expiration.  */
+                    if (extract32(s->regs[offset], timer_bitshift, 3)) {
+                        s->regs[offset] = deposit32(s->regs[offset],
+                                                    timer_bitshift, 3,
+                                                    extract32(value,
+                                                    timer_bitshift, 3));
+                        mc68901_timer_start(s, 2 + i);
+                    }
+                }
+            }
+        }
+    }
+    break;
+    default:
+        /* This shouldn't hap.. Aborted (core dumped).  */
+        abort();
+        break;
+    }
+}
 
 static uint64_t mc68901_read(void *opaque, hwaddr offset, unsigned size)
 {
@@ -190,6 +346,11 @@ static void mc68901_write(void *opaque, hwaddr offset, uint64_t value,
     case MC68901_UCR_ADDR:
         s->regs[offset] = (uint8_t)(value & 0xFE);
         break;
+    case MC68901_TACR_ADDR:
+    case MC68901_TBCR_ADDR:
+    case MC68901_TCDCR_ADDR:
+        mc68901_timer_control_update(s, offset, value);
+        break;
     default:
         s->regs[offset] = (uint8_t)value;
         break;
@@ -246,6 +407,7 @@ static const VMStateDescription vmstate_mc68901 = {
 
 static Property mc68901_properties[] = {
     DEFINE_PROP_CHR("chardev", MC68901State, chr),
+    DEFINE_PROP_UINT32("timer_freq", MC68901State, timer_freq, 0),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -262,10 +424,24 @@ static void mc68901_init(Object *obj)
 static void mc68901_realize(DeviceState *dev, Error **errp)
 {
     MC68901State *s = MC68901(dev);
+    int i;
 
     qemu_chr_fe_set_handlers(&s->chr, mc68901_can_receive, mc68901_receive,
                              mc68901_event, NULL, s, NULL, true);
     memset(s->regs, 0, sizeof(s->regs));
+
+    if (!s->timer_freq) {
+        error_setg(errp, "timer_freq property not set");
+        return;
+    }
+    qdev_init_gpio_out(dev, s->txo, MC68901_TIMER_COUNT);
+
+    for (i = 0; i < MC68901_TIMER_COUNT; i++) {
+        s->timers[i].id = i;
+        timer_init_ns(&s->timers[i].qemu_timer,
+                      QEMU_CLOCK_VIRTUAL, mc68901_timer_expired,
+                      &s->timers[i]);
+    }
 }
 
 static void mc68901_class_init(ObjectClass *oc, void *data)
