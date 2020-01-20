@@ -1,7 +1,7 @@
 /*
  * Arm Texas-Instrument TMS570
  *
- * Copyright (c) 2013 AdaCore
+ * Copyright (c) 2013-2020 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 #include "exec/memory.h"
 #include "sysemu/blockdev.h"
 #include "exec/address-spaces.h"
+#include "hw/misc/tms570_gio.h"
 #include "hw/adacore/gnat-bus.h"
 #include "hw/adacore/hostfs.h"
 
@@ -237,6 +238,13 @@ static void tms570_init(MachineState *args)
         sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, pic[13]);
         sysbus_connect_irq(SYS_BUS_DEVICE(dev), 1, pic[27]);
     }
+
+    /* GIO */
+    dev = qdev_create(NULL, TYPE_TMS570_GIO);
+    qdev_init_nofail(dev);
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0xFFF7BC00);
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), TMS570_GIO_IRQ_LOW, pic[23]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), TMS570_GIO_IRQ_HIGH, pic[9]);
 
     /* Initialize the GnatBus Master */
     gnatbus_master_init(pic, 64);
