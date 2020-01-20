@@ -82,3 +82,4 @@ obj-y += qsp_sys_reg.o
 obj-y += fixed-clock.o
 obj-y += mc68901.o
 obj-y += xilinx_ddrc.o
+obj-$(CONFIG_TMS570) += tms570_gio.o
