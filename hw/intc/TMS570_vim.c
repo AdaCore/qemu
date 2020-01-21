@@ -5,7 +5,7 @@
  *
  * Based on PL190 by Paul Brook.
  *
- * Copyright (c) 2013 AdaCore
+ * Copyright (c) 2013-2020 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,8 @@
 #define DPRINTF(fmt, ...) do { } while (0)
 #endif
 
+#define VIM_MAX_IRQ_SET (3)
+
 typedef struct {
     SysBusDevice busdev;
     MemoryRegion iomem;
@@ -47,43 +49,39 @@ typedef struct {
     uint8_t  last_IRQINDEX;
     uint8_t  last_FIQINDEX;
 
-    /* The FIQ/IRQ program control registers determine whether a given interrupt
-     * request will be either FIQ or IRQ.
-     */
-    uint32_t FIRQPR[3];
+    /* The FIQ/IRQ program control registers determine whether a given
+     * interrupt request will be either FIQ or IRQ.  */
+    uint32_t FIRQPR[VIM_MAX_IRQ_SET];
 
-    /* The pending interrupt register gives the pending interrupt requests */
-    uint32_t INTREQ[3];      /* Read-Only */
+    /* The pending interrupt register gives the pending interrupt
+     * requests.  */
+    uint32_t INTREQ[VIM_MAX_IRQ_SET];      /* Read-Only */
 
     /* The interrupt register enable selectively enables individual request
      * channels.
      *
      * The interrupt register enable selectively disables individual request
-     * channels.
-     */
-    uint32_t ENA[3];
+     * channels.  */
+    uint32_t ENA[VIM_MAX_IRQ_SET];
 
     /* Wakeup Interrupts are not implemented */
-    uint32_t WAKEENA[3];
+    uint32_t WAKEENA[VIM_MAX_IRQ_SET];
 
-    /* The interrupt vector register gives the address of the enabled and active
-     * IRQ interrupt.
-     */
+    /* The interrupt vector register gives the address of the enabled and
+     * active IRQ interrupt.  */
     uint32_t IRQVEC;
 
-    /* The interrupt vector register gives the address of the enabled and active
-     * FIQ interrupt.
-     */
+    /* The interrupt vector register gives the address of the enabled and
+     * active FIQ interrupt.  */
     uint32_t FIQVEC;
 
     /* Capture Event Sources are not implemented */
 
-    /* These bits determine which interrupt request the priority channel CHANx0
-     * maps to.
-     */
+    /* These bits determine which interrupt request the priority channel
+     * CHANx0 maps to.  */
     union {
-        uint8_t  _8[96];
-        uint32_t _32[24];
+        uint8_t  _8[VIM_MAX_IRQ_SET * 32];
+        uint32_t _32[VIM_MAX_IRQ_SET * 8];
     } CHANMAP;
 
     qemu_irq irq;
@@ -106,7 +104,7 @@ static void vim_update(vim_state *s)
     DPRINTF("%s: s->FIRQPR:0x%08x%08x%08x\n", __func__, s->FIRQPR[2],
             s->FIRQPR[1], s->FIRQPR[0]);
 
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < VIM_MAX_IRQ_SET; i++) {
         IRQ = s->INTREQ[i] & s->ENA[i] & ~s->FIRQPR[i];
         index = IRQ ? __builtin_ctzll(IRQ) + i * 32 + 1 : 0;
 
@@ -132,7 +130,7 @@ static void vim_update(vim_state *s)
         DPRINTF("%s: qemu_set_irq(s->irq, %d);\n", __func__, IRQ != 0);
     }
 
-   for (i = 0; i < 3; i++) {
+   for (i = 0; i < VIM_MAX_IRQ_SET; i++) {
         FIQ = s->INTREQ[i] & s->ENA[i] & s->FIRQPR[i];
         index = FIQ ? __builtin_ctzll(FIQ) + i * 32 + 1 : 0;
 
@@ -165,7 +163,7 @@ static void vim_set_irq(void *opaque, int irq, int level)
 
     DPRINTF("%s: irq:%d level:%d\n", __func__, irq, level);
 
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < VIM_MAX_IRQ_SET; i++) {
         for (j = 0; j < 32; j++) {
             if (s->CHANMAP._8[i * 32 + j] == irq) {
                 if (level) {
@@ -183,7 +181,8 @@ static uint64_t vim_read(void *opaque, hwaddr offset, unsigned size)
 {
     vim_state *s = (vim_state *)opaque;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u\n", __func__, offset, size);
+    DPRINTF("%s: offset:0x" TARGET_FMT_plx " size:%u\n", __func__, offset,
+            size);
 
     switch (offset) {
     case 0x00: /* IRQINDEX */
@@ -241,11 +240,12 @@ static uint64_t vim_read(void *opaque, hwaddr offset, unsigned size)
     }
 }
 
-static void vim_write(void *opaque, hwaddr offset, uint64_t val, unsigned size)
+static void vim_write(void *opaque, hwaddr offset, uint64_t val,
+                      unsigned size)
 {
     vim_state *s = (vim_state *)opaque;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u val:0x%" PRIx64 "\n",
+    DPRINTF("%s: offset:0x" TARGET_FMT_plx " size:%u val:0x%" PRIx64 "\n",
             __func__, offset, size, val);
 
     switch (offset) {
@@ -348,14 +348,14 @@ static void vim_reset(DeviceState *d)
     s->IRQVEC   = 0;
     s->FIQVEC   = 0;
 
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < VIM_MAX_IRQ_SET; i++) {
         s->FIRQPR[i]   = 0;
         s->INTREQ[i]   = 0;
         s->ENA[i]      = 0;
     }
     s->FIRQPR[0]   = 0x3;
 
-    for (i = 0; i < 96; i++) {
+    for (i = 0; i < VIM_MAX_IRQ_SET * 32; i++) {
         s->CHANMAP._8[i] = i;
     }
 }
