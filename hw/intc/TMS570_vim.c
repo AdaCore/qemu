@@ -38,7 +38,7 @@
 #define DPRINTF(fmt, ...) do { } while (0)
 #endif
 
-#define VIM_MAX_IRQ_SET (3)
+#define VIM_MAX_IRQ_SET (4)
 
 typedef struct {
     SysBusDevice busdev;
@@ -97,12 +97,13 @@ static void vim_update(vim_state *s)
 {
     uint32_t IRQ, FIQ, index;
     int i;
-    DPRINTF("%s: s->ENA:   0x%08x%08x%08x\n", __func__, s->ENA[2], s->ENA[1],
-            s->ENA[0]);
-    DPRINTF("%s: s->INTREQ:0x%08x%08x%08x\n", __func__, s->INTREQ[2],
-            s->INTREQ[1], s->INTREQ[0]);
-    DPRINTF("%s: s->FIRQPR:0x%08x%08x%08x\n", __func__, s->FIRQPR[2],
-            s->FIRQPR[1], s->FIRQPR[0]);
+
+    DPRINTF("%s: s->ENA:   0x%08x%08x%08x%08x\n", __func__,
+            s->ENA[3], s->ENA[2], s->ENA[1], s->ENA[0]);
+    DPRINTF("%s: s->INTREQ:0x%08x%08x%08x%08x\n", __func__,
+            s->INTREQ[3], s->INTREQ[2], s->INTREQ[1], s->INTREQ[0]);
+    DPRINTF("%s: s->FIRQPR:0x%08x%08x%08x%08x\n", __func__,
+            s->FIRQPR[3], s->FIRQPR[2], s->FIRQPR[1], s->FIRQPR[0]);
 
     for (i = 0; i < VIM_MAX_IRQ_SET; i++) {
         IRQ = s->INTREQ[i] & s->ENA[i] & ~s->FIRQPR[i];
@@ -174,6 +175,7 @@ static void vim_set_irq(void *opaque, int irq, int level)
             }
         }
     }
+
     vim_update(s);
 }
 
@@ -195,11 +197,13 @@ static uint64_t vim_read(void *opaque, hwaddr offset, unsigned size)
     case 0x10: /* FIRQPR0 */
     case 0x14: /* FIRQPR1 */
     case 0x18: /* FIRQPR2 */
+    case 0x1c: /* FIRQPR3 */
         return s->FIRQPR[(offset - 0x10) / 4];
 
     case 0x20: /* INTREQ0 */
     case 0x24: /* INTREQ1 */
     case 0x28: /* INTREQ2 */
+    case 0x2c: /* INTREQ3 */
         return s->INTREQ[(offset - 0x20) / 4];
 
     case 0x30: /* REQENASET0 */
@@ -211,6 +215,9 @@ static uint64_t vim_read(void *opaque, hwaddr offset, unsigned size)
     case 0x38: /* REQENASET2 */
     case 0x48: /* REQENACLR2 */
         return s->ENA[2];
+    case 0x3c: /* REQENASET3 */
+    case 0x4c: /* REQENACLR3 */
+        return s->ENA[3];
 
     case 0x50: /* WAKEENASET0 */
     case 0x60: /* WAKEENACLR0 */
@@ -221,6 +228,9 @@ static uint64_t vim_read(void *opaque, hwaddr offset, unsigned size)
     case 0x58: /* WAKEENASET2 */
     case 0x68: /* WAKEENACLR2 */
         return s->WAKEENA[2];
+    case 0x5c: /* WAKEENASET3 */
+    case 0x6c: /* WAKEENACLR3 */
+        return s->WAKEENA[3];
 
     case 0x70: /* IRQVECREG */
         return s->IRQVEC;
@@ -232,7 +242,7 @@ static uint64_t vim_read(void *opaque, hwaddr offset, unsigned size)
         hw_error("VIM: Capture Event Sources not implemented\n");
         break;
 
-    case 0x80 ... 0xDC: /* CHANCTRL */
+    case 0x80 ... 0xFC: /* CHANCTRL */
         return s->CHANMAP._32[(offset - 0x80) / 4];
     default:
         hw_error("vim_read: Bad offset 0x%x\n", (int)offset);
@@ -256,7 +266,8 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
         /* Read-Only  */
         break;
 
-    /* Determine whether a given interrupt request will be either FIQ or IRQ */
+    /* Determine whether a given interrupt request will be either FIQ or
+     * IRQ.  */
     case 0x10: /* FIRQPR0 */
         /* Channel 0 and channel 1 are routed exclusively to FIQ */
         s->FIRQPR[0] = val | 0x3;
@@ -267,8 +278,11 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
     case 0x18: /* FIRQPR2 */
         s->FIRQPR[2] = val;
         break;
+    case 0x1c: /* FIRQPR3 */
+        s->FIRQPR[3] = val;
+        break;
 
-    case 0x20 ... 0x28: /* INTREQx */
+    case 0x20 ... 0x2c: /* INTREQx */
         /* Read-Only  */
         break;
 
@@ -281,6 +295,9 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
     case 0x38: /* REQENASET2 */
         s->ENA[2] |= val;
         break;
+    case 0x3c: /* REQENASET3 */
+        s->ENA[3] |= val;
+        break;
 
     case 0x40: /* REQENACLR0 */
         s->ENA[0] &= ~val | 0x3;
@@ -291,15 +308,20 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
     case 0x48: /* REQENACLR2 */
         s->ENA[2] &= ~val;
         break;
+    case 0x4C: /* REQENACLR3 */
+        s->ENA[3] &= ~val;
+        break;
 
     case 0x50: /* WAKEENASET0 */
     case 0x54: /* WAKEENASET1 */
     case 0x58: /* WAKEENASET2 */
+    case 0x5c: /* WAKEENASET3 */
         s->WAKEENA[(offset - 0x50) / 4] |= val;
         break;
     case 0x60: /* WAKEENACLR0 */
     case 0x64: /* WAKEENACLR1 */
     case 0x68: /* WAKEENACLR2 */
+    case 0x6c: /* WAKEENACLR3 */
         s->WAKEENA[(offset - 0x60) / 4] &= ~val;
         break;
 
@@ -314,7 +336,7 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
         hw_error("VIM: Capture Event Sources not implemented\n");
         break;
 
-    case 0x80 ... 0xBC: /* CHANCTRL */
+    case 0x80 ... 0xFC: /* CHANCTRL */
         s->CHANMAP._32[(offset - 0x80) / 4] = val & 0x7F7F7F7F;
         return;
         break;
@@ -323,6 +345,7 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
         hw_error("vim_write: Bad offset 0x%x\n", (int)offset);
         return;
     }
+
     vim_update(s);
 }
 
@@ -366,7 +389,7 @@ static void vim_realize(DeviceState *dev, Error **errp)
 
     memory_region_init_io(&s->iomem, OBJECT(dev), &vim_ops, s, "VIM", 0x100);
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->iomem);
-    qdev_init_gpio_in(dev, vim_set_irq, 64);
+    qdev_init_gpio_in(dev, vim_set_irq, 128);
     sysbus_init_irq(SYS_BUS_DEVICE(dev), &s->irq);
     sysbus_init_irq(SYS_BUS_DEVICE(dev), &s->fiq);
 }
