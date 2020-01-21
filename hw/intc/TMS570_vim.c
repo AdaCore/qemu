@@ -29,6 +29,7 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "hw/sysbus.h"
+#include "qemu/log.h"
 
 /* #define DEBUG_VIM */
 
@@ -239,13 +240,15 @@ static uint64_t vim_read(void *opaque, hwaddr offset, unsigned size)
         return s->FIQVEC;
 
     case 0x78:
-        hw_error("VIM: Capture Event Sources not implemented\n");
-        break;
+        qemu_log_mask(LOG_UNIMP,
+                      "VIM: Capture Event Sources not implemented\n");
+        return 0;
 
     case 0x80 ... 0xFC: /* CHANCTRL */
         return s->CHANMAP._32[(offset - 0x80) / 4];
     default:
-        hw_error("vim_read: Bad offset 0x%x\n", (int)offset);
+        qemu_log_mask(LOG_GUEST_ERROR, "vim_read: Bad offset 0x%x\n",
+                      (int)offset);
         return 0;
     }
 }
@@ -333,7 +336,8 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
         break;
 
     case 0x78:
-        hw_error("VIM: Capture Event Sources not implemented\n");
+        qemu_log_mask(LOG_UNIMP,
+                      "VIM: Capture Event Sources not implemented\n");
         break;
 
     case 0x80 ... 0xFC: /* CHANCTRL */
@@ -342,7 +346,8 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
         break;
 
     default:
-        hw_error("vim_write: Bad offset 0x%x\n", (int)offset);
+        qemu_log_mask(LOG_GUEST_ERROR, "vim_write: Bad offset 0x%x\n",
+                      (int)offset);
         return;
     }
 
