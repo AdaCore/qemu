@@ -125,7 +125,7 @@ static void tms570_acknowledge_irq(TMS570GIOState *s, uint32_t pin_id)
 {
     int i, j, k;
     uint8_t * const cur_irq_queue[] = {s->high, s->low};
-    uint8_t temp[MAX_PIN];
+    uint8_t temp[MAX_PIN] = {0};
 
     DPRINTF("tms570_acknowledge_irq(%u)\n", pin_id);
     /* 0 <= pin_id <= 15, but in the IRQ rings 0 means no IRQ so everything
@@ -370,7 +370,7 @@ static uint64_t tms570_gio_read(void *opaque, hwaddr offset, unsigned size)
             break;
         }
         r = s->regs[offset];
-        tms570_clear_interrupt_flag(s, s->regs[offset]);
+        tms570_clear_interrupt_flag(s, 1 << (s->regs[offset] - 1));
         break;
     default:
         r = s->regs[offset];
