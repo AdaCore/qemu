@@ -62,6 +62,8 @@
 #include "sysemu/runstate.h"
 #include "sysemu/sysemu.h"
 
+#include "hw/adacore/gnat-bus.h"
+
 #include <libfdt.h>
 
 /* CLINT timebase frequency */
@@ -826,6 +828,7 @@ static void sifive_u_soc_realize(DeviceState *dev, Error **errp)
     char *plic_hart_config;
     int i, j;
     NICInfo *nd = &nd_table[0];
+    qemu_irq *cpu_irqs;
 
     qdev_prop_set_uint32(DEVICE(&s->u_cpus), "num-harts", ms->smp.cpus - 1);
     qdev_prop_set_uint32(DEVICE(&s->u_cpus), "hartid-base", 1);
@@ -978,6 +981,14 @@ static void sifive_u_soc_realize(DeviceState *dev, Error **errp)
                     memmap[SIFIVE_U_DEV_QSPI2].base);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->spi2), 0,
                        qdev_get_gpio_in(DEVICE(s->plic), SIFIVE_U_QSPI2_IRQ));
+
+    /* Initialize the GnatBus Master */
+    cpu_irqs = qemu_allocate_irqs(NULL, NULL, SIFIVE_U_PLIC_NUM_SOURCES);
+    for (i = 0; i < SIFIVE_U_PLIC_NUM_SOURCES; i++) {
+        cpu_irqs[i] = qdev_get_gpio_in(DEVICE(s->plic), i);
+    }
+    gnatbus_master_init(cpu_irqs, SIFIVE_U_PLIC_NUM_SOURCES);
+    gnatbus_device_init();
 }
 
 static Property sifive_u_soc_props[] = {
