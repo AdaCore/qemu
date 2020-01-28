@@ -63,6 +63,7 @@
 #include "sysemu/sysemu.h"
 
 #include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
 
 #include <libfdt.h>
 
@@ -73,6 +74,7 @@ static const MemMapEntry sifive_u_memmap[] = {
     [SIFIVE_U_DEV_DEBUG] =    {        0x0,      0x100 },
     [SIFIVE_U_DEV_MROM] =     {     0x1000,     0xf000 },
     [SIFIVE_U_DEV_TEST] =     {   0x100000,     0x1000 },
+    [SIFIVE_U_DEV_HOSTFS] =   {   0x101000,     0x1000 },
     [SIFIVE_U_DEV_CLINT] =    {  0x2000000,    0x10000 },
     [SIFIVE_U_DEV_L2CC] =     {  0x2010000,     0x1000 },
     [SIFIVE_U_DEV_PDMA] =     {  0x3000000,   0x100000 },
@@ -989,6 +991,9 @@ static void sifive_u_soc_realize(DeviceState *dev, Error **errp)
     }
     gnatbus_master_init(cpu_irqs, SIFIVE_U_PLIC_NUM_SOURCES);
     gnatbus_device_init();
+
+    /* HostFS */
+    hostfs_create(memmap[SIFIVE_U_DEV_HOSTFS].base, get_system_memory());
 }
 
 static Property sifive_u_soc_props[] = {
