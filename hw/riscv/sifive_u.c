@@ -48,6 +48,8 @@
 #include "exec/address-spaces.h"
 #include "elf.h"
 
+#include "hw/adacore/gnat-bus.h"
+
 #include <libfdt.h>
 
 static const struct MemmapEntry {
@@ -353,6 +355,7 @@ static void riscv_sifive_u_soc_realize(DeviceState *dev, Error **errp)
     int i;
     Error *err = NULL;
     NICInfo *nd = &nd_table[0];
+    qemu_irq *cpu_irqs;
 
     object_property_set_bool(OBJECT(&s->cpus), true, "realized",
                              &error_abort);
@@ -437,6 +440,14 @@ static void riscv_sifive_u_soc_realize(DeviceState *dev, Error **errp)
     }
 
     sifive_test_create(memmap[SIFIVE_U_TEST].base);
+
+    /* Initialize the GnatBus Master */
+    cpu_irqs = qemu_allocate_irqs(NULL, NULL, SIFIVE_U_PLIC_NUM_SOURCES);
+    for (i = 0; i < SIFIVE_U_PLIC_NUM_SOURCES; i++) {
+        cpu_irqs[i] = qdev_get_gpio_in(DEVICE(s->plic), i);
+    }
+    gnatbus_master_init(cpu_irqs, SIFIVE_U_PLIC_NUM_SOURCES);
+    gnatbus_device_init();
 }
 
 static void riscv_sifive_u_machine_init(MachineClass *mc)
