@@ -49,6 +49,7 @@
 #include "elf.h"
 
 #include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
 
 #include <libfdt.h>
 
@@ -59,6 +60,7 @@ static const struct MemmapEntry {
     [SIFIVE_U_DEBUG] =    {        0x0,      0x100 },
     [SIFIVE_U_MROM] =     {     0x1000,    0x11000 },
     [SIFIVE_U_TEST] =     {   0x100000,     0x1000 },
+    [SIFIVE_U_HOSTFS] =   {   0x101000,     0x1000 },
     [SIFIVE_U_CLINT] =    {  0x2000000,    0x10000 },
     [SIFIVE_U_PLIC] =     {  0xc000000,  0x4000000 },
     [SIFIVE_U_UART0] =    { 0x10013000,     0x1000 },
@@ -448,6 +450,9 @@ static void riscv_sifive_u_soc_realize(DeviceState *dev, Error **errp)
     }
     gnatbus_master_init(cpu_irqs, SIFIVE_U_PLIC_NUM_SOURCES);
     gnatbus_device_init();
+
+    /* HostFS */
+    hostfs_create(memmap[SIFIVE_U_TEST].base, get_system_memory());
 }
 
 static void riscv_sifive_u_machine_init(MachineClass *mc)
