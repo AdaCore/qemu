@@ -46,6 +46,8 @@
 #define DPRINTF(fmt, ...) do { } while (0)
 #endif
 
+#define TMS570_IRQ_COUNT (64)
+
 static struct arm_boot_info tms570_binfo;
 
 typedef struct {
@@ -169,7 +171,7 @@ static void tms570_init(MachineState *args)
     DeviceState     *dev;
     tms570_sys_data *sys_data = g_new(tms570_sys_data, 1);;
     int              n;
-    qemu_irq         pic[64];
+    qemu_irq        *pic;
 
     cpuobj = object_new(args->cpu_type);
     object_property_set_bool(cpuobj, true, "realized", &error_fatal);
@@ -186,7 +188,9 @@ static void tms570_init(MachineState *args)
                                 qdev_get_gpio_in(DEVICE(cpu), ARM_CPU_IRQ),
                                 qdev_get_gpio_in(DEVICE(cpu), ARM_CPU_FIQ),
                                 NULL);
-    for (n = 0; n < 64; n++) {
+
+    pic = qemu_allocate_irqs(NULL, NULL, TMS570_IRQ_COUNT);
+    for (n = 0; n < TMS570_IRQ_COUNT; n++) {
         pic[n] = qdev_get_gpio_in(dev, n);
     }
 
@@ -248,11 +252,11 @@ static void tms570_init(MachineState *args)
     sysbus_connect_irq(SYS_BUS_DEVICE(dev), TMS570_GIO_IRQ_HIGH, pic[9]);
 
     /* Initialize plug-ins */
-    plugin_init(pic, 64);
+    plugin_init(pic, TMS570_IRQ_COUNT);
     plugin_device_init();
 
     /* Initialize the GnatBus Master */
-    gnatbus_master_init(pic, 64);
+    gnatbus_master_init(pic, TMS570_IRQ_COUNT);
     gnatbus_device_init();
 
     /* HostFS */
