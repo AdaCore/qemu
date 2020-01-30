@@ -1,7 +1,3 @@
-
-/* TARGET_WORDS_BIGENDIAN is poisoned so let's workaround that */
-#define GNATBUS_BIG_ENDIAN (TARGET_WORDS_BIGENDIAN)
-
 #include "qemu/osdep.h"
 #include "qemu/timer.h"
 #include "exec/memory.h"
@@ -259,11 +255,11 @@ static inline int gnatbus_process_register(GnatBus_Device         *qbdev,
     GnatBusPacket_Endianness_Init(&end);
 
     end.parent.id  = reg->parent.id;
-#if defined(GNATBUS_BIG_ENDIAN)
-    end.endianness = TargetEndianness_BigEndian;
-#else
-    end.endianness = TargetEndianness_LittleEndian;
-#endif
+    if (target_words_bigendian()) {
+        end.endianness = TargetEndianness_BigEndian;
+    } else {
+        end.endianness = TargetEndianness_LittleEndian;
+    }
 
     gnatbus_send(qbdev, (uint8_t *)&end, sizeof(end));
 
