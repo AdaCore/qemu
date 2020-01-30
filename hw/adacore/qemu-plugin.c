@@ -1,7 +1,3 @@
-
-/* TARGET_WORDS_BIGENDIAN is poisoned so let's workaround that */
-#define GNATBUS_BIG_ENDIAN (TARGET_WORDS_BIGENDIAN)
-
 #include "qemu/osdep.h"
 
 #ifdef _WIN32
@@ -483,11 +479,11 @@ static QemuPLugin_InitFunction plugin_load_init_func(const char *plugin_name,
 
 static uint32_t target_endianness(void)
 {
-#if defined(GNATBUS_BIG_ENDIAN)
-    return TargetEndianness_BigEndian;
-#else
-    return TargetEndianness_LittleEndian;
-#endif
+    if (target_words_bigendian()) {
+        return TargetEndianness_BigEndian;
+    } else {
+        return TargetEndianness_LittleEndian;
+    }
 }
 
 static uint32_t shutdown_request(void)
