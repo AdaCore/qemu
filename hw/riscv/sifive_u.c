@@ -627,7 +627,7 @@ static void riscv_sifive_u_soc_realize(DeviceState *dev, Error **errp)
     gnatbus_device_init();
 
     /* HostFS */
-    hostfs_create(memmap[SIFIVE_U_TEST].base, get_system_memory());
+    hostfs_create(memmap[SIFIVE_U_HOSTFS].base, get_system_memory());
 }
 
 static void riscv_sifive_u_soc_class_init(ObjectClass *oc, void *data)
