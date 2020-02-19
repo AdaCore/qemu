@@ -886,7 +886,7 @@ endif
 	$(MAKE) $(SUBDIR_MAKEFLAGS) TARGET_DIR=$$d/ -C $$d $@ || exit 1 ; \
         done
 	$(INSTALL_DIR) "$(DESTDIR)$(includedir)"
-	$(INSTALL_DATA) $(SRC_PATH)/qemu_plugin_interface.h "$(DESTDIR)$(includedir)"
+	$(INSTALL_DATA) $(SRC_PATH)/include/hw/adacore/qemu_plugin_interface.h "$(DESTDIR)$(includedir)"
 
 .PHONY: ctags
 ctags:
