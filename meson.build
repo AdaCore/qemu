@@ -460,8 +460,15 @@ if 'ust' in get_option('trace_backends')
 endif
 pixman = not_found
 if have_system or have_tools
-  pixman = dependency('pixman-1', required: have_system, version:'>=0.21.8',
-                      method: 'pkg-config', kwargs: static_kwargs)
+  if 'CONFIG_STATIC_PIXMAN' in config_host
+     pixman = dependency('pixman-1', required: have_system, static: true,
+                         version:'>=0.21.8', method: 'pkg-config',
+                         kwargs: static_kwargs)
+  else
+     pixman = dependency('pixman-1', required: have_system,
+                         version:'>=0.21.8', method: 'pkg-config',
+                         kwargs: static_kwargs)
+  endif
 endif
 zlib = dependency('zlib', required: true, kwargs: static_kwargs)
 
@@ -3396,7 +3403,7 @@ subdir('scripts')
 subdir('tools')
 subdir('pc-bios')
 subdir('docs')
-subdir('tests')
+# subdir('tests')
 if gtk.found()
   subdir('po')
 endif

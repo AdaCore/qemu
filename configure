@@ -332,6 +332,7 @@ meson_args=""
 ninja=""
 gio="$default_feature"
 static_glib="no"
+static_pixman="no"
 skip_meson=no
 
 # The following Meson options are handled manually (still they
@@ -1055,6 +1056,8 @@ for opt do
   # everything else has the same name in configure and meson
   --enable-* | --disable-*) meson_option_parse "$opt" "$optarg"
   ;;
+  --static-pixman) static_pixman="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1132,6 +1135,10 @@ fi
 if test "$static" = "yes"; then
     if test "$static_glib" = "yes"; then
         echo "ERROR: --static and --static-glib are not compatible"
+        exit 1
+    fi
+    if test "$static_pixman" = "yes"; then
+        echo "ERROR: --static and --static-pixman are not compatible"
         exit 1
     fi
 fi
@@ -2863,6 +2870,9 @@ if test "$solaris" = "yes" ; then
 fi
 if test "$static" = "yes" ; then
   echo "CONFIG_STATIC=y" >> $config_host_mak
+fi
+if test "$static_pixman" = "yes" ; then
+  echo "CONFIG_STATIC_PIXMAN=y" >> $config_host_mak
 fi
 echo "CONFIG_BDRV_RW_WHITELIST=$block_drv_rw_whitelist" >> $config_host_mak
 echo "CONFIG_BDRV_RO_WHITELIST=$block_drv_ro_whitelist" >> $config_host_mak
