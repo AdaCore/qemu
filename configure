@@ -331,6 +331,7 @@ meson=""
 meson_args=""
 ninja=""
 gio="$default_feature"
+static_glib="no"
 skip_meson=no
 
 # The following Meson options are handled manually (still they
@@ -1038,6 +1039,10 @@ for opt do
   ;;
   --disable-gio) gio=no
   ;;
+  --static-glib) static_glib="yes"
+  ;;
+  --enable-fuse-lseek) fuse_lseek="enabled"
+  ;;
   # backwards compatibility options
   --enable-trace-backend=*) meson_option_parse "--enable-trace-backends=$optarg" "$optarg"
   ;;
@@ -1121,6 +1126,16 @@ if eval test -z "\${cross_cc_$cpu}"; then
     eval "cross_cc_${cpu}=\$cc"
     cross_cc_vars="$cross_cc_vars cross_cc_${cpu}"
 fi
+
+# Sanity check that we are not trying to enable --static-xxx and -static
+# at the same time.
+if test "$static" = "yes"; then
+    if test "$static_glib" = "yes"; then
+        echo "ERROR: --static and --static-glib are not compatible"
+        exit 1
+    fi
+fi
+
 
 default_target_list=""
 mak_wilds=""
@@ -2154,10 +2169,16 @@ elif test "$plugins" = "yes"; then
     glib_modules="$glib_modules gmodule-no-export-2.0"
 fi
 
+glib_libs=''
 for i in $glib_modules; do
     if $pkg_config --atleast-version=$glib_req_ver $i; then
-        glib_cflags=$($pkg_config --cflags $i)
-        glib_libs=$($pkg_config --libs $i)
+        if test "$static_glib" != "no" ; then
+            glib_cflags=$($pkg_config --static --cflags $i)
+            glib_libs="$glib_libs $($pkg_config --static --libs $i)"
+        else
+            glib_cflags=$($pkg_config --cflags $i)
+            glib_libs="$glib_libs $($pkg_config --libs $i)"
+        fi
     else
         error_exit "glib-$glib_req_ver $i is required to compile QEMU"
     fi
@@ -2168,6 +2189,35 @@ done
 
 if test "$static" = yes && test "$mingw32" = yes; then
     glib_cflags="-DGLIB_STATIC_COMPILATION $glib_cflags"
+fi
+
+# This second workaround is required because of the missing libiconv link
+# in case of a static glib.
+if test "$static_glib" != "no" -a "$mingw32" = yes; then
+    glib_libs="-liconv $glib_libs"
+fi
+
+# Dirty workaround to only link glib libraries statically and not the
+# system one included by pkg-config.
+if test "$static_glib" != "no" ; then
+    glib_fixed_lib=''
+    for i in $glib_libs; do
+        case "$i" in
+            -lrt)
+                ;;
+            -ldl)
+                ;;
+            -lole32)
+                ;;
+            -l*)
+                i=$(echo $i | sed 's/-l\(.*\)/-l:lib\1.a/')
+                ;;
+            *)
+                ;;
+        esac
+        glib_fixed_lib="$glib_fixed_lib $i"
+    done
+    glib_libs=$glib_fixed_lib
 fi
 
 if ! test "$gio" = "no"; then
