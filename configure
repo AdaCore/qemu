@@ -335,6 +335,7 @@ ninja=""
 gio="$default_feature"
 skip_meson=no
 static_glib="no"
+static_pixman="no"
 
 # The following Meson options are handled manually (still they
 # are included in the automatically generated help message)
@@ -1053,6 +1054,8 @@ for opt do
   ;;
   --static-glib) static_glib="yes"
   ;;
+  --static-pixman) static_pixman="yes"
+  ;;
   # backwards compatibility options
   --enable-trace-backend=*) meson_option_parse "--enable-trace-backends=$optarg" "$optarg"
   ;;
@@ -1137,6 +1140,10 @@ localedir="${localedir:-$datadir/locale}"
 if test "$static" = "yes"; then
     if test "$static_glib" = "yes"; then
         echo "ERROR: --static and --static-glib are not compatible"
+        exit 1
+    fi
+    if test "$static_pixman" = "yes"; then
+        echo "ERROR: --static and --static-pixman are not compatible"
         exit 1
     fi
 fi
@@ -2401,6 +2408,23 @@ if test "$modules" = yes; then
     if test "$shacmd" = ""; then
         error_exit "one of the checksum commands is required to enable modules: $shacmd_probe"
     fi
+fi
+
+##########################################
+# pixman support probe
+
+if test "$want_tools" = "no" && test "$softmmu" = "no"; then
+  pixman_cflags=
+  pixman_libs=
+elif $pkg_config --atleast-version=0.21.8 pixman-1 > /dev/null 2>&1; then
+  pixman_cflags=$($pkg_config --cflags pixman-1)
+  pixman_libs=$($pkg_config --libs pixman-1)
+  if test "$static_pixman" != "no"; then
+    pixman_libs="-Wl,-Bstatic $pixman_libs -Wl,-Bdynamic"
+  fi
+else
+  error_exit "pixman >= 0.21.8 not present." \
+      "Please install the pixman devel package."
 fi
 
 ##########################################
