@@ -458,6 +458,7 @@ secret_keyring="$default_feature"
 libdaxctl="$default_feature"
 meson=""
 ninja=""
+static_glib="no"
 skip_meson=no
 gettext="auto"
 fuse="auto"
@@ -1553,6 +1554,8 @@ for opt do
   ;;
   --disable-fuse) fuse="disabled"
   ;;
+  --static-glib) static_glib="yes"
+  ;;
   --enable-fuse-lseek) fuse_lseek="enabled"
   ;;
   --disable-fuse-lseek) fuse_lseek="disabled"
@@ -1604,6 +1607,15 @@ sysconfdir="${sysconfdir:-$prefix/etc}"
 local_statedir="${local_statedir:-$prefix/var}"
 firmwarepath="${firmwarepath:-$datadir/qemu-firmware}"
 localedir="${localedir:-$datadir/locale}"
+
+# Sanity check that we are not trying to enable --static-xxx and -static
+# at the same time.
+if test "$static" = "yes"; then
+    if test "$static_glib" = "yes"; then
+        echo "ERROR: --static and --static-glib are not compatible"
+        exit 1
+    fi
+fi
 
 case "$cpu" in
     ppc)
@@ -3309,10 +3321,16 @@ if test "$plugins" = yes; then
     glib_modules="$glib_modules gmodule-2.0"
 fi
 
+glib_libs=''
 for i in $glib_modules; do
     if $pkg_config --atleast-version=$glib_req_ver $i; then
-        glib_cflags=$($pkg_config --cflags $i)
-        glib_libs=$($pkg_config --libs $i)
+        if test "$static_glib" != "no" ; then
+            glib_cflags=$($pkg_config --static --cflags $i)
+            glib_libs="$glib_libs $($pkg_config --static --libs $i)"
+        else
+            glib_cflags=$($pkg_config --cflags $i)
+            glib_libs="$glib_libs $($pkg_config --libs $i)"
+        fi
     else
         error_exit "glib-$glib_req_ver $i is required to compile QEMU"
     fi
@@ -3323,6 +3341,33 @@ done
 
 if test "$static" = yes && test "$mingw32" = yes; then
     glib_cflags="-DGLIB_STATIC_COMPILATION $glib_cflags"
+fi
+
+# This second workaround is required because of the missing libiconv link
+# in case of a static glib.
+if test "$static_glib" != "no" -a "$mingw32" = yes; then
+    glib_libs="-liconv $glib_libs"
+fi
+
+# Dirty workaround to only link glib libraries statically and not the
+# system one included by pkg-config.
+if test "$static_glib" != "no" ; then
+    glib_fixed_lib=''
+    for i in $glib_libs; do
+        case "$i" in
+            -lrt)
+                ;;
+            -lole32)
+                ;;
+            -l*)
+                i=$(echo $i | sed 's/-l\(.*\)/-l:lib\1.a/')
+                ;;
+            *)
+                ;;
+        esac
+        glib_fixed_lib="$glib_fixed_lib $i"
+    done
+    glib_libs=$glib_fixed_lib
 fi
 
 if ! test "$gio" = "no"; then
