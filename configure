@@ -468,6 +468,7 @@ multiprocess="auto"
 
 malloc_trim="auto"
 gio="$default_feature"
+static_glib="no"
 
 # parse CC options second
 for opt do
@@ -1576,6 +1577,7 @@ for opt do
   --enable-gio) gio=yes
   ;;
   --disable-gio) gio=no
+  --static-glib) static_glib="yes"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -1616,6 +1618,15 @@ sysconfdir="${sysconfdir:-$prefix/etc}"
 local_statedir="${local_statedir:-$prefix/var}"
 firmwarepath="${firmwarepath:-$datadir/qemu-firmware}"
 localedir="${localedir:-$datadir/locale}"
+
+# Sanity check that we are not trying to enable --static-xxx and -static
+# at the same time.
+if test "$static" = "yes"; then
+    if test "$static_glib" = "yes"; then
+        echo "ERROR: --static and --static-glib are not compatible"
+        exit 1
+    fi
+fi
 
 case "$cpu" in
     ppc)
@@ -3339,20 +3350,51 @@ if test "$plugins" = yes; then
     glib_modules="$glib_modules gmodule-2.0"
 fi
 
+# This workaround is required due to a bug in pkg-config file for glib as it
+# doesn't define GLIB_STATIC_COMPILATION for pkg-config --static
+
+if test "$static" = yes && test "$mingw32" = yes; then
+    QEMU_CFLAGS="-DGLIB_STATIC_COMPILATION $QEMU_CFLAGS"
+fi
+
+glib_libs=''
 for i in $glib_modules; do
     if $pkg_config --atleast-version=$glib_req_ver $i; then
-        glib_cflags=$($pkg_config --cflags $i)
-        glib_libs=$($pkg_config --libs $i)
+        if test "$static_glib" != "no" ; then
+            glib_cflags=$($pkg_config --static --cflags $i)
+            glib_libs="$glib_libs $($pkg_config --static --libs $i)"
+        else
+            glib_cflags=$($pkg_config --cflags $i)
+            glib_libs="$glib_libs $($pkg_config --libs $i)"
+        fi
+        QEMU_CFLAGS="$glib_cflags $QEMU_CFLAGS"
     else
         error_exit "glib-$glib_req_ver $i is required to compile QEMU"
     fi
 done
 
-# This workaround is required due to a bug in pkg-config file for glib as it
-# doesn't define GLIB_STATIC_COMPILATION for pkg-config --static
+# This second workaround is required because of the missing libiconv link
+# in case of a static glib.
+if test "$static_glib" != "no" -a "$mingw32" = yes; then
+    LIBS="-Wl,-Bstatic -liconv -Wl,-Bdynamic $LIBS"
+fi
 
-if test "$static" = yes && test "$mingw32" = yes; then
-    glib_cflags="-DGLIB_STATIC_COMPILATION $glib_cflags"
+glib_fixed_lib=''
+# Dirty workaround to only link glib libraries statically and not the
+# system one included by pkg-config.
+if test "$static_glib" != "no" ; then
+    for i in $glib_libs; do
+        if test "$i" != "-lrt" -a "$i" != "-lole32" ; then
+            glib_fixed_lib="$glib_fixed_lib -Wl,-Bstatic $i -Wl,-Bdynamic"
+        else
+            glib_fixed_lib="$glib_fixed_lib $i"
+        fi
+    done
+    LIBS="$glib_fixed_lib $LIBS"
+    libs_qga="$glib_fixed_lib $libs_qga"
+else
+    LIBS="$glib_libs $LIBS"
+    libs_qga="$glib_libs $libs_qga"
 fi
 
 if ! test "$gio" = "no"; then
