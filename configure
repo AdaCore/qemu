@@ -497,6 +497,7 @@ malloc_trim=""
 bridge_helper="yes"
 enable_roms="yes"
 static_glib="no"
+static_pixman="no"
 
 # parse CC options first
 for opt do
@@ -1590,6 +1591,8 @@ for opt do
   ;;
   --static-glib) static_glib="yes"
   ;;
+  --static-pixman) static_pixman="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1603,6 +1606,10 @@ done
 if test "$static" = "yes"; then
     if test "$static_glib" = "yes"; then
         echo "ERROR: --static and --static-glib are not compatible"
+        exit 1
+    fi
+    if test "$static_pixman" = "yes"; then
+        echo "ERROR: --static and --static-pixman are not compatible"
         exit 1
     fi
 fi
@@ -3965,6 +3972,9 @@ if test "$want_tools" = "no" && test "$softmmu" = "no"; then
 elif $pkg_config --atleast-version=0.21.8 pixman-1 > /dev/null 2>&1; then
   pixman_cflags=$($pkg_config --cflags pixman-1)
   pixman_libs=$($pkg_config --libs pixman-1)
+  if test "$static_pixman" != "no"; then
+    pixman_libs="-Wl,-Bstatic $pixman_libs -Wl,-Bdynamic"
+  fi
 else
   error_exit "pixman >= 0.21.8 not present." \
       "Please install the pixman devel package."
