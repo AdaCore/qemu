@@ -336,6 +336,7 @@ gio="$default_feature"
 skip_meson=no
 static_glib="no"
 static_pixman="no"
+static_zlib="no"
 
 # The following Meson options are handled manually (still they
 # are included in the automatically generated help message)
@@ -1056,6 +1057,8 @@ for opt do
   ;;
   --static-pixman) static_pixman="yes"
   ;;
+  --static-zlib) static_zlib="yes"
+  ;;
   # backwards compatibility options
   --enable-trace-backend=*) meson_option_parse "--enable-trace-backends=$optarg" "$optarg"
   ;;
@@ -1144,6 +1147,10 @@ if test "$static" = "yes"; then
     fi
     if test "$static_pixman" = "yes"; then
         echo "ERROR: --static and --static-pixman are not compatible"
+        exit 1
+    fi
+    if test "$static_zlib" = "yes"; then
+        echo "ERROR: --static and --static-zlib are not compatible"
         exit 1
     fi
 fi
@@ -2973,6 +2980,9 @@ if test "$solaris" = "yes" ; then
 fi
 if test "$static" = "yes" ; then
   echo "CONFIG_STATIC=y" >> $config_host_mak
+fi
+if test "$static_zlib" = "yes" ; then
+  echo "CONFIG_STATIC_ZLIB=y" >> $config_host_mak
 fi
 echo "CONFIG_BDRV_RW_WHITELIST=$block_drv_rw_whitelist" >> $config_host_mak
 echo "CONFIG_BDRV_RO_WHITELIST=$block_drv_ro_whitelist" >> $config_host_mak

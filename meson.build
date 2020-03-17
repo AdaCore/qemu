@@ -463,7 +463,11 @@ if have_system or have_tools
   pixman = dependency('pixman-1', required: have_system, version:'>=0.21.8',
                       method: 'pkg-config', kwargs: static_kwargs)
 endif
-zlib = dependency('zlib', required: true, kwargs: static_kwargs)
+if 'CONFIG_STATIC_ZLIB' in config_host
+  zlib = dependency('zlib', required: true, static: true)
+else
+  zlib = dependency('zlib', required: true)
+endif
 
 libaio = not_found
 if not get_option('linux_aio').auto() or have_block
