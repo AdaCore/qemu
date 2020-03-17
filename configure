@@ -470,6 +470,7 @@ malloc_trim="auto"
 gio="$default_feature"
 static_glib="no"
 static_pixman="no"
+static_zlib="no"
 
 # parse CC options second
 for opt do
@@ -1582,6 +1583,8 @@ for opt do
   ;;
   --static-pixman) static_pixman="yes"
   ;;
+  --static-zlib) static_zlib="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1631,6 +1634,10 @@ if test "$static" = "yes"; then
     fi
     if test "$static_pixman" = "yes"; then
         echo "ERROR: --static and --static-pixman are not compatible"
+        exit 1
+    fi
+    if test "$static_zlib" = "yes"; then
+        echo "ERROR: --static and --static-zlib are not compatible"
         exit 1
     fi
 fi
@@ -5672,6 +5679,9 @@ fi
 echo "JACK_LIBS=$jack_libs" >> $config_host_mak
 if test "$audio_win_int" = "yes" ; then
   echo "CONFIG_AUDIO_WIN_INT=y" >> $config_host_mak
+fi
+if test "$static_zlib" = "yes" ; then
+  echo "CONFIG_STATIC_ZLIB=y" >> $config_host_mak
 fi
 echo "CONFIG_BDRV_RW_WHITELIST=$block_drv_rw_whitelist" >> $config_host_mak
 echo "CONFIG_BDRV_RO_WHITELIST=$block_drv_ro_whitelist" >> $config_host_mak
