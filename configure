@@ -460,6 +460,7 @@ meson=""
 ninja=""
 static_glib="no"
 static_pixman="no"
+static_zlib="no"
 skip_meson=no
 gettext="auto"
 fuse="auto"
@@ -1571,6 +1572,8 @@ for opt do
   ;;
   --static-pixman) static_pixman="yes"
   ;;
+  --static-zlib) static_zlib="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1620,6 +1623,10 @@ if test "$static" = "yes"; then
     fi
     if test "$static_pixman" = "yes"; then
         echo "ERROR: --static and --static-pixman are not compatible"
+        exit 1
+    fi
+    if test "$static_zlib" = "yes"; then
+        echo "ERROR: --static and --static-zlib are not compatible"
         exit 1
     fi
 fi
@@ -5575,6 +5582,9 @@ if test "$static" = "yes" ; then
 fi
 if test "$static_pixman" = "yes" ; then
   echo "CONFIG_STATIC_PIXMAN=y" >> $config_host_mak
+fi
+if test "$static_zlib" = "yes" ; then
+  echo "CONFIG_STATIC_ZLIB=y" >> $config_host_mak
 fi
 if test "$profiler" = "yes" ; then
   echo "CONFIG_PROFILER=y" >> $config_host_mak
