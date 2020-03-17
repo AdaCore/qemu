@@ -479,6 +479,7 @@ bridge_helper="yes"
 enable_roms="yes"
 static_glib="no"
 static_pixman="no"
+static_zlib="no"
 
 # parse CC options first
 for opt do
@@ -1434,6 +1435,8 @@ for opt do
   ;;
   --static-pixman) static_pixman="yes"
   ;;
+  --static-zlib) static_zlib="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1451,6 +1454,10 @@ if test "$static" = "yes"; then
     fi
     if test "$static_pixman" = "yes"; then
         echo "ERROR: --static and --static-pixman are not compatible"
+        exit 1
+    fi
+    if test "$static_zlib" = "yes"; then
+        echo "ERROR: --static and --static-zlib are not compatible"
         exit 1
     fi
 fi
@@ -2174,7 +2181,14 @@ EOF
             "Make sure to have the zlib libs and headers installed."
     fi
 fi
-LIBS="$LIBS -lz"
+
+if test "$static_zlib" != "no" ; then
+    ZLIB_LIBS="-Wl,-Bstatic -lz -Wl,-Bdynamic"
+else
+    ZLIB_LIBS="-lz"
+fi
+
+LIBS="$LIBS $ZLIB_LIBS"
 
 ##########################################
 # lzo check
@@ -6574,6 +6588,10 @@ fi
 if test "$bzip2" = "yes" ; then
   echo "CONFIG_BZIP2=y" >> $config_host_mak
   echo "BZIP2_LIBS=-lbz2" >> $config_host_mak
+fi
+
+if test "$zlib" = "yes" ; then
+  echo "ZLIB_LIBS=$ZLIB_LIBS" >> $config_host_mak
 fi
 
 if test "$libiscsi" = "yes" ; then
