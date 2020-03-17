@@ -470,13 +470,17 @@ if have_system or have_tools
                          kwargs: static_kwargs)
   endif
 endif
-zlib = dependency('zlib', required: true, kwargs: static_kwargs)
-
 libaio = not_found
 if not get_option('linux_aio').auto() or have_block
   libaio = cc.find_library('aio', has_headers: ['libaio.h'],
                            required: get_option('linux_aio'),
                            kwargs: static_kwargs)
+endif
+if 'CONFIG_STATIC_ZLIB' in config_host
+  zlib = dependency('zlib', required: true, static: true,
+                    kwargs: static_kwargs)
+else
+  zlib = dependency('zlib', required: true, kwargs: static_kwargs)
 endif
 linux_io_uring = not_found
 if not get_option('linux_io_uring').auto() or have_block
