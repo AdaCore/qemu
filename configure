@@ -1546,6 +1546,8 @@ for opt do
   ;;
   --static-zlib) static_zlib="yes"
   ;;
+  --disable-gio) gio="no"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -3577,17 +3579,18 @@ else
     libs_qga="$glib_libs $libs_qga"
 fi
 
-if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
-    gio_cflags=$($pkg_config --cflags gio-2.0)
-    gio_libs=$($pkg_config --libs gio-2.0)
-    gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
-    if [ ! -x "$gdbus_codegen" ]; then
-        gdbus_codegen=
-    fi
-    # Check that the libraries actually work -- Ubuntu 18.04 ships
-    # with pkg-config --static --libs data for gio-2.0 that is missing
-    # -lblkid and will give a link error.
-    cat > $TMPC <<EOF
+if test "$gio" != "no" ; then
+  if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
+      gio_cflags=$($pkg_config --cflags gio-2.0)
+      gio_libs=$($pkg_config --libs gio-2.0)
+      gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
+      if [ ! -x "$gdbus_codegen" ]; then
+          gdbus_codegen=
+      fi
+      # Check that the libraries actually work -- Ubuntu 18.04 ships
+      # with pkg-config --static --libs data for gio-2.0 that is missing
+      # -lblkid and will give a link error.
+      cat > $TMPC <<EOF
 #include <gio/gio.h>
 int main(void)
 {
@@ -3595,18 +3598,33 @@ int main(void)
     return 0;
 }
 EOF
-    if compile_prog "$gio_cflags" "$gio_libs" ; then
+      if compile_prog "$gio_cflags" "$gio_libs" ; then
+          gio=yes
+      else
+          gio=no
+      fi
+  else
+      gio=no
+  fi
+fi	
+
+if test "$gio" != "no" ; then
+    if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
         gio=yes
+        gio_cflags=$($pkg_config --cflags gio-2.0)
+        gio_libs=$($pkg_config --libs gio-2.0)
+        gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
+        if [ ! -x "$gdbus_codegen" ]; then
+            gdbus_codegen=
+        fi
     else
         gio=no
     fi
-else
-    gio=no
-fi
 
-if $pkg_config --atleast-version=$glib_req_ver gio-unix-2.0; then
-    gio_cflags="$gio_cflags $($pkg_config --cflags gio-unix-2.0)"
-    gio_libs="$gio_libs $($pkg_config --libs gio-unix-2.0)"
+    if $pkg_config --atleast-version=$glib_req_ver gio-unix-2.0; then
+        gio_cflags="$gio_cflags $($pkg_config --cflags gio-unix-2.0)"
+        gio_libs="$gio_libs $($pkg_config --libs gio-unix-2.0)"
+    fi
 fi
 
 # Sanity check that the current size_t matches the
