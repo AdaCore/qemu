@@ -1579,11 +1579,14 @@ for opt do
   --enable-gio) gio=yes
   ;;
   --disable-gio) gio=no
+  ;;
   --static-glib) static_glib="yes"
   ;;
   --static-pixman) static_pixman="yes"
   ;;
   --static-zlib) static_zlib="yes"
+  ;;
+  --disable-gio) gio="no"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -3431,27 +3434,34 @@ int main(void)
     return 0;
 }
 EOF
-        if compile_prog "$gio_cflags" "$gio_libs" ; then
-            pass=yes
-        else
-            pass=no
-        fi
+      if compile_prog "$gio_cflags" "$gio_libs" ; then
+          gio=yes
+          pass=yes
+      else
+          gio=no
+          pass=no
+      fi
+  else
+      gio=no
+  fi
+fi	
 
-        if test "$pass" = "yes" &&
-            $pkg_config --atleast-version=$glib_req_ver gio-unix-2.0; then
-            gio_cflags="$gio_cflags $($pkg_config --cflags gio-unix-2.0)"
-            gio_libs="$gio_libs $($pkg_config --libs gio-unix-2.0)"
-        fi
-    fi
-
-    if test "$pass" = "no"; then
-        if test "$gio" = "yes"; then
-            feature_not_found "gio" "Install libgio >= 2.0"
-        else
-            gio=no
+if test "$gio" != "no" ; then
+    if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
+        gio=yes
+        gio_cflags=$($pkg_config --cflags gio-2.0)
+        gio_libs=$($pkg_config --libs gio-2.0)
+        gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
+        if [ ! -x "$gdbus_codegen" ]; then
+            gdbus_codegen=
         fi
     else
-        gio=yes
+        gio=no
+    fi
+
+    if $pkg_config --atleast-version=$glib_req_ver gio-unix-2.0; then
+        gio_cflags="$gio_cflags $($pkg_config --cflags gio-unix-2.0)"
+        gio_libs="$gio_libs $($pkg_config --libs gio-unix-2.0)"
     fi
 fi
 
