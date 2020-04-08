@@ -1596,6 +1596,8 @@ for opt do
   ;;
   --static-zlib) static_zlib="yes"
   ;;
+  --disable-gio) gio="no"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -3859,21 +3861,23 @@ else
     libs_qga="$glib_libs $libs_qga"
 fi
 
-if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
-    gio=yes
-    gio_cflags=$($pkg_config --cflags gio-2.0)
-    gio_libs=$($pkg_config --libs gio-2.0)
-    gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
-    if [ ! -x "$gdbus_codegen" ]; then
-        gdbus_codegen=
+if test "$gio" != "no" ; then
+    if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
+        gio=yes
+        gio_cflags=$($pkg_config --cflags gio-2.0)
+        gio_libs=$($pkg_config --libs gio-2.0)
+        gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
+        if [ ! -x "$gdbus_codegen" ]; then
+            gdbus_codegen=
+        fi
+    else
+        gio=no
     fi
-else
-    gio=no
-fi
 
-if $pkg_config --atleast-version=$glib_req_ver gio-unix-2.0; then
-    gio_cflags="$gio_cflags $($pkg_config --cflags gio-unix-2.0)"
-    gio_libs="$gio_libs $($pkg_config --libs gio-unix-2.0)"
+    if $pkg_config --atleast-version=$glib_req_ver gio-unix-2.0; then
+        gio_cflags="$gio_cflags $($pkg_config --cflags gio-unix-2.0)"
+        gio_libs="$gio_libs $($pkg_config --libs gio-unix-2.0)"
+    fi
 fi
 
 # Sanity check that the current size_t matches the
