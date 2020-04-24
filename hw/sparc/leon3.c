@@ -139,10 +139,10 @@ static void main_cpu_reset(void *opaque)
     env->regbase[6] = s->sp;
 }
 
-void leon3_irq_ack(void *irq_manager, int intno)
+void leon3_irq_ack(CPUSPARCState *env, int intno)
 {
     /* No SMP support yet.  */
-    grlib_irqmp_ack((DeviceState *)irq_manager, 0, intno);
+    grlib_irqmp_ack(env->irq_manager, 0, intno);
 }
 
 /*
