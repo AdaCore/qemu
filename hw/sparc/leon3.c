@@ -141,7 +141,8 @@ static void main_cpu_reset(void *opaque)
 
 void leon3_irq_ack(void *irq_manager, int intno)
 {
-    grlib_irqmp_ack((DeviceState *)irq_manager, intno);
+    /* No SMP support yet.  */
+    grlib_irqmp_ack((DeviceState *)irq_manager, 0, intno);
 }
 
 /*
