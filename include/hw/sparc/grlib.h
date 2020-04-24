@@ -34,7 +34,7 @@
 /* IRQMP */
 #define TYPE_GRLIB_IRQMP "grlib-irqmp"
 
-void grlib_irqmp_ack(DeviceState *dev, int intno);
+void grlib_irqmp_ack(DeviceState *dev, int cpu, int intno);
 
 /* GPTimer */
 #define TYPE_GRLIB_GPTIMER "grlib-gptimer"
