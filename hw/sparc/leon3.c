@@ -217,6 +217,15 @@ static void leon3_irq_manager(CPUSPARCState *env, void *irq_manager, int intno)
     leon3_cache_control_int(env);
 }
 
+static void leon3_start_cpu(void *opaque, int n, int level)
+{
+    CPUState *cs = opaque;
+
+    if (level) {
+        cs->halted = 0;
+    }
+}
+
 static void leon3_generic_hw_init(MachineState *machine)
 {
     ram_addr_t ram_size = machine->ram_size;
@@ -266,6 +275,12 @@ static void leon3_generic_hw_init(MachineState *machine)
     irqmpdev = qdev_new(TYPE_GRLIB_IRQMP);
     object_property_set_int(OBJECT(irqmpdev), "ncpus", 1, &error_fatal);
     sysbus_realize_and_unref(SYS_BUS_DEVICE(irqmpdev), &error_fatal);
+
+    qdev_init_gpio_in_named_with_opaque(DEVICE(cpu), leon3_start_cpu,
+                                        env, "start_cpu", 1);
+    qdev_connect_gpio_out_named(irqmpdev, "grlib-start-cpu", 0,
+                                qdev_get_gpio_in_named(DEVICE(cpu),
+                                                       "start_cpu", 0));
 
     qdev_init_gpio_in_named_with_opaque(DEVICE(cpu), leon3_set_pil_in,
                                         env, "pil", 1);
