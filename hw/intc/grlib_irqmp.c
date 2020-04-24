@@ -30,7 +30,7 @@
 #include "cpu.h"
 
 #include "hw/qdev-properties.h"
-#include "hw/sparc/grlib.h"
+#include "hw/intc/grlib_irqmp.h"
 
 #include "trace.h"
 #include "qapi/error.h"
