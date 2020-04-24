@@ -167,10 +167,10 @@ static void leon3_cache_control_int(CPUSPARCState *env)
     }
 }
 
-static void leon3_irq_ack(void *irq_manager, int intno)
+void leon3_irq_ack(CPUSPARCState *env, int intno)
 {
     /* No SMP support yet.  */
-    grlib_irqmp_ack((DeviceState *)irq_manager, 0, intno);
+    grlib_irqmp_ack(env->irq_manager, 0, intno);
 }
 
 /*
