@@ -251,4 +251,11 @@ void helper_power_down(CPUSPARCState *env)
     env->npc = env->pc + 4;
     cpu_loop_exit(cs);
 }
+
+target_ulong helper_rdasr17(CPUSPARCState *env)
+{
+    CPUState *cs = env_cpu(env);
+
+    return (cs->cpu_index << 28) | (1 << 8) | (env->nwindows - 1);
+}
 #endif
