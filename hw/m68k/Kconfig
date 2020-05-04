@@ -7,3 +7,6 @@ config MCF5208
     bool
     select COLDFIRE
     select PTIMER
+
+config MVME
+    bool
