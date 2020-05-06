@@ -56,6 +56,7 @@
 #define LEON3_RAM_OFFSET     (0x40000000)
 
 #define MAX_PILS 16
+#define MAX_CPUS  4
 
 #define LEON3_UART_OFFSET  (0x80000100)
 #define LEON3_UART_IRQ     (3)
@@ -70,9 +71,12 @@
 #define LEON3_AHB_PNP_OFFSET (0xFFFFF000)
 
 typedef struct ResetData {
-    SPARCCPU *cpu;
-    uint32_t  entry;            /* save kernel entry in case of reset */
-    target_ulong sp;            /* initial stack pointer */
+    struct CPUResetData {
+        int id;
+        SPARCCPU *cpu;
+        target_ulong sp;  /* initial stack pointer */
+    } info[MAX_CPUS];
+    uint32_t entry;             /* save kernel entry in case of reset */
 } ResetData;
 
 static uint32_t *gen_store_u32(uint32_t *code, hwaddr addr, uint32_t val)
@@ -128,24 +132,26 @@ static void write_bootloader(CPUSPARCState *env, uint8_t *base,
     stl_p(p++, 0x01000000); /* nop */
 }
 
-static void main_cpu_reset(void *opaque)
+static void leon3_cpu_reset(void *opaque)
 {
-    ResetData *s   = (ResetData *)opaque;
-    CPUState *cpu = CPU(s->cpu);
-    CPUSPARCState  *env = &s->cpu->env;
+    struct CPUResetData *info = (struct CPUResetData *) opaque;
+    int id = info->id;
+    ResetData *s = (ResetData *)DO_UPCAST(ResetData, info[id], info);
+    CPUState *cpu = CPU(s->info[id].cpu);
+    CPUSPARCState *env = cpu->env_ptr;
 
     cpu_reset(cpu);
-
-    cpu->halted = 0;
-    env->pc     = s->entry;
-    env->npc    = s->entry + 4;
-    env->regbase[6] = s->sp;
+    cpu->halted = cpu->cpu_index != 0;
+    env->pc = s->entry;
+    env->npc = s->entry + 4;
+    env->regbase[6] = s->info[id].sp;
 }
 
 void leon3_irq_ack(CPUSPARCState *env, int intno)
 {
+    CPUState *cpu = CPU(env_cpu(env));
     /* No SMP support yet.  */
-    grlib_irqmp_ack(env->irq_manager, 0, intno);
+    grlib_irqmp_ack(env->irq_manager, cpu->cpu_index, intno);
 }
 
 /*
@@ -189,7 +195,7 @@ static void leon3_set_pil_in(void *opaque, int n, int level)
 
 static void leon3_start_cpu(void *opaque, int n, int level)
 {
-    CPUState *cs = opaque;
+    CPUState *cs = CPU(opaque);
 
     if (level) {
         cs->halted = 0;
@@ -201,7 +207,7 @@ static void leon3_generic_hw_init(MachineState *machine)
     ram_addr_t ram_size = machine->ram_size;
     const char *kernel_filename = machine->kernel_filename;
     SPARCCPU *cpu;
-    CPUSPARCState   *env;
+    CPUSPARCState *env;
     MemoryRegion *address_space_mem = get_system_memory();
     MemoryRegion *prom = g_new(MemoryRegion, 1);
     int         ret;
@@ -215,17 +221,21 @@ static void leon3_generic_hw_init(MachineState *machine)
     AHBPnp *ahb_pnp;
     APBPnp *apb_pnp;
 
-    /* Init CPU */
-    cpu = SPARC_CPU(cpu_create(machine->cpu_type));
-    env = &cpu->env;
+    reset_info = g_malloc0(sizeof(ResetData));
 
-    cpu_sparc_set_id(env, 0);
+    for (i = 0; i < machine->smp.cpus; i++) {
+        /* Init CPU */
+        cpu = SPARC_CPU(cpu_create(machine->cpu_type));
+        env = &cpu->env;
 
-    /* Reset data */
-    reset_info        = g_malloc0(sizeof(ResetData));
-    reset_info->cpu   = cpu;
-    reset_info->sp    = LEON3_RAM_OFFSET + ram_size;
-    qemu_register_reset(main_cpu_reset, reset_info);
+        cpu_sparc_set_id(env, i);
+
+        /* Reset data */
+        reset_info->info[i].id = i;
+        reset_info->info[i].cpu = cpu;
+        reset_info->info[i].sp = LEON3_RAM_OFFSET + ram_size;
+        qemu_register_reset(leon3_cpu_reset, &reset_info->info[i]);
+    }
 
     ahb_pnp = GRLIB_AHB_PNP(object_new(TYPE_GRLIB_AHB_PNP));
     object_property_set_bool(OBJECT(ahb_pnp), true, "realized", &error_fatal);
@@ -243,22 +253,28 @@ static void leon3_generic_hw_init(MachineState *machine)
 
     /* Allocate IRQ manager */
     dev = DEVICE(qdev_create(NULL, TYPE_GRLIB_IRQMP));
-    object_property_set_int(OBJECT(dev), 1, "ncpus", &error_fatal);
+    object_property_set_int(OBJECT(dev), machine->smp.cpus, "ncpus",
+                            &error_fatal);
     qdev_init_nofail(dev);
 
-    qdev_init_gpio_in_named_with_opaque(DEVICE(cpu), leon3_start_cpu,
-                                        env, "start_cpu", 1);
-    qdev_connect_gpio_out_named(dev, "grlib-start-cpu", 0,
-                                qdev_get_gpio_in_named(DEVICE(cpu),
-                                                       "start_cpu", 0));
+    for (i = 0; i < machine->smp.cpus; i++) {
+        cpu = reset_info->info[i].cpu;
+        env = &cpu->env;
+        qdev_init_gpio_in_named_with_opaque(DEVICE(cpu), leon3_start_cpu,
+                                            cpu, "start_cpu", 1);
+        qdev_connect_gpio_out_named(dev, "grlib-start-cpu", i,
+                                    qdev_get_gpio_in_named(DEVICE(cpu),
+                                                           "start_cpu", 0));
+        qdev_init_gpio_in_named_with_opaque(DEVICE(cpu), leon3_set_pil_in,
+                                            env, "pil", 1);
+        qdev_connect_gpio_out_named(dev, "grlib-irq", i,
+                                    qdev_get_gpio_in_named(DEVICE(cpu),
+                                                           "pil", 0));
+        env->irq_manager = dev;
+        env->qemu_irq_ack = leon3_irq_manager;
+    }
 
-    qdev_init_gpio_in_named_with_opaque(DEVICE(cpu), leon3_set_pil_in,
-                                        env, "pil", 1);
-    qdev_connect_gpio_out_named(dev, "grlib-irq", 0,
-                                qdev_get_gpio_in_named(DEVICE(cpu), "pil", 0));
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, LEON3_IRQMP_OFFSET);
-    env->irq_manager = dev;
-    env->qemu_irq_ack = leon3_irq_manager;
     cpu_irqs = qemu_allocate_irqs(grlib_irqmp_set_irq, dev, MAX_PILS);
     grlib_apb_pnp_add_entry(apb_pnp, LEON3_IRQMP_OFFSET, 0xFFF,
                             GRLIB_VENDOR_GAISLER, GRLIB_IRQMP_DEV,
@@ -336,10 +352,13 @@ static void leon3_generic_hw_init(MachineState *machine)
             uint8_t *bootloader_entry;
 
             bootloader_entry = memory_region_get_ram_ptr(prom);
-            write_bootloader(env, bootloader_entry, entry);
-            env->pc = LEON3_PROM_OFFSET;
-            env->npc = LEON3_PROM_OFFSET + 4;
+            write_bootloader(&reset_info->info[0].cpu->env, bootloader_entry,
+                             entry);
             reset_info->entry = LEON3_PROM_OFFSET;
+            for (i = 0; i < machine->smp.cpus; i++) {
+                reset_info->info[i].cpu->env.pc = LEON3_PROM_OFFSET;
+                reset_info->info[i].cpu->env.npc = LEON3_PROM_OFFSET + 4;
+            }
         }
     }
 
@@ -386,6 +405,7 @@ static void leon3_generic_machine_init(MachineClass *mc)
     mc->init = leon3_generic_hw_init;
     mc->default_cpu_type = SPARC_CPU_TYPE_NAME("LEON3");
     mc->default_ram_id = "leon3.ram";
+    mc->max_cpus = MAX_CPUS;
 }
 
 DEFINE_MACHINE("leon3_generic", leon3_generic_machine_init)
