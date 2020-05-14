@@ -1,7 +1,7 @@
 /*
  * QEMU System Emulator
  *
- * Copyright (C) 2009-2011, AdaCore
+ * Copyright (C) 2009-2020, AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -130,7 +130,11 @@ static void exec_trace_flush(void)
         }
     }
 
-    fwrite(trace_entries, len, 1, tracefile);
+    if (fwrite(trace_entries, len, 1, tracefile) != 1) {
+        fprintf(stderr, "exec_trace_flush failed\n");
+        exit(1);
+    }
+
     trace_current = trace_entries;
     if (tracefile_nobuf) {
         fflush(tracefile);
