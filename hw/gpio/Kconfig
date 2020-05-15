@@ -7,3 +7,6 @@ config PL061
 
 config GPIO_KEY
     bool
+
+config PSE_GPIO
+    bool
