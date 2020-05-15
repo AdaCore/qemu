@@ -3028,12 +3028,12 @@ void qemu_init(int argc, char **argv, char **envp)
                                    GetCurrentThreadId());
 
         if (!handle) {
-            printf("Can't get a thread handle: %d\n", GetLastError());
+            printf("Can't get a thread handle: %ld\n", GetLastError());
             abort();
         }
 
         if (!SetThreadPriority(handle, THREAD_PRIORITY_ABOVE_NORMAL)) {
-            printf("Can't set thread priority: %d\n", GetLastError());
+            printf("Can't set thread priority: %ld\n", GetLastError());
             abort();
         }
     }
