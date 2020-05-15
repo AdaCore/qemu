@@ -749,11 +749,11 @@ int get_tmp_filename(char *filename, int size)
        have length MAX_PATH or greater.  */
     assert(size >= MAX_PATH);
     if (GetTempPath(MAX_PATH, temp_dir) == 0) {
-        fprintf(stderr, "GetTempPath() error: %d\n", GetLastError());
+        fprintf(stderr, "GetTempPath() error: %ld\n", GetLastError());
         return -GetLastError();
     }
     if (GetTempFileName(temp_dir, "qem", 0, filename) == 0) {
-        fprintf(stderr, "GetTempFileName(%s) error: %d\n", temp_dir,
+        fprintf(stderr, "GetTempFileName(%s) error: %ld\n", temp_dir,
                 GetLastError());
         return -GetLastError();
     }
