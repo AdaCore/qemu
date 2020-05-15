@@ -169,7 +169,7 @@ static void exec_read_map_file(char **poptarg)
 
     histfile = fopen(filename, "rb");
     if (histfile == NULL) {
-        fprintf(stderr, "cannot open histmap file '%s': %m\n", filename);
+        fprintf(stderr, "cannot open histmap file '%s'\n", filename);
         exit(1);
     }
     if (fread(&hdr, sizeof(hdr), 1, histfile) != 1) {
@@ -297,7 +297,7 @@ void exec_trace_init(const char *optarg)
     tracefile = fopen(optarg, noappend ? "wb" : "ab");
 
     if (tracefile == NULL) {
-        fprintf(stderr, "can't open file %s: %m\n", optarg);
+        fprintf(stderr, "can't open file %s\n", optarg);
         exit(1);
     }
 
