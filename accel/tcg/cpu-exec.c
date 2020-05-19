@@ -41,7 +41,7 @@
 #include "qemu-decision_map.h"
 
 static void trace_before_exec(TranslationBlock *);
-static void trace_after_exec(unsigned long);
+static void trace_after_exec(uintptr_t);
 static void trace_at_fault(CPUArchState *e);
 /* #define DEBUG_TRACE */
 
@@ -789,7 +789,7 @@ static void trace_before_exec(TranslationBlock *tb)
 }
 
 /* TB is the tb we jumped to, LAST_TB (if not null) is the last executed tb.  */
-static void trace_after_exec(unsigned long next_tb)
+static void trace_after_exec(uintptr_t next_tb)
 {
     TranslationBlock *last_tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
     int exit_val = next_tb & TB_EXIT_MASK;
