@@ -5,11 +5,12 @@
 #include "hw/qdev.h"
 #include "sysemu/sysemu.h"
 #include "qemu/qemu-clock.h"
+#include "hw/sysbus.h"
 
 #define XLNX_CRL_MAX_REGS (0x300)
 
 typedef struct {
-    DeviceState parent_obj;
+    SysBusDevice parent_obj;
 
     uint32_t regs[XLNX_CRL_MAX_REGS];
     MemoryRegion iomem;
