@@ -231,6 +231,10 @@ static void spike_board_init(MachineState *machine)
     sifive_clint_create(memmap[SPIKE_CLINT].base, memmap[SPIKE_CLINT].size,
         smp_cpus, SIFIVE_SIP_BASE, SIFIVE_TIMECMP_BASE, SIFIVE_TIME_BASE,
         false);
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(NULL, 0);
+    gnatbus_device_init();
 }
 
 static void spike_v1_10_0_board_init(MachineState *machine)
@@ -332,10 +336,6 @@ static void spike_v1_10_0_board_init(MachineState *machine)
     sifive_clint_create(memmap[SPIKE_CLINT].base, memmap[SPIKE_CLINT].size,
         smp_cpus, SIFIVE_SIP_BASE, SIFIVE_TIMECMP_BASE, SIFIVE_TIME_BASE,
         false);
-
-    /* Initialize the GnatBus Master */
-    gnatbus_master_init(NULL, 0);
-    gnatbus_device_init();
 }
 
 static void spike_v1_09_1_board_init(MachineState *machine)
