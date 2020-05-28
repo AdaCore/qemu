@@ -249,6 +249,7 @@ static uint64_t sifive_plic_read(void *opaque, hwaddr addr, unsigned size)
                     value);
                 sifive_plic_print_state(plic);
             }
+            sifive_plic_update(plic);
             return value;
         }
     }
