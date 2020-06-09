@@ -793,7 +793,7 @@ static void sifive_u_soc_instance_init(Object *obj)
     SiFiveUSoCState *s = RISCV_U_SOC(obj);
 
     object_initialize_child(obj, "e-cluster", &s->e_cluster, TYPE_CPU_CLUSTER);
-    qdev_prop_set_uint32(DEVICE(&s->e_cluster), "cluster-id", 0);
+    qdev_prop_set_uint32(DEVICE(&s->e_cluster), "cluster-id", 1);
 
     object_initialize_child(OBJECT(&s->e_cluster), "e-cpus", &s->e_cpus,
                             TYPE_RISCV_HART_ARRAY);
@@ -803,7 +803,7 @@ static void sifive_u_soc_instance_init(Object *obj)
     qdev_prop_set_uint64(DEVICE(&s->e_cpus), "resetvec", 0x1004);
 
     object_initialize_child(obj, "u-cluster", &s->u_cluster, TYPE_CPU_CLUSTER);
-    qdev_prop_set_uint32(DEVICE(&s->u_cluster), "cluster-id", 1);
+    qdev_prop_set_uint32(DEVICE(&s->u_cluster), "cluster-id", 0);
 
     object_initialize_child(OBJECT(&s->u_cluster), "u-cpus", &s->u_cpus,
                             TYPE_RISCV_HART_ARRAY);
