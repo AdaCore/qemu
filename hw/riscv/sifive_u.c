@@ -418,7 +418,7 @@ static void riscv_sifive_u_soc_init(Object *obj)
     object_initialize_child(obj, "e-cluster", &s->e_cluster,
                             sizeof(s->e_cluster), TYPE_CPU_CLUSTER,
                             &error_abort, NULL);
-    qdev_prop_set_uint32(DEVICE(&s->e_cluster), "cluster-id", 0);
+    qdev_prop_set_uint32(DEVICE(&s->e_cluster), "cluster-id", 1);
 
     object_initialize_child(OBJECT(&s->e_cluster), "e-cpus",
                             &s->e_cpus, sizeof(s->e_cpus),
@@ -431,7 +431,7 @@ static void riscv_sifive_u_soc_init(Object *obj)
     object_initialize_child(obj, "u-cluster", &s->u_cluster,
                             sizeof(s->u_cluster), TYPE_CPU_CLUSTER,
                             &error_abort, NULL);
-    qdev_prop_set_uint32(DEVICE(&s->u_cluster), "cluster-id", 1);
+    qdev_prop_set_uint32(DEVICE(&s->u_cluster), "cluster-id", 0);
 
     object_initialize_child(OBJECT(&s->u_cluster), "u-cpus",
                             &s->u_cpus, sizeof(s->u_cpus),
