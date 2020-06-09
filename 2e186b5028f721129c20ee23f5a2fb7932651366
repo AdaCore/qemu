@@ -1,0 +1,6 @@
+Code-Review+2: Frédéric Konrad <konrad@adacore.com>
+Submitted-by: Fabien Chouteau <chouteau@adacore.com>
+Submitted-at: Tue, 09 Jun 2020 12:39:43 +0200
+Reviewed-on: https://git.adacore.com/74146
+Project: qemu
+Branch: refs/heads/qemu-stable-5.0.0
