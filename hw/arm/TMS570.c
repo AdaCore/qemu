@@ -210,8 +210,12 @@ static void tms570_init(MachineState *args)
 
     /* RTI */
     dev = qdev_create(NULL, "RTI");
-    qdev_prop_set_uint32(dev, "freq", 180000000), /* 180 MHz */
+
+    /* 180 MHz / 8, the Ravenscar run-time is configuring a 2^3 divider in RTI.
+     * This divider is not emulated so we divide the clock base frequency */
+    qdev_prop_set_uint32(dev, "freq", 180000000 / 8);
     qdev_init_nofail(dev);
+
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0xFFFFFC00);
     sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, pic[2]); /* COMPARE0 */
     sysbus_connect_irq(SYS_BUS_DEVICE(dev), 1, pic[3]); /* COMPARE1 */
