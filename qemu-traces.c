@@ -111,6 +111,10 @@ static void exec_trace_flush(void)
     static int limit_hit = 0;
     size_t len = (trace_current - trace_entries) * sizeof(trace_entries[0]);
 
+    if (!len) {
+        return;
+    }
+
     if (tracefile_limit) {
         written += len;
         if ((tracefile_limit < written)) {
