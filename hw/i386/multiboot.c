@@ -189,30 +189,25 @@ int load_multiboot(X86MachineState *x86ms,
     if (flags & 0x00000004) { /* MULTIBOOT_HEADER_HAS_VBE */
         error_report("multiboot knows VBE. we don't");
     }
-    if (!(flags & 0x00010000)) { /* MULTIBOOT_HEADER_HAS_ADDR */
-        uint64_t elf_entry;
-        uint64_t elf_low, elf_high;
-        int kernel_size;
+
+    /* If it's an elf file, load it with load_elf instead of badly
+     * loading it below.  */
+    int kernel_size;
+    uint64_t elf_entry;
+    uint64_t elf_low, elf_high;
+
+    kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, &elf_entry,
+                           &elf_low, &elf_high, NULL, 0, I386_ELF_MACHINE,
+                           0, 0);
+    if (kernel_size >= 0) {
         fclose(f);
-
-        if (((struct elf64_hdr*)header)->e_machine == EM_X86_64) {
-            error_report("Cannot load x86-64 image, give a 32bit one.");
-            exit(1);
-        }
-
-        kernel_size = load_elf(kernel_filename, NULL, NULL, NULL, &elf_entry,
-                               &elf_low, &elf_high, NULL, 0, I386_ELF_MACHINE,
-                               0, 0);
-        if (kernel_size < 0) {
-            error_report("Error while loading elf kernel");
-            exit(1);
-        }
         mh_load_addr = elf_low;
         mb_kernel_size = elf_high - elf_low;
         mh_entry_addr = elf_entry;
 
         mbs.mb_buf = g_malloc(mb_kernel_size);
-        if (rom_copy(mbs.mb_buf, mh_load_addr, mb_kernel_size) != mb_kernel_size) {
+        if (rom_copy(mbs.mb_buf, mh_load_addr, mb_kernel_size)
+            != mb_kernel_size) {
             error_report("Error while fetching elf kernel from rom");
             exit(1);
         }
@@ -220,7 +215,14 @@ int load_multiboot(X86MachineState *x86ms,
         mb_debug("loading multiboot-elf kernel "
                  "(%#x bytes) with entry %#zx",
                  mb_kernel_size, (size_t)mh_entry_addr);
-    } else {
+    }
+
+    if (!(flags & 0x00010000) && kernel_size < 0) {
+         /* MULTIBOOT_HEADER_HAS_ADDR, not supported if not an elf file.  */
+        fclose(f);
+        error_report("Error while loading elf kernel");
+        exit(1);
+    } else if (kernel_size < 0) {
         /* Valid if mh_flags sets MULTIBOOT_HEADER_HAS_ADDR. */
         uint32_t mh_header_addr = ldl_p(header+i+12);
         uint32_t mh_load_end_addr = ldl_p(header+i+20);
