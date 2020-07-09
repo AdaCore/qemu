@@ -73,6 +73,7 @@ extern int daemon(int, int);
 
 /* enable C99/POSIX format strings (needs mingw32-runtime 3.15 or later) */
 #ifdef __MINGW32__
+#undef __USE_MINGW_ANSI_STDIO
 #define __USE_MINGW_ANSI_STDIO 1
 #endif
 
