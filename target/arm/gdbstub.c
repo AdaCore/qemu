@@ -160,21 +160,26 @@ static int vfp_gdb_set_reg(CPUARMState *env, uint8_t *buf, int reg)
     int nregs = cpu_isar_feature(aa32_simd_r32, cpu) ? 32 : 16;
 
     if (reg < nregs) {
-        *aa32_vfp_dreg(env, reg) = ldq_le_p(buf);
+        *aa32_vfp_dreg(env, reg) = tswap64(ldq_le_p(buf));
         return 8;
     }
     if (arm_feature(env, ARM_FEATURE_NEON)) {
         nregs += 16;
         if (reg < nregs) {
             uint64_t *q = aa32_vfp_qreg(env, reg - 32);
-            q[0] = ldq_le_p(buf);
-            q[1] = ldq_le_p(buf + 8);
+#ifdef TARGET_WORDS_BIGENDIAN
+            q[0] = tswap64(ldq_le_p(buf + 8));
+            q[1] = tswap64(ldq_le_p(buf));
+#else
+            q[0] = tswap64(ldq_le_p(buf));
+            q[1] = tswap64(ldq_le_p(buf + 8));
+#endif
             return 16;
         }
     }
     switch (reg - nregs) {
     case 0:
-        vfp_set_fpscr(env, ldl_p(buf));
+        vfp_set_fpscr(env, tswap32(ldl_p(buf)));
         return 4;
     }
     return 0;
