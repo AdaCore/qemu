@@ -41,6 +41,7 @@
 #include "qapi/error.h"
 #include "qemu/module.h"
 #include "hw/core/generic-loader.h"
+#include "sysemu/device_tree.h"
 
 #define CPU_NONE 0xFFFFFFFF
 
@@ -53,6 +54,14 @@ static void generic_loader_reset(void *opaque)
         cpu_reset(s->cpu);
         if (cc) {
             cc->set_pc(s->cpu, s->addr);
+        }
+    }
+
+    if (s->load_dtb) {
+        CPUClass *cc = CPU_GET_CLASS(s->cpu);
+        if (cc) {
+            assert(cc->set_dtb_blobs);
+            cc->set_dtb_blobs(s->cpu, s->addr);
         }
     }
 
@@ -151,6 +160,22 @@ static void generic_loader_realize(DeviceState *dev, Error **errp)
             if (size < 0) {
                 size = load_targphys_hex_as(s->file, &entry, as);
             }
+        }
+
+        /* Check if the file is a device-tree, in which case try to set the
+         * correct address later.  */
+        if (size < 0) {
+            void *fdt = load_device_tree(s->file, &size);
+
+            if (fdt) {
+                if (s->cpu_num != CPU_NONE) {
+                    s->set_pc = false;
+                    s->load_dtb = true;
+                }
+                g_free(fdt);
+            }
+            /* Let load_image_targphys_as load the binary.  */
+            size = -1;
         }
 
         if (size < 0 || s->force_raw) {
