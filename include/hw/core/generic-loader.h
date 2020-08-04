@@ -39,6 +39,7 @@ struct GenericLoaderState {
     bool force_raw;
     bool data_be;
     bool set_pc;
+    bool load_dtb;
 };
 
 #define TYPE_GENERIC_LOADER "loader"
