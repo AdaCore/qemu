@@ -58,6 +58,19 @@ static void arm_cpu_set_pc(CPUState *cs, vaddr value)
     }
 }
 
+static void arm_set_dtb_blobs(CPUState *cs, vaddr value)
+{
+    ARMCPU *cpu = ARM_CPU(cs);
+    CPUARMState *env = &cpu->env;
+
+    if (is_a64(env)) {
+        env->xregs[0] = value;
+    } else {
+        env->regs[0] = 0;
+        env->regs[2] = value;
+    }
+}
+
 #ifdef CONFIG_TCG
 void arm_cpu_synchronize_from_tb(CPUState *cs,
                                  const TranslationBlock *tb)
@@ -2081,6 +2094,7 @@ static void arm_cpu_class_init(ObjectClass *oc, void *data)
     cc->has_work = arm_cpu_has_work;
     cc->dump_state = arm_cpu_dump_state;
     cc->set_pc = arm_cpu_set_pc;
+    cc->set_dtb_blobs = arm_set_dtb_blobs;
     cc->gdb_read_register = arm_cpu_gdb_read_register;
     cc->gdb_write_register = arm_cpu_gdb_write_register;
 #ifndef CONFIG_USER_ONLY
