@@ -149,8 +149,7 @@ GENERATED_STORAGE_DAEMON_QAPI_FILES += storage-daemon/qapi/qapi-visit.c
 GENERATED_STORAGE_DAEMON_QAPI_FILES += storage-daemon/qapi/qapi-doc.texi
 
 generated-files-y += $(GENERATED_QAPI_FILES)
-generated-files-y += $(GENERATED_STORAGE_DAEMON_QAPI_FILES)
-
+# generated-files-y += $(GENERATED_STORAGE_DAEMON_QAPI_FILES)
 generated-files-y += trace/generated-tcg-tracers.h
 
 generated-files-y += trace/generated-helpers-wrappers.h
@@ -505,7 +504,7 @@ TARGET_DIRS_RULES := $(foreach t, all fuzz clean install, $(addsuffix /$(t), $(T
 SOFTMMU_ALL_RULES=$(filter %-softmmu/all, $(TARGET_DIRS_RULES))
 $(SOFTMMU_ALL_RULES): $(authz-obj-y)
 $(SOFTMMU_ALL_RULES): $(block-obj-y)
-$(SOFTMMU_ALL_RULES): $(storage-daemon-obj-y)
+# $(SOFTMMU_ALL_RULES): $(storage-daemon-obj-y)
 $(SOFTMMU_ALL_RULES): $(chardev-obj-y)
 $(SOFTMMU_ALL_RULES): $(crypto-obj-y)
 $(SOFTMMU_ALL_RULES): $(io-obj-y)
@@ -676,12 +675,12 @@ qapi-modules-storage-daemon = \
 	$(SRC_PATH)/storage-daemon/qapi/qapi-schema.json \
     $(QAPI_MODULES_STORAGE_DAEMON:%=$(SRC_PATH)/qapi/%.json)
 
-$(GENERATED_STORAGE_DAEMON_QAPI_FILES): storage-daemon/qapi/qapi-gen-timestamp ;
-storage-daemon/qapi/qapi-gen-timestamp: $(qapi-modules-storage-daemon) $(qapi-py)
-	$(call quiet-command,$(PYTHON) $(SRC_PATH)/scripts/qapi-gen.py \
-		-o "storage-daemon/qapi" $<, \
-		"GEN","$(@:%-timestamp=%)")
-	@>$@
+#$(GENERATED_STORAGE_DAEMON_QAPI_FILES): storage-daemon/qapi/qapi-gen-timestamp ;
+#storage-daemon/qapi/qapi-gen-timestamp: $(qapi-modules-storage-daemon) $(qapi-py)
+#	$(call quiet-command,$(PYTHON) $(SRC_PATH)/scripts/qapi-gen.py \
+#		-o "storage-daemon/qapi" $<, \
+#		"GEN","$(@:%-timestamp=%)")
+#	@>$@
 
 QGALIB_GEN=$(addprefix qga/qapi-generated/, qga-qapi-types.h qga-qapi-visit.h qga-qapi-commands.h qga-qapi-init-commands.h)
 $(qga-obj-y): $(QGALIB_GEN)
