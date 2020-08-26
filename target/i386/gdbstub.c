@@ -125,13 +125,6 @@ int x86_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
         int len = gdb_get_reg64(mem_buf, cpu_to_le64(fp->low));
         len += gdb_get_reg16(mem_buf, cpu_to_le16(fp->high));
         return len;
-    } else if (n >= IDX_XMM_REGS && n < IDX_XMM_REGS + CPU_NB_REGS) {
-        n -= IDX_XMM_REGS;
-        if (n < CPU_NB_REGS32 || TARGET_LONG_BITS == 64) {
-            return gdb_get_reg128(mem_buf,
-                                  env->xmm_regs[n].ZMM_Q(0),
-                                  env->xmm_regs[n].ZMM_Q(1));
-        }
     } else {
         switch (n) {
         case IDX_IP_REG:
@@ -189,10 +182,6 @@ int x86_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
         case IDX_FP_REGS + 15:
             return gdb_get_reg32(mem_buf, 0); /* fop */
 
-        case IDX_MXCSR_REG:
-            update_mxcsr_from_sse_status(env);
-            return gdb_get_reg32(mem_buf, env->mxcsr);
-
         case IDX_CTL_CR0_REG:
             return gdb_read_reg_cs64(env->hflags, mem_buf, env->cr[0]);
         case IDX_CTL_CR2_REG:
@@ -246,6 +235,20 @@ static int x86_cpu_gdb_load_seg(X86CPU *cpu, X86Seg sreg, uint8_t *mem_buf)
     return 4;
 }
 
+static int x86_cpu_gdb_read_sse_register(CPUX86State *env,
+                                         GByteArray *mem_buf,
+                                         int n)
+{
+    if (n < CPU_NB_REGS32 || (n < CPU_NB_REGS64 && TARGET_LONG_BITS == 64)) {
+        return gdb_get_reg128(mem_buf,
+                              env->xmm_regs[n].ZMM_Q(1),
+                              env->xmm_regs[n].ZMM_Q(0));
+    } else {
+        update_mxcsr_from_sse_status(env);
+        return gdb_get_reg32(mem_buf, env->mxcsr);
+    }
+}
+
 int x86_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
 {
     X86CPU *cpu = X86_CPU(cs);
@@ -276,13 +279,6 @@ int x86_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
         fp->low = le64_to_cpu(* (uint64_t *) mem_buf);
         fp->high = le16_to_cpu(* (uint16_t *) (mem_buf + 8));
         return 10;
-    } else if (n >= IDX_XMM_REGS && n < IDX_XMM_REGS + CPU_NB_REGS) {
-        n -= IDX_XMM_REGS;
-        if (n < CPU_NB_REGS32 || TARGET_LONG_BITS == 64) {
-            env->xmm_regs[n].ZMM_Q(0) = ldq_p(mem_buf);
-            env->xmm_regs[n].ZMM_Q(1) = ldq_p(mem_buf + 8);
-            return 16;
-        }
     } else {
         switch (n) {
         case IDX_IP_REG:
@@ -345,10 +341,6 @@ int x86_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
         case IDX_FP_REGS + 15: /* fop */
             return 4;
 
-        case IDX_MXCSR_REG:
-            cpu_set_mxcsr(env, ldl_p(mem_buf));
-            return 4;
-
         case IDX_CTL_CR0_REG:
             len = gdb_write_reg_cs64(env->hflags, mem_buf, &tmp);
 #ifndef CONFIG_USER_ONLY
@@ -394,4 +386,34 @@ int x86_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
     }
     /* Unrecognised register.  */
     return 0;
+}
+
+static int x86_cpu_gdb_write_sse_register(CPUX86State *env,
+                                          uint8_t *mem_buf,
+                                          int n)
+{
+    if (n < CPU_NB_REGS32 || (n < CPU_NB_REGS64 && TARGET_LONG_BITS == 64)) {
+        env->xmm_regs[n].ZMM_Q(0) = ldq_p(mem_buf);
+        env->xmm_regs[n].ZMM_Q(1) = ldq_p(mem_buf + 8);
+        return 16;
+    } else {
+        cpu_set_mxcsr(env, ldl_p(mem_buf));
+        return 4;
+    }
+}
+
+void x86_cpu_init_gdb(X86CPU *cpu)
+{
+    CPUState *cs = CPU(cpu);
+
+    /* TODO: check if SSE is enabled?  */
+#ifdef TARGET_X86_64
+    gdb_register_coprocessor(cs, x86_cpu_gdb_read_sse_register,
+                             x86_cpu_gdb_write_sse_register,
+                             17, "i386-64bit-sse.xml", 49);
+#else
+    gdb_register_coprocessor(cs, x86_cpu_gdb_read_sse_register,
+                             x86_cpu_gdb_write_sse_register,
+                             9, "i386-32bit-sse.xml", 41);
+#endif
 }
