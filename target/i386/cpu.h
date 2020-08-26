@@ -2194,4 +2194,6 @@ static inline bool hyperv_feat_enabled(X86CPU *cpu, int feat)
 # define TARGET_VSYSCALL_PAGE  (UINT64_C(-10) << 20)
 #endif
 
+void x86_cpu_init_gdb(X86CPU *cpu);
+
 #endif /* I386_CPU_H */

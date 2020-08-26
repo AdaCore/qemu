@@ -194,23 +194,4 @@
 	<field name="PM" start="12" end="12"/>
 	<field name="FZ" start="15" end="15"/>
   </flags>
-
-  <reg name="xmm0" bitsize="128" type="vec128"/>
-  <reg name="xmm1" bitsize="128" type="vec128"/>
-  <reg name="xmm2" bitsize="128" type="vec128"/>
-  <reg name="xmm3" bitsize="128" type="vec128"/>
-  <reg name="xmm4" bitsize="128" type="vec128"/>
-  <reg name="xmm5" bitsize="128" type="vec128"/>
-  <reg name="xmm6" bitsize="128" type="vec128"/>
-  <reg name="xmm7" bitsize="128" type="vec128"/>
-  <reg name="xmm8" bitsize="128" type="vec128"/>
-  <reg name="xmm9" bitsize="128" type="vec128"/>
-  <reg name="xmm10" bitsize="128" type="vec128"/>
-  <reg name="xmm11" bitsize="128" type="vec128"/>
-  <reg name="xmm12" bitsize="128" type="vec128"/>
-  <reg name="xmm13" bitsize="128" type="vec128"/>
-  <reg name="xmm14" bitsize="128" type="vec128"/>
-  <reg name="xmm15" bitsize="128" type="vec128"/>
-
-  <reg name="mxcsr" bitsize="32" type="x64_mxcsr" group="vector"/>
 </feature>
