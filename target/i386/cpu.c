@@ -6711,6 +6711,9 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
     if (local_err != NULL) {
         goto out;
     }
+
+    x86_cpu_init_gdb(cpu);
+
     cpu_reset(cs);
 
     xcc->parent_realize(dev, &local_err);
@@ -7271,10 +7274,10 @@ static void x86_cpu_common_class_init(ObjectClass *oc, void *data)
     cc->gdb_arch_name = x86_gdb_arch_name;
 #ifdef TARGET_X86_64
     cc->gdb_core_xml_file = "i386-64bit.xml";
-    cc->gdb_num_core_regs = 66;
+    cc->gdb_num_core_regs = 49;
 #else
     cc->gdb_core_xml_file = "i386-32bit.xml";
-    cc->gdb_num_core_regs = 50;
+    cc->gdb_num_core_regs = 41;
 #endif
 #if defined(CONFIG_TCG) && !defined(CONFIG_USER_ONLY)
     cc->debug_excp_handler = breakpoint_handler;
