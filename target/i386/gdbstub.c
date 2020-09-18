@@ -456,6 +456,6 @@ void x86_cpu_init_gdb(X86CPU *cpu)
 #else
     gdb_register_coprocessor(cs, x86_cpu_gdb_read_sse_register,
                              x86_cpu_gdb_write_sse_register,
-                             9, "i386-64bit-sse.xml", 41);
+                             9, "i386-32bit-sse.xml", 41);
 #endif
 }
