@@ -34,37 +34,13 @@
 
 /* #define DEBUG_TRACE */
 
-#ifdef PPC_ELF_MACHINE
-#define ELF_MACHINE PPC_ELF_MACHINE
-#elif defined(TARGET_AARCH64)
-#  define ELF_MACHINE EM_AARCH64
-#elif defined(TARGET_ARM)
-#  define ELF_MACHINE EM_ARM
-#elif defined(TARGET_SPARC)
-#  define ELF_MACHINE EM_SPARC
-#elif defined(TARGET_SPARC64)
-#  define ELF_MACHINE EM_SPARCV9
-#elif defined(TARGET_I386)
-#  define ELF_MACHINE EM_386
-#elif defined(TARGET_X86_64)
-#  define ELF_MACHINE EM_386_64
-#elif defined(TARGET_RISCV64)
-#  define ELF_MACHINE EM_RISCV
-#elif defined(TARGET_RISCV32)
-#  define ELF_MACHINE EM_RISCV
-#elif defined(TARGET_M68K)
-#  define ELF_MACHINE EM_68K
-#else
-#error "Unknown architecture"
-#endif
-
 static uint64_t tracefile_limit = 0;
 static FILE *tracefile;
 
 #define MAX_TRACE_ENTRIES 1024
-static struct trace_entry trace_entries[MAX_TRACE_ENTRIES];
+static trace_entry trace_entries[MAX_TRACE_ENTRIES];
 
-struct trace_entry *trace_current = trace_entries;
+trace_entry *trace_current = trace_entries;
 int                 tracefile_enabled;
 static int          tracefile_nobuf;
 static int          tracefile_history;
@@ -158,11 +134,11 @@ static void exec_read_map_file(char **poptarg)
     char *filename = *poptarg;
     char *efilename = strchr(filename, ',');
     FILE *histfile;
-    struct trace_header hdr;
     off_t length;
-    int ent_sz;
     int i;
     int my_endian;
+    struct trace_header hdr;
+    trace_entry ent;
 
     if (efilename == NULL) {
         fprintf(stderr, "missing ',' after filename for --trace histmap=");
@@ -202,17 +178,12 @@ static void exec_read_map_file(char **poptarg)
         exit(1);
     }
     length -= sizeof(hdr);
-    if (sizeof(target_ulong) == 4) {
-        ent_sz = sizeof(struct trace_entry32);
-    } else {
-        ent_sz = sizeof(struct trace_entry64);
-    }
 
-    if ((length % ent_sz) != 0) {
+    if ((length % sizeof(trace_entry)) != 0) {
         fprintf(stderr, "bad length of histmap file '%s'\n", filename);
         exit(1);
     }
-    nbr_histmap_entries = length / ent_sz;
+    nbr_histmap_entries = length / sizeof(trace_entry);
     if (nbr_histmap_entries) {
         histmap_entries =
             g_malloc(nbr_histmap_entries * sizeof(target_ulong));
@@ -224,47 +195,28 @@ static void exec_read_map_file(char **poptarg)
     my_endian = 0;
 #endif
 
-    if (sizeof(target_ulong) == 4) {
-        for (i = 0; i < nbr_histmap_entries; i++) {
-            struct trace_entry32 ent;
-
-            if (fread(&ent, sizeof(ent), 1, histfile) != 1) {
-                fprintf(stderr, "cannot read histmap file entry from '%s'\n",
-                        filename);
-                exit(1);
-            }
-            if (my_endian != hdr.big_endian) {
-                ent.pc = bswap32(ent.pc);
-            }
-            if (i > 0 && ent.pc < histmap_entries[i - 1]) {
-                fprintf(stderr, "unordered entry #%d in histmap file '%s'\n",
-                        i, filename);
-                exit(1);
-            }
-
-            histmap_entries[i] = ent.pc;
+    for (i = 0; i < nbr_histmap_entries; i++) {
+        if (fread(&ent, sizeof(ent), 1, histfile) != 1) {
+            fprintf(stderr, "cannot read histmap file entry from '%s'\n",
+                    filename);
+            exit(1);
         }
-    } else {
-        for (i = 0; i < nbr_histmap_entries; i++) {
-            struct trace_entry64 ent;
-
-            if (fread(&ent, sizeof(ent), 1, histfile) != 1) {
-                fprintf(stderr, "cannot read histmap file entry from '%s'\n",
-                        filename);
-                exit(1);
-            }
-            if (my_endian != hdr.big_endian) {
+        if (my_endian != hdr.big_endian) {
+            if (sizeof(ent.pc) == 4) {
+                ent.pc = bswap32(ent.pc);
+            } else {
                 ent.pc = bswap64(ent.pc);
             }
-            if (i > 0 && ent.pc < histmap_entries[i - 1]) {
-                fprintf(stderr, "unordered entry #%d in histmap file '%s'\n",
-                        i, filename);
-                exit(1);
-            }
-
-            histmap_entries[i] = ent.pc;
         }
+        if (i > 0 && ent.pc < histmap_entries[i - 1]) {
+            fprintf(stderr, "unordered entry #%d in histmap file '%s'\n",
+                    i, filename);
+            exit(1);
+        }
+
+        histmap_entries[i] = ent.pc;
     }
+
     fclose(histfile);
     *efilename = ',';
 }

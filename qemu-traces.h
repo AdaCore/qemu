@@ -1,7 +1,7 @@
 /*
  * QEMU System Emulator
  *
- * Copyright (C) 2009-2011, AdaCore
+ * Copyright (C) 2009-2020, AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,65 @@
 
 #include <stdint.h>
 
+#if defined(TARGET_PPC)
+
+#define ELF_MACHINE EM_PPC
+typedef struct trace_entry32 trace_entry;
+
+#elif defined(TARGET_PPC64)
+
+#define ELF_MACHINE EM_PPC64
+typedef struct trace_entry64 trace_entry;
+
+#elif defined(TARGET_AARCH64)
+
+#define ELF_MACHINE EM_AARCH64
+typedef struct trace_entry64 trace_entry;
+
+#elif defined(TARGET_ARM)
+
+#define ELF_MACHINE EM_ARM
+typedef struct trace_entry32 trace_entry;
+
+#elif defined(TARGET_SPARC)
+
+#define ELF_MACHINE EM_SPARC
+typedef struct trace_entry32 trace_entry;
+
+#elif defined(TARGET_SPARC64)
+
+#define ELF_MACHINE EM_SPARCV9
+typedef struct trace_entry64 trace_entry;
+
+#elif defined(TARGET_I386)
+
+#define ELF_MACHINE EM_386
+typedef struct trace_entry32 trace_entry;
+
+#elif defined(TARGET_X86_64)
+
+#define ELF_MACHINE EM_386_64
+typedef struct trace_entry64 trace_entry;
+
+#elif defined(TARGET_RISCV64)
+
+#define ELF_MACHINE EM_RISCV
+typedef struct trace_entry64 trace_entry;
+
+#elif defined(TARGET_RISCV32)
+
+#define ELF_MACHINE EM_RISCV
+typedef struct trace_entry32 trace_entry;
+
+#elif defined(TARGET_M68K)
+
+#define ELF_MACHINE EM_68K
+typedef struct trace_entry32 trace_entry;
+
+#else
+#error "Unknown architecture"
+#endif
+
 /* File header definition.  */
 struct trace_header {
     char magic[12];
@@ -63,15 +122,6 @@ struct trace_header {
 };
 
 /* Header is followed by trace entries.  */
-struct trace_entry {
-    /* FIXME: import target_ulong */
-    /* target_ulong pc; */
-    uint32_t pc;
-
-    uint16_t size;
-    uint8_t  op;
-};
-
 struct trace_entry32 {
     uint32_t pc;
     uint16_t size;
@@ -111,8 +161,8 @@ struct trace_entry64 {
 /* Trace conditional jump instruction at address */
 #define TRACE_OP_TRACE_CONDITIONAL 1
 
-extern struct trace_entry *trace_current;
-extern int                 tracefile_enabled;
+extern trace_entry *trace_current;
+extern int tracefile_enabled;
 
 void exec_trace_init(const char *optarg);
 void exec_trace_limit(const char *optarg);
