@@ -1459,9 +1459,9 @@ static bool trans_B_cond(DisasContext *s, arg_B_cond *a)
         /* genuinely conditional branches */
         DisasLabel match = gen_disas_label(s);
         arm_gen_test_cc(a->cond, match.label);
-        gen_goto_tb(s, 0, 4);
+        gen_goto_tb(s, 1, 4);
         set_disas_label(s, match);
-        gen_goto_tb(s, 1, a->imm);
+        gen_goto_tb(s, 0, a->imm);
     } else {
         /* 0xe and 0xf are both "always" conditions */
         gen_goto_tb(s, 0, a->imm);
