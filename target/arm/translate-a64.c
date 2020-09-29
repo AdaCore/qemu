@@ -1399,9 +1399,9 @@ static void disas_cond_b_imm(DisasContext *s, uint32_t insn)
         /* genuinely conditional branches */
         TCGLabel *label_match = gen_new_label();
         arm_gen_test_cc(cond, label_match);
-        gen_goto_tb(s, 0, s->base.pc_next);
+        gen_goto_tb(s, 1, s->base.pc_next);
         gen_set_label(label_match);
-        gen_goto_tb(s, 1, addr);
+        gen_goto_tb(s, 0, addr);
     } else {
         /* 0xe and 0xf are both "always" conditions */
         gen_goto_tb(s, 0, addr);
