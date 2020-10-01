@@ -1358,9 +1358,9 @@ static void disas_comp_b_imm(DisasContext *s, uint32_t insn)
     match = gen_disas_label(s);
     tcg_gen_brcondi_i64(op ? TCG_COND_NE : TCG_COND_EQ,
                         tcg_cmp, 0, match.label);
-    gen_goto_tb(s, 0, 4);
+    gen_goto_tb(s, 1, 4);
     set_disas_label(s, match);
-    gen_goto_tb(s, 1, diff);
+    gen_goto_tb(s, 0, diff);
 }
 
 /* Test and branch (immediate)
@@ -1389,9 +1389,9 @@ static void disas_test_b_imm(DisasContext *s, uint32_t insn)
     match = gen_disas_label(s);
     tcg_gen_brcondi_i64(op ? TCG_COND_NE : TCG_COND_EQ,
                         tcg_cmp, 0, match.label);
-    gen_goto_tb(s, 0, 4);
+    gen_goto_tb(s, 1, 4);
     set_disas_label(s, match);
-    gen_goto_tb(s, 1, diff);
+    gen_goto_tb(s, 0, diff);
 }
 
 /* Conditional branch (immediate)
