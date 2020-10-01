@@ -1423,9 +1423,9 @@ static bool trans_CBZ(DisasContext *s, arg_cbz *a)
     match = gen_disas_label(s);
     tcg_gen_brcondi_i64(a->nz ? TCG_COND_NE : TCG_COND_EQ,
                         tcg_cmp, 0, match.label);
-    gen_goto_tb(s, 0, 4);
+    gen_goto_tb(s, 1, 4);
     set_disas_label(s, match);
-    gen_goto_tb(s, 1, a->imm);
+    gen_goto_tb(s, 0, a->imm);
     return true;
 }
 
@@ -1442,9 +1442,9 @@ static bool trans_TBZ(DisasContext *s, arg_tbz *a)
     match = gen_disas_label(s);
     tcg_gen_brcondi_i64(a->nz ? TCG_COND_NE : TCG_COND_EQ,
                         tcg_cmp, 0, match.label);
-    gen_goto_tb(s, 0, 4);
+    gen_goto_tb(s, 1, 4);
     set_disas_label(s, match);
-    gen_goto_tb(s, 1, a->imm);
+    gen_goto_tb(s, 0, a->imm);
     return true;
 }
 
