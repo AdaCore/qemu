@@ -182,17 +182,9 @@ static void riscv_polarfire_soc_realize(DeviceState *dev, Error **errp)
     NICInfo *nd = &nd_table[0];
     qemu_irq *cpu_irqs;
 
-    /* IMPORTANT: Realize the CPU of cluster U first. This is to make sure that
-     * their cpu_index starts at 0 and therefore GDB remote thread ids start at
-     * 1:
-     *   Thread 1.1 (sifive-u54-riscv-cpu harts[0]
-     *   Thread 1.2 (sifive-u54-riscv-cpu harts[1]
-     *   Thread 1.3 (sifive-u54-riscv-cpu harts[2]
-     *   Thread 1.4 (sifive-u54-riscv-cpu harts[3]
-     */
-    object_property_set_bool(OBJECT(&s->u_cpus), true, "realized",
-                             &error_abort);
     object_property_set_bool(OBJECT(&s->e_cpus), true, "realized",
+                             &error_abort);
+    object_property_set_bool(OBJECT(&s->u_cpus), true, "realized",
                              &error_abort);
 
     /*
