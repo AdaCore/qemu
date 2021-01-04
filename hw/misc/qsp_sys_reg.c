@@ -28,6 +28,7 @@
 #include "qemu/log.h"
 #include "hw/sysbus.h"
 #include "qemu/timer.h"
+#include "sysemu/runstate.h"
 
 #define QSP_SYSREG_R_MAX (0x110 / 4)
 
@@ -98,6 +99,10 @@ static void sysreg_write(void *opaque, hwaddr offset,
             value ? 0 : 1;
         s->reg[offset] = value;
         break;
+    case 0x12:
+        if (value & 0x1) {
+            qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
+        }
     default:
         s->reg[offset] = value;
         break;
