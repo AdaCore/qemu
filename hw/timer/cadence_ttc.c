@@ -86,8 +86,12 @@ static uint64_t cadence_timer_get_ns(CadenceTimerState *s,
     if (s->reg_clock & CLOCK_CTRL_PS_EN) {
         factor -= (((s->reg_clock & CLOCK_CTRL_PS_V) >> 1) + 1);
     }
-    r >>= factor;
 
+    if (factor < 0) {
+        r <<= -factor;
+    } else {
+        r >>= factor;
+    }
     return muldiv64(r, NANOSECONDS_PER_SECOND, s->freq);
 }
 
@@ -102,7 +106,11 @@ static uint64_t cadence_timer_get_steps(CadenceTimerState *s, uint64_t ns)
         factor -= (((s->reg_clock & CLOCK_CTRL_PS_V) >> 1) + 1);
     }
 
-    return muldiv64(ns, s->freq, NANOSECONDS_PER_SECOND) << factor;
+    if (factor < 0) {
+        return muldiv64(ns, s->freq, NANOSECONDS_PER_SECOND) >> -factor;
+    } else {
+        return muldiv64(ns, s->freq, NANOSECONDS_PER_SECOND) << factor;
+    }
 }
 
 /* determine if x is in between a and b, exclusive of a, inclusive of b */
