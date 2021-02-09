@@ -41,6 +41,7 @@
 #include "hw/timer/cadence_ttc.h"
 #include "hw/usb/hcd-dwc3.h"
 #include "hw/misc/xlnx_crl.h"
+#include "hw/core/split-irq.h"
 
 #define TYPE_XLNX_ZYNQMP "xlnx-zynqmp"
 OBJECT_DECLARE_SIMPLE_TYPE(XlnxZynqMPState, XLNX_ZYNQMP)
@@ -92,6 +93,8 @@ OBJECT_DECLARE_SIMPLE_TYPE(XlnxZynqMPState, XLNX_ZYNQMP)
  */
 #define XLNX_ZYNQMP_NUM_UNIMP_AREAS 1
 
+#define GIC_NUM_SPI_INTR 160
+
 struct XlnxZynqMPState {
     /*< private >*/
     DeviceState parent_obj;
@@ -103,6 +106,9 @@ struct XlnxZynqMPState {
     ARMCPU rpu_cpu[XLNX_ZYNQMP_NUM_RPU_CPUS];
     GICState gic;
     MemoryRegion gic_mr[XLNX_ZYNQMP_GIC_REGIONS][XLNX_ZYNQMP_GIC_ALIASES];
+
+    GICState rpu_gic;
+    SplitIRQ splitter[GIC_NUM_SPI_INTR];
 
     MemoryRegion ocm_ram[XLNX_ZYNQMP_NUM_OCM_BANKS];
 
