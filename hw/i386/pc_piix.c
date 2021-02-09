@@ -62,7 +62,7 @@
 #include "hw/i386/acpi-build.h"
 #include "kvm/kvm-cpu.h"
 
-
+#include "hw/adacore/gnat-bus.h"
 #include "hw/adacore/hostfs.h"
 
 #define HOSTFS_START (0xf3082000)
@@ -261,6 +261,10 @@ static void pc_init1(MachineState *machine,
                          0x4);
 
     pc_nic_init(pcmc, isa_bus, pci_bus);
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(x86ms->gsi, GSI_NUM_PINS);
+    gnatbus_device_init();
 
     if (pcmc->pci_enabled) {
         PCIDevice *dev;
