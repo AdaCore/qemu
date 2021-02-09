@@ -66,6 +66,7 @@
 #include "hw/i386/acpi-build.h"
 #include "target/i386/cpu.h"
 
+#include "hw/adacore/gnat-bus.h"
 #include "hw/adacore/hostfs.h"
 
 #define HOSTFS_START (0xf3082000)
@@ -317,6 +318,10 @@ static void pc_init1(MachineState *machine, const char *pci_type)
                          !MACHINE_CLASS(pcmc)->no_floppy, 0x4);
 
     pc_nic_init(pcmc, isa_bus, pcms->pcibus);
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(x86ms->gsi, IOAPIC_NUM_PINS);
+    gnatbus_device_init();
 
     if (piix4_pm) {
         smi_irq = qemu_allocate_irq(pc_acpi_smi_interrupt, first_cpu, 0);
