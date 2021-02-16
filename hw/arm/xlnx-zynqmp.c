@@ -764,6 +764,8 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     lpd_lsbus = qemu_clk_device_get_clock(DEVICE(&s->crl), "out_lpd_lsbus");
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
+        int j;
+
         object_property_set_bool(OBJECT(&s->ttc[i]), true, "realized", &err);
 
         if (err) {
@@ -772,8 +774,10 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         }
 
         sysbus_mmio_map(SYS_BUS_DEVICE(&s->ttc[i]), 0, ttc_addr[i]);
-        sysbus_connect_irq(SYS_BUS_DEVICE(&s->ttc[i]), 0,
-                           gic_spi[ttc_intr[i]]);
+        for (j = 0; j < 3; j++) {
+             sysbus_connect_irq(SYS_BUS_DEVICE(&s->ttc[i]), j,
+                                gic_spi[ttc_intr[i] + j]);
+        }
         clock_in = qemu_clk_device_get_clock(DEVICE(&s->ttc[i]), "clock_in");
         qemu_clk_bind(lpd_lsbus, clock_in);
     }
