@@ -25,7 +25,7 @@
 #define OPTROM_H
 
 #include <stdint.h>
-#include "../../include/standard-headers/linux/qemu_fw_cfg.h"
+#include "standard-headers/linux/qemu_fw_cfg.h"
 
 #define barrier() asm("" : : : "memory")
 
