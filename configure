@@ -189,10 +189,11 @@ compile_prog() {
 }
 
 # symbolically link $1 to $2.  Portable version of "ln -sf".
+# It can be overrided by the LN_SF environment variable.
 symlink() {
   rm -rf "$2"
   mkdir -p "$(dirname "$2")"
-  ln -s "$1" "$2"
+  $ln_sf "$1" "$2"
 }
 
 # check whether a command is available to this shell (may be either an
@@ -418,6 +419,12 @@ if test -z "${CXX}${cross_prefix}"; then
   cxx="c++"
 else
   cxx="${CXX-${cross_prefix}g++}"
+fi
+
+if test -z "${LN_SF}"; then
+  ln_sf="ln -sf"
+else
+  ln_sf="${LN_SF}"
 fi
 
 ar="${AR-${cross_prefix}ar}"
