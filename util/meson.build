@@ -1,3 +1,4 @@
+util_ss.add(when: 'CONFIG_POSIX', if_true: dependency('threads'))
 util_ss.add(files('osdep.c', 'cutils.c', 'unicode.c', 'qemu-timer-common.c'))
 if not config_host_data.get('CONFIG_ATOMIC64')
   util_ss.add(files('atomic64.c'))

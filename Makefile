@@ -129,7 +129,7 @@ Makefile.mtest: build.ninja scripts/mtest2make.py
 all update-buildoptions: $(SRC_PATH)/scripts/meson-buildoptions.sh
 $(SRC_PATH)/scripts/meson-buildoptions.sh: $(SRC_PATH)/meson_options.txt
 	$(MESON) introspect --buildoptions $(SRC_PATH)/meson.build | $(PYTHON) \
-	  scripts/meson-buildoptions.py > $@.tmp && mv $@.tmp $@
+	  $(SRC_PATH)/scripts/meson-buildoptions.py > $@.tmp && mv $@.tmp $@
 endif
 
 # 4. Rules to bridge to other makefiles
