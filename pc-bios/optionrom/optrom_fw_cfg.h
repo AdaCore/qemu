@@ -24,7 +24,7 @@
 #ifndef OPTROM_FW_CFG_H
 #define OPTROM_FW_CFG_H
 
-#include "../../include/standard-headers/linux/qemu_fw_cfg.h"
+#include "standard-headers/linux/qemu_fw_cfg.h"
 
 #define BIOS_CFG_IOPORT_CFG     0x510
 #define BIOS_CFG_IOPORT_DATA    0x511

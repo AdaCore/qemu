@@ -1,5 +1,9 @@
 include config.mak
-SRC_DIR := $(TOPSRC_DIR)/pc-bios/optionrom
+#SRC_DIR := $(TOPSRC_DIR)/pc-bios/optionrom
+CURRENT_MAKEFILE := $(realpath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+SRC_DIR := $(SRC_PATH)/pc-bios/optionrom
+TOPSRC_DIR := $(SRC_PATH)
+
 VPATH = $(SRC_DIR)
 
 all: multiboot.bin multiboot_dma.bin linuxboot.bin linuxboot_dma.bin kvmvapic.bin pvh.bin

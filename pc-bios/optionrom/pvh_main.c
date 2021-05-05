@@ -25,7 +25,7 @@ asm (".code32"); /* this code will be executed in protected mode */
 #include <stdint.h>
 #include "optrom.h"
 #include "optrom_fw_cfg.h"
-#include "../../include/hw/xen/start_info.h"
+#include "hw/xen/start_info.h"
 
 #define RSDP_SIGNATURE          0x2052545020445352LL /* "RSD PTR " */
 #define RSDP_AREA_ADDR          0x000E0000
