@@ -4,6 +4,7 @@ specific_ss.add(when: 'CONFIG_SOFTMMU', if_true: [files(
   'memory.c',
   'physmem.c',
   'qtest.c',
+  'vl.c',
 )])
 
 specific_ss.add(when: ['CONFIG_SOFTMMU', 'CONFIG_TCG'], if_true: [files(
@@ -24,7 +25,6 @@ softmmu_ss.add(files(
   'rtc.c',
   'runstate-action.c',
   'runstate.c',
-  'vl.c',
 ), sdl, libpmem, libdaxctl)
 
 if have_tpm
