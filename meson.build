@@ -476,6 +476,9 @@ if not get_option('linux_aio').auto() or have_block
                            required: get_option('linux_aio'),
                            kwargs: static_kwargs)
 endif
+if targetos == 'linux'
+  rt = cc.find_library('rt')
+endif
 if 'CONFIG_STATIC_ZLIB' in config_host
   zlib = dependency('zlib', required: true, static: true,
                     kwargs: static_kwargs)
