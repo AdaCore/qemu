@@ -54,6 +54,7 @@
 #include "sysemu/device_tree.h"
 #include "sysemu/sysemu.h"
 #include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
 
 /*
  * The BIOS image used by this machine is called Hart Software Services (HSS).
@@ -89,6 +90,7 @@
 static const MemMapEntry microchip_pfsoc_memmap[] = {
     [MICROCHIP_PFSOC_RSVD0] =           {        0x0,        0x100 },
     [MICROCHIP_PFSOC_DEBUG] =           {      0x100,        0xf00 },
+    [MICROCHIP_PFSOC_HOSTFS] =          {   0x101000,       0x1000 },
     [MICROCHIP_PFSOC_E51_DTIM] =        {  0x1000000,       0x2000 },
     [MICROCHIP_PFSOC_BUSERR_UNIT0] =    {  0x1700000,       0x1000 },
     [MICROCHIP_PFSOC_BUSERR_UNIT1] =    {  0x1701000,       0x1000 },
@@ -141,7 +143,6 @@ static const MemMapEntry microchip_pfsoc_memmap[] = {
     [MICROCHIP_PFSOC_DRAM_LO_ALIAS] =   { 0xc0000000,   0x40000000 },
     [MICROCHIP_PFSOC_DRAM_HI] =       { 0x1000000000,          0x0 },
     [MICROCHIP_PFSOC_DRAM_HI_ALIAS] = { 0x1400000000,          0x0 },
-
 };
 
 static void microchip_pfsoc_soc_instance_init(Object *obj)
@@ -488,6 +489,9 @@ static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
     }
     gnatbus_master_init(cpu_irqs, MICROCHIP_PFSOC_PLIC_NUM_SOURCES);
     gnatbus_device_init();
+
+    /* HostFS */
+    hostfs_create(memmap[MICROCHIP_PFSOC_HOSTFS].base, get_system_memory());
 }
 
 static void microchip_pfsoc_soc_class_init(ObjectClass *oc, void *data)
