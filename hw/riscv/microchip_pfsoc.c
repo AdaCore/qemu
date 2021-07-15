@@ -54,6 +54,7 @@
 #include "hw/intc/sifive_clint.h"
 #include "hw/intc/sifive_plic.h"
 #include "sysemu/sysemu.h"
+#include "hw/adacore/gnat-bus.h"
 
 /*
  * The BIOS image used by this machine is called Hart Software Services (HSS).
@@ -191,6 +192,7 @@ static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
     size_t plic_hart_config_len;
     NICInfo *nd;
     int i;
+    qemu_irq *cpu_irqs;
 
     sysbus_realize(SYS_BUS_DEVICE(&s->e_cpus), &error_abort);
     sysbus_realize(SYS_BUS_DEVICE(&s->u_cpus), &error_abort);
@@ -425,6 +427,15 @@ static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
     memory_region_add_subregion(system_memory,
                                 memmap[MICROCHIP_PFSOC_QSPI_XIP].base,
                                 qspi_xip_mem);
+
+    /* Initialize the GnatBus Master */
+    cpu_irqs = qemu_allocate_irqs(NULL, NULL,
+                                  MICROCHIP_PFSOC_PLIC_NUM_SOURCES);
+    for (i = 0; i < MICROCHIP_PFSOC_PLIC_NUM_SOURCES; i++) {
+        cpu_irqs[i] = qdev_get_gpio_in(DEVICE(s->plic), i);
+    }
+    gnatbus_master_init(cpu_irqs, MICROCHIP_PFSOC_PLIC_NUM_SOURCES);
+    gnatbus_device_init();
 }
 
 static void microchip_pfsoc_soc_class_init(ObjectClass *oc, void *data)
