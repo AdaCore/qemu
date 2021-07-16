@@ -135,10 +135,6 @@ static const MemoryRegionOps uart_ops = {
     .read = uart_read,
     .write = uart_write,
     .endianness = DEVICE_NATIVE_ENDIAN,
-    .valid = {
-        .min_access_size = 4,
-        .max_access_size = 4
-    }
 };
 
 static void uart_rx(void *opaque, const uint8_t *buf, int size)
