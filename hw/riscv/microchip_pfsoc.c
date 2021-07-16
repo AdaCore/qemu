@@ -582,6 +582,20 @@ static void microchip_icicle_kit_machine_init(MachineState *machine)
                                 memmap[MICROCHIP_PFSOC_DRAM_HI_ALIAS].base,
                                 mem_high_alias);
 
+    /* Try to load an elf file, and point the reset vector to
+     * it's entry point.  */
+    if (machine->kernel_filename) {
+        uint64_t kernel_entry = riscv_load_kernel(machine, &s->soc.u_cpus,
+                                                  0, false, NULL);
+
+        /* load the reset vector */
+        riscv_setup_rom_reset_vec(machine, &s->soc.u_cpus,
+                                  memmap[MICROCHIP_PFSOC_DRAM_LO].base,
+                                  memmap[MICROCHIP_PFSOC_ENVM_DATA].base,
+                                  memmap[MICROCHIP_PFSOC_ENVM_DATA].size,
+                                  kernel_entry, 0);
+    }
+
     /* Attach an SD card */
     if (dinfo) {
         CadenceSDHCIState *sdhci = &(s->soc.sdhci);
