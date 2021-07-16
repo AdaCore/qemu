@@ -135,10 +135,6 @@ static const MemoryRegionOps sifive_uart_ops = {
     .read = sifive_uart_read,
     .write = sifive_uart_write,
     .endianness = DEVICE_NATIVE_ENDIAN,
-    .valid = {
-        .min_access_size = 4,
-        .max_access_size = 4
-    }
 };
 
 static void sifive_uart_rx(void *opaque, const uint8_t *buf, int size)
