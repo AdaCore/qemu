@@ -230,10 +230,6 @@ static const MemoryRegionOps sifive_plic_ops = {
     .read = sifive_plic_read,
     .write = sifive_plic_write,
     .endianness = DEVICE_LITTLE_ENDIAN,
-    .valid = {
-        .min_access_size = 4,
-        .max_access_size = 4
-    }
 };
 
 static void sifive_plic_reset(DeviceState *dev)
