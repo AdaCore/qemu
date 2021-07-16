@@ -53,6 +53,7 @@
 #include "hw/intc/sifive_plic.h"
 #include "sysemu/device_tree.h"
 #include "sysemu/sysemu.h"
+#include "hw/misc/sifive_test.h"
 #include "hw/adacore/gnat-bus.h"
 #include "hw/adacore/hostfs.h"
 
@@ -90,6 +91,7 @@
 static const MemMapEntry microchip_pfsoc_memmap[] = {
     [MICROCHIP_PFSOC_RSVD0] =           {        0x0,      0x100 },
     [MICROCHIP_PFSOC_DEBUG] =           {      0x100,      0xf00 },
+    [MICROCHIP_PFSOC_TEST] =            {   0x100000,     0x1000 },
     [MICROCHIP_PFSOC_HOSTFS] =          {   0x101000,     0x1000 },
     [MICROCHIP_PFSOC_E51_DTIM] =        {  0x1000000,     0x2000 },
     [MICROCHIP_PFSOC_BUSERR_UNIT0] =    {  0x1700000,     0x1000 },
@@ -248,6 +250,8 @@ static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
     /* L2 cache controller */
     create_unimplemented_device("microchip.pfsoc.l2cc",
         memmap[MICROCHIP_PFSOC_L2CC].base, memmap[MICROCHIP_PFSOC_L2CC].size);
+
+    sifive_test_create(memmap[MICROCHIP_PFSOC_TEST].base);
 
     /*
      * Add L2-LIM at reset size.
