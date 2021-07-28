@@ -111,13 +111,11 @@ static void stm32_init(MachineState *args)
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, RCC_OFFSET);
 
     /* UART */
-    if (serial_hd(0)) {
-        dev = qdev_new("stm32_UART");
-        qdev_prop_set_chr(dev, "chrdev", serial_hd(0));
-        sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
-        sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, UART_OFFSET);
-        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, qdev_get_gpio_in(nvic, 7));
-    }
+    dev = qdev_new("stm32_UART");
+    qdev_prop_set_chr(dev, "chrdev", serial_hd(1));
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, UART_OFFSET);
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0, qdev_get_gpio_in(nvic, 7));
 
     armv7m_load_kernel(ARM_CPU(first_cpu), args->kernel_filename, FLASH_SIZE);
 }
