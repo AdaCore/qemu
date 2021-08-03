@@ -13,6 +13,7 @@
 #include "exec/replay-core.h"
 #include "exec/icount.h"
 #include "system/qtest.h"
+#include "qemu/log.h"
 #include "block/aio.h"
 #include "hw/clock.h"
 
@@ -85,7 +86,8 @@ static void ptimer_reload(ptimer_state *s, int delta_adjust)
 
     if (s->period == 0 && s->period_frac == 0) {
         if (!qtest_enabled()) {
-            fprintf(stderr, "Timer with period zero, disabling\n");
+            qemu_log_mask(LOG_GUEST_ERROR,
+                          "Timer with period zero, disabling\n");
         }
         timer_del(s->timer);
         s->enabled = 0;
@@ -122,7 +124,8 @@ static void ptimer_reload(ptimer_state *s, int delta_adjust)
             return;
         }
         if (!qtest_enabled()) {
-            fprintf(stderr, "Timer with delta zero, disabling\n");
+            qemu_log_mask(LOG_GUEST_ERROR,
+                          "Timer with delta zero, disabling\n");
         }
         timer_del(s->timer);
         s->enabled = 0;
@@ -311,7 +314,8 @@ void ptimer_run(ptimer_state *s, int oneshot)
 
     if (was_disabled && s->period == 0 && s->period_frac == 0) {
         if (!qtest_enabled()) {
-            fprintf(stderr, "Timer with period zero, disabling\n");
+            qemu_log_mask(LOG_GUEST_ERROR,
+                          "Timer with period zero, disabling\n");
         }
         return;
     }
