@@ -1171,7 +1171,8 @@ static void trace_before_exec(TranslationBlock *tb)
 /* TB is the tb we jumped to, LAST_TB (if not null) is the last executed tb.  */
 static void trace_after_exec(uintptr_t next_tb)
 {
-    TranslationBlock *last_tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
+    TranslationBlock *last_tb =
+        tcg_splitwx_to_rw((void *)(next_tb & ~TB_EXIT_MASK));
     int exit_val = next_tb & TB_EXIT_MASK;
     int br = exit_val & (TB_EXIT_IDX1 | TB_EXIT_IDX0);
 
