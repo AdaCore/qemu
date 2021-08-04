@@ -37,6 +37,7 @@
 #include "trace-tcg.h"
 #include "exec/log.h"
 
+#include "qemu-traces.h"
 
 #define ENABLE_ARCH_4T    arm_dc_feature(s, ARM_FEATURE_V4T)
 #define ENABLE_ARCH_5     arm_dc_feature(s, ARM_FEATURE_V5)
@@ -2597,9 +2598,13 @@ static inline bool use_goto_tb(DisasContext *s, target_ulong dest)
 #endif
 }
 
-static void gen_goto_ptr(void)
+static inline void gen_goto_ptr(DisasContext *s, int n)
 {
-    tcg_gen_lookup_and_goto_ptr();
+    if (unlikely(tracefile_enabled)) {
+        tcg_gen_exit_tb(s->base.tb, TB_EXIT_NOPATCH | n);
+    } else {
+        tcg_gen_lookup_and_goto_ptr();
+    }
 }
 
 /* This will end the TB but doesn't guarantee we'll return to
@@ -2614,7 +2619,7 @@ static void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
         tcg_gen_exit_tb(s->base.tb, n);
     } else {
         gen_set_pc_im(s, dest);
-        gen_goto_ptr();
+        gen_goto_ptr(s, n);
     }
     s->base.is_jmp = DISAS_NORETURN;
 }
@@ -9257,14 +9262,18 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             gen_set_pc_im(dc, dc->base.pc_next);
             /* fall through */
         case DISAS_JUMP:
-            gen_goto_ptr();
+            gen_goto_ptr(dc, 0);
             break;
         case DISAS_UPDATE_EXIT:
             gen_set_pc_im(dc, dc->base.pc_next);
             /* fall through */
         default:
             /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(NULL, 0);
+            if (unlikely(tracefile_enabled)) {
+                tcg_gen_exit_tb(dc->base.tb, TB_EXIT_NOPATCH);
+            } else {
+                tcg_gen_exit_tb(NULL, 0);
+            }
             break;
         case DISAS_NORETURN:
             /* nothing more to generate */
@@ -9279,7 +9288,11 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(NULL, 0);
+            if (unlikely(tracefile_enabled)) {
+                tcg_gen_exit_tb(dc->base.tb, TB_EXIT_NOPATCH);
+            } else {
+                tcg_gen_exit_tb(NULL, 0);
+            }
             break;
         }
         case DISAS_WFE:
