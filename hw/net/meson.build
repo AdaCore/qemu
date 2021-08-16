@@ -65,5 +65,7 @@ softmmu_ss.add(when: 'CONFIG_ROCKER', if_true: files(
 ), if_false: files('rocker/qmp-norocker.c'))
 softmmu_ss.add(when: 'CONFIG_ALL', if_true: files('rocker/qmp-norocker.c'))
 
+softmmu_ss.add(when: 'CONFIG_T2080RDB', if_true: files('memac.c'))
+
 subdir('can')
 subdir('phy')
