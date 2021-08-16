@@ -198,3 +198,9 @@ config FDT_PPC
 
 config VOF
     bool
+
+config T2080RDB
+    bool
+    default y
+    select FMAN_V3
+    select MEMAC
