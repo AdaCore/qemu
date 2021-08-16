@@ -121,6 +121,9 @@ config MIPS_ITU
     bool
     depends on TCG
 
+config	FMAN_V3
+    bool
+
 config MPS2_FPGAIO
     bool
     select LED
