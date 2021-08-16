@@ -80,3 +80,5 @@ ppc_ss.add(when: 'CONFIG_E500', if_true: files(
 ppc_ss.add(when: 'CONFIG_VIRTEX', if_true: files('virtex_ml507.c'))
 
 hw_arch += {'ppc': ppc_ss}
+
+ppc_ss.add(when: 'CONFIG_T2080RDB', if_true: files('t2080rdb.c'))
