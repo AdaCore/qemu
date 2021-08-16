@@ -82,7 +82,10 @@ config STM32F4XX_SYSCFG
 config STM32F4XX_EXTI
     bool
 
-config MIPS_ITU
+config	MIPS_ITU
+    bool
+
+config	FMAN_V3
     bool
 
 config MPS2_FPGAIO
