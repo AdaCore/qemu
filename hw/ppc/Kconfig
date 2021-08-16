@@ -151,3 +151,7 @@ config FDT_PPC
 
 config VOF
     bool
+
+config T2080RDB
+    bool
+    select DP83667
