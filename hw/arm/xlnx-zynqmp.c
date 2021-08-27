@@ -427,6 +427,7 @@ static void xlnx_zynqmp_init(Object *obj)
     XlnxZynqMPState *s = XLNX_ZYNQMP(obj);
     int i;
     int num_apus = MIN(ms->smp.cpus, XLNX_ZYNQMP_NUM_APU_CPUS);
+    Clock *ps_ref_clk;
 
     object_initialize_child(obj, "apu-cluster", &s->apu_cluster,
                             TYPE_CPU_CLUSTER);
@@ -494,6 +495,12 @@ static void xlnx_zynqmp_init(Object *obj)
     object_initialize_child(obj, "qspi-dma", &s->qspi_dma, TYPE_XLNX_CSU_DMA);
     object_initialize_child(obj, "qspi-irq-orgate",
                             &s->qspi_irq_orgate, TYPE_OR_IRQ);
+
+    /* Init the ref clock.  */
+    ps_ref_clk = CLOCK(object_new(TYPE_CLOCK));
+    object_property_add_child(obj, "ps_ref_clk", OBJECT(ps_ref_clk));
+    clock_set_hz(ps_ref_clk, 0x1fca055);
+    qdev_connect_clock_in(DEVICE(&s->crl), "ps_ref_clk", ps_ref_clk);
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
         object_initialize_child(obj, "ttc[*]", &s->ttc[i], TYPE_ZYNQMP_TTC);
