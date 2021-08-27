@@ -157,7 +157,7 @@ static void generic_loader_realize(DeviceState *dev, Error **errp)
         return;
     }
 
-    qemu_register_reset(generic_loader_reset, dev);
+    qemu_register_late_reset(generic_loader_reset, dev);
 
     if (s->cpu_num != CPU_NONE) {
         s->cpu = qemu_get_cpu(s->cpu_num);

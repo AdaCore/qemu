@@ -4,6 +4,7 @@
 typedef void QEMUResetHandler(void *opaque);
 
 void qemu_register_reset(QEMUResetHandler *func, void *opaque);
+void qemu_register_late_reset(QEMUResetHandler *func, void *opaque);
 void qemu_unregister_reset(QEMUResetHandler *func, void *opaque);
 void qemu_devices_reset(void);
 
