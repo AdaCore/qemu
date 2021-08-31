@@ -36,4 +36,9 @@ typedef struct MchpPfSoCSysregState {
     OBJECT_CHECK(MchpPfSoCSysregState, (obj), \
                  TYPE_MCHP_PFSOC_SYSREG)
 
+enum {
+    MICROCHIP_PFSOC_NO_RESET = 0,
+    MICROCHIP_PFSOC_RESET = 0xDEAD,
+};
+
 #endif /* MCHP_PFSOC_SYSREG_H */

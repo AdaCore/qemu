@@ -26,8 +26,11 @@
 #include "qapi/error.h"
 #include "hw/sysbus.h"
 #include "hw/misc/mchp_pfsoc_sysreg.h"
+#include "sysemu/runstate.h"
+#include <stdio.h>
 
 #define ENVM_CR         0xb8
+#define RESET_CR        0x18
 
 static uint64_t mchp_pfsoc_sysreg_read(void *opaque, hwaddr offset,
                                        unsigned size)
@@ -51,11 +54,23 @@ static uint64_t mchp_pfsoc_sysreg_read(void *opaque, hwaddr offset,
 
 static void mchp_pfsoc_sysreg_write(void *opaque, hwaddr offset,
                                     uint64_t value, unsigned size)
-{
-    qemu_log_mask(LOG_UNIMP, "%s: unimplemented device write "
-                  "(size %d, value 0x%" PRIx64
-                  ", offset 0x%" HWADDR_PRIx ")\n",
-                  __func__, size, value, offset);
+{ 
+    int status;
+    switch (offset) {
+        case RESET_CR:
+            status = extract32(value, 0, 16); 
+            if (MICROCHIP_PFSOC_RESET == status) {
+                qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_SHUTDOWN);
+            }
+            return;
+            break;
+        default:
+            qemu_log_mask(LOG_UNIMP, "%s: unimplemented device write "
+                      "(size %d, value 0x%" PRIx64
+                      ", offset 0x%" HWADDR_PRIx ")\n",
+                      __func__, size, value, offset);
+            break;
+        }
 }
 
 static const MemoryRegionOps mchp_pfsoc_sysreg_ops = {
