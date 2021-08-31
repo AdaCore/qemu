@@ -27,7 +27,10 @@
 #include "hw/irq.h"
 #include "hw/sysbus.h"
 #include "hw/misc/mchp_pfsoc_sysreg.h"
+#include "sysemu/runstate.h"
+#include <stdio.h>
 
+#define RESET_CR        0x18
 #define ENVM_CR         0xb8
 #define MESSAGE_INT     0x118c
 
@@ -55,7 +58,15 @@ static void mchp_pfsoc_sysreg_write(void *opaque, hwaddr offset,
                                     uint64_t value, unsigned size)
 {
     MchpPfSoCSysregState *s = opaque;
+    int status;
+
     switch (offset) {
+    case RESET_CR:
+        status = extract32(value, 0, 16);
+        if (MICROCHIP_PFSOC_RESET == status) {
+            qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_SHUTDOWN);
+        }
+        break;
     case MESSAGE_INT:
         qemu_irq_lower(s->irq);
         break;
