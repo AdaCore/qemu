@@ -38,6 +38,8 @@
 #include "translate-a64.h"
 #include "qemu/atomic128.h"
 
+#include "qemu-traces.h"
+
 static TCGv_i64 cpu_X[32];
 static TCGv_i64 cpu_pc;
 
@@ -393,19 +395,39 @@ static inline bool use_goto_tb(DisasContext *s, uint64_t dest)
     return translator_use_goto_tb(&s->base, dest);
 }
 
+static inline void gen_goto_ptr(DisasContext *s, int n)
+{
+    if (unlikely(tracefile_enabled)) {
+        tcg_gen_exit_tb(s->base.tb, TB_EXIT_NOPATCH | n);
+    } else {
+        tcg_gen_lookup_and_goto_ptr();
+    }
+}
+
+static inline void gen_exit_tb(const TranslationBlock *tb, int n)
+{
+    if (unlikely(tracefile_enabled)) {
+        tcg_gen_exit_tb(tb, TB_EXIT_NOPATCH | n);
+    } else {
+        tcg_gen_exit_tb(tb, n);
+    }
+}
+
 static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
 {
-    if (use_goto_tb(s, dest)) {
+    if (use_goto_tb(s,  dest)) {
         tcg_gen_goto_tb(n);
         gen_a64_set_pc_im(dest);
-        tcg_gen_exit_tb(s->base.tb, n);
+        gen_exit_tb(s->base.tb, n);
         s->base.is_jmp = DISAS_NORETURN;
     } else {
         gen_a64_set_pc_im(dest);
         if (s->ss_active) {
             gen_step_complete_exception(s);
+        } else if (s->base.singlestep_enabled) {
+            gen_exception_internal(EXCP_DEBUG);
         } else {
-            tcg_gen_lookup_and_goto_ptr();
+            gen_goto_ptr(s, n);
             s->base.is_jmp = DISAS_NORETURN;
         }
     }
@@ -14927,13 +14949,13 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             gen_a64_set_pc_im(dc->base.pc_next);
             /* fall through */
         case DISAS_EXIT:
-            tcg_gen_exit_tb(NULL, 0);
+            gen_exit_tb(NULL, 0);
             break;
         case DISAS_UPDATE_NOCHAIN:
             gen_a64_set_pc_im(dc->base.pc_next);
             /* fall through */
         case DISAS_JUMP:
-            tcg_gen_lookup_and_goto_ptr();
+            gen_goto_ptr(dc, 0);
             break;
         case DISAS_NORETURN:
         case DISAS_SWI:
@@ -14959,7 +14981,7 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(NULL, 0);
+            gen_exit_tb(NULL, 0);
             break;
         }
         }
