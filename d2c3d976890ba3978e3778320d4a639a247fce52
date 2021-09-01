@@ -1,0 +1,6 @@
+Code-Review+2: Frédéric Konrad <konrad@adacore.com>
+Submitted-by: Matthieu Eyraud <eyraud@adacore.com>
+Submitted-at: Wed, 01 Sep 2021 18:18:04 +0200
+Reviewed-on: https://git.adacore.com/c/qemu/+/100792
+Project: qemu
+Branch: refs/heads/qemu-stable-6.0.0
