@@ -178,6 +178,10 @@ static void microchip_pfsoc_soc_instance_init(Object *obj)
                             TYPE_CADENCE_SDHCI);
 
     object_initialize_child(obj, "ioscb", &s->ioscb, TYPE_MCHP_PFSOC_IOSCB);
+
+    object_initialize_child(obj, "gpio0", &s->gpio0, TYPE_PSE_GPIO);
+    object_initialize_child(obj, "gpio1", &s->gpio1, TYPE_PSE_GPIO);
+    object_initialize_child(obj, "gpio2", &s->gpio2, TYPE_PSE_GPIO);
 }
 
 static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
@@ -387,15 +391,23 @@ static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
         qdev_get_gpio_in(DEVICE(s->plic), MICROCHIP_PFSOC_GEM1_IRQ));
 
     /* GPIOs */
-    create_unimplemented_device("microchip.pfsoc.gpio0",
-        memmap[MICROCHIP_PFSOC_GPIO0].base,
-        memmap[MICROCHIP_PFSOC_GPIO0].size);
-    create_unimplemented_device("microchip.pfsoc.gpio1",
-        memmap[MICROCHIP_PFSOC_GPIO1].base,
-        memmap[MICROCHIP_PFSOC_GPIO1].size);
-    create_unimplemented_device("microchip.pfsoc.gpio2",
-        memmap[MICROCHIP_PFSOC_GPIO2].base,
-        memmap[MICROCHIP_PFSOC_GPIO2].size);
+    sysbus_realize(SYS_BUS_DEVICE(&s->gpio0), errp);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gpio0), 0,
+                    memmap[MICROCHIP_PFSOC_GPIO0].base);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->gpio0), 0,
+        qdev_get_gpio_in(DEVICE(s->plic), MICROCHIP_PFSOC_GPIO0_IRQ));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->gpio1), errp);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gpio1), 0,
+                    memmap[MICROCHIP_PFSOC_GPIO1].base);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->gpio1), 0,
+        qdev_get_gpio_in(DEVICE(s->plic), MICROCHIP_PFSOC_GPIO1_IRQ));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->gpio2), errp);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gpio2), 0,
+                    memmap[MICROCHIP_PFSOC_GPIO2].base);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->gpio2), 0,
+        qdev_get_gpio_in(DEVICE(s->plic), MICROCHIP_PFSOC_GPIO2_IRQ));
 
     /* eNVM */
     memory_region_init_rom(envm_data, OBJECT(dev), "microchip.pfsoc.envm.data",

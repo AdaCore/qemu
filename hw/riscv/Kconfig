@@ -16,6 +16,7 @@ config MICROCHIP_PFSOC
     select SIFIVE_PDMA
     select SIFIVE_PLIC
     select UNIMP
+    select PSE_GPIO
 
 config OPENTITAN
     bool
