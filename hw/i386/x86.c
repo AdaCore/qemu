@@ -1101,15 +1101,26 @@ void x86_bios_rom_init(MachineState *ms, const char *default_firmware,
     MemoryRegion *bios, *isa_bios;
     int bios_size, isa_bios_size;
     int ret;
+    int no_bios;
 
     /* BIOS load */
     bios_name = ms->firmware ?: default_firmware;
-    filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
-    if (filename) {
-        bios_size = get_image_size(filename);
+    no_bios = !strcmp("-", bios_name);
+
+    if (no_bios) {
+        /* No bios, simulate a 256KB ram / rom instead.  */
+        filename = NULL;
+        bios_size = 256 * 1024;
     } else {
-        bios_size = -1;
+        filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+
+        if (filename) {
+            bios_size = get_image_size(filename);
+        } else {
+            bios_size = -1;
+        }
     }
+
     if (bios_size <= 0 ||
         (bios_size % 65536) != 0) {
         goto bios_error;
@@ -1119,13 +1130,16 @@ void x86_bios_rom_init(MachineState *ms, const char *default_firmware,
     if (!isapc_ram_fw) {
         memory_region_set_readonly(bios, true);
     }
-    ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size), -1);
-    if (ret != 0) {
-    bios_error:
-        fprintf(stderr, "qemu: could not load PC BIOS '%s'\n", bios_name);
-        exit(1);
+
+    if (!no_bios) {
+        ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size), -1);
+        if (ret != 0) {
+        bios_error:
+            fprintf(stderr, "qemu: could not load PC BIOS '%s'\n", bios_name);
+            exit(1);
+        }
+        g_free(filename);
     }
-    g_free(filename);
 
     /* map the last 128KB of the BIOS in ISA space */
     isa_bios_size = MIN(bios_size, 128 * KiB);
