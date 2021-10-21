@@ -2354,7 +2354,11 @@ float64_muladd(float64 xa, float64 xb, float64 xc, int flags, float_status *s)
             uc.h = -uc.h;
         }
 
+#ifdef __MINGW32__
+        ur.h = fmal(ua.h, ub.h, uc.h);
+#else
         ur.h = fma(ua.h, ub.h, uc.h);
+#endif
 
         if (unlikely(f64_is_inf(ur))) {
             float_raise(float_flag_overflow, s);
@@ -4973,6 +4977,7 @@ floatx80 floatx80_round(floatx80 a, float_status *status)
     return floatx80_round_pack_canonical(&p, status);
 }
 
+#ifdef __MINGW32__
 static void __attribute__((constructor)) softfloat_init(void)
 {
     union_float64 ua, ub, uc, ur;
@@ -4993,3 +4998,4 @@ static void __attribute__((constructor)) softfloat_init(void)
         force_soft_fma = true;
     }
 }
+#endif
