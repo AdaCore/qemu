@@ -633,6 +633,7 @@ enum {
     POWERPC_FLAG_PMM      = 0x00000400,
     /* Flag for special features                                             */
     /* Decrementer clock                                                     */
+    POWERPC_FLAG_RTC_CLK  = 0x00010000,
     POWERPC_FLAG_BUS_CLK  = 0x00020000,
     /* Has CFAR                                                              */
     POWERPC_FLAG_CFAR     = 0x00040000,

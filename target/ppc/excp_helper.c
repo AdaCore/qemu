@@ -2010,7 +2010,12 @@ static void do_rfi(CPUPPCState *env, target_ulong nip, target_ulong msr)
 
 void helper_rfi(CPUPPCState *env)
 {
-    do_rfi(env, env->spr[SPR_SRR0], env->spr[SPR_SRR1] & 0xfffffffful);
+    if (env->excp_model == POWERPC_EXCP_BOOKE) {
+        do_rfi(env, env->spr[SPR_SRR0], env->spr[SPR_SRR1]);
+    } else {
+        do_rfi(env, env->spr[SPR_SRR0], env->spr[SPR_SRR1] &
+               ~((target_ulong)0x783F0000));
+    }
 }
 
 #define MSR_BOOK3S_MASK
@@ -2023,7 +2028,8 @@ void helper_rfid(CPUPPCState *env)
      * which will be called by do_rfi(), so there is no need to filter
      * here
      */
-    do_rfi(env, env->spr[SPR_SRR0], env->spr[SPR_SRR1]);
+    do_rfi(env, env->spr[SPR_SRR0], env->spr[SPR_SRR1] &
+           ~((target_ulong)0x783F0000));
 }
 
 void helper_rfscv(CPUPPCState *env)
