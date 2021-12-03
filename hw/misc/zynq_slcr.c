@@ -289,12 +289,12 @@ static void zynq_slcr_compute_clocks_internal(ZynqSLCRState *s, uint64_t ps_clk)
  * But do not propagate them further. Connected clocks
  * will not receive any updates (See zynq_slcr_compute_clocks())
  */
-static void zynq_slcr_compute_clocks(ZynqSLCRState *s)
+static void zynq_slcr_compute_clocks(ZynqSLCRState *s, int reset_hold)
 {
     uint64_t ps_clk = clock_get(s->ps_clk);
 
     /* consider outputs clocks are disabled while in reset */
-    if (device_is_in_reset(DEVICE(s))) {
+    if (reset_hold) {
         ps_clk = 0;
     }
 
@@ -316,7 +316,7 @@ static void zynq_slcr_ps_clk_callback(void *opaque, ClockEvent event)
 {
     ZynqSLCRState *s = (ZynqSLCRState *) opaque;
 
-    zynq_slcr_compute_clocks(s);
+    zynq_slcr_compute_clocks(s, 0);
     zynq_slcr_propagate_clocks(s);
 }
 
@@ -425,7 +425,7 @@ static void zynq_slcr_reset_hold(Object *obj)
     ZynqSLCRState *s = ZYNQ_SLCR(obj);
 
     /* will disable all output clocks */
-    zynq_slcr_compute_clocks_internal(s, 0);
+    zynq_slcr_compute_clocks(s, 1);
     zynq_slcr_propagate_clocks(s);
 }
 
@@ -573,7 +573,7 @@ static void zynq_slcr_write(void *opaque, hwaddr offset,
     case R_ARM_PLL_CTRL:
     case R_DDR_PLL_CTRL:
     case R_UART_CLK_CTRL:
-        zynq_slcr_compute_clocks(s);
+        zynq_slcr_compute_clocks(s, 0);
         zynq_slcr_propagate_clocks(s);
         break;
     }
