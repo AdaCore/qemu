@@ -314,6 +314,11 @@ config STRONGARM
     bool
     select PXA2XX
 
+config SAMRH71
+    bool
+    default y
+    depends on TCG && ARM
+
 config COLLIE
     bool
     default y
