@@ -1,5 +1,6 @@
 arm_ss = ss.source_set()
 arm_ss.add(files('boot.c'), fdt)
+arm_ss.add(when: 'CONFIG_SAMRH71', if_true: files('samrh71.c'))
 arm_ss.add(when: 'CONFIG_STM32', if_true: files('stm32f4.c'))
 arm_ss.add(when: 'CONFIG_TMS570', if_true: files('TMS570.c'))
 arm_ss.add(when: 'CONFIG_PLATFORM_BUS', if_true: files('sysbus-fdt.c'))

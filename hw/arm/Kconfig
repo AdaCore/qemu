@@ -568,5 +568,8 @@ config ARMSSE
 config STM32
     bool
 
+config SAMRH71
+    bool
+
 config TMS570
     bool
