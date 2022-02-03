@@ -267,6 +267,9 @@ config TMS570
     select TMS570_SCI
     select TMS570_VIM
 
+config SAMRH71
+    bool
+
 config COLLIE
     bool
     select PFLASH_CFI01
