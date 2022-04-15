@@ -1207,7 +1207,10 @@ static int vvfat_open(BlockDriverState *bs, QDict *options, int flags,
         cyls = 80;
         heads = 2;
     } else {
-        /* 32MB or 504MB disk*/
+        /* 256MB disk.
+         * It has to be a power of 2 for some systems.
+         * This size should be convinient for most systems.
+         */
         if (!s->fat_type) {
             s->fat_type = 16;
         }
@@ -1215,9 +1218,9 @@ static int vvfat_open(BlockDriverState *bs, QDict *options, int flags,
             /* We have an MBR in this case, it stay zero otherwise.. */
             s->offset_to_bootsector = 0x3f;
         }
-        cyls = s->fat_type == 12 ? 64 : 1024;
+        cyls = 512;
         heads = 16;
-        secs = 63;
+        secs = 64;
     }
 
     switch (s->fat_type) {
