@@ -283,7 +283,11 @@ static void sifive_plic_write(void *opaque, hwaddr addr, uint64_t value,
         addr < plic->priority_base + (plic->num_sources << 2))
     {
         uint32_t irq = ((addr - plic->priority_base) >> 2) + 1;
-        plic->source_priority[irq] = value & 7;
+
+        /* Interrupt Priority registers are Write-Any Read-Legal. Cleanup
+         * incoming values before storing them.
+         */
+        plic->source_priority[irq] = value % (plic->num_priorities + 1);
         if (RISCV_DEBUG_PLIC) {
             qemu_log("plic: write priority: irq=%d priority=%d\n",
                 irq, plic->source_priority[irq]);
@@ -324,10 +328,11 @@ static void sifive_plic_write(void *opaque, hwaddr addr, uint64_t value,
                     mode_to_char(plic->addr_config[addrid].mode),
                     plic->target_priority[addrid]);
             }
-            if (value <= plic->num_priorities) {
-                plic->target_priority[addrid] = value;
-                sifive_plic_update(plic);
-            }
+            /* Priority Thresholds registers are Write-Any Read-Legal. Cleanup
+             * incoming values before storing them.
+             */
+            plic->target_priority[addrid] = value % (plic->num_priorities + 1);
+            sifive_plic_update(plic);
             return;
         } else if (contextid == 4) {
             if (RISCV_DEBUG_PLIC) {
