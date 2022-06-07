@@ -180,7 +180,10 @@ static void sifive_plic_write(void *opaque, hwaddr addr, uint64_t value,
     if (addr_between(addr, plic->priority_base, plic->num_sources << 2)) {
         uint32_t irq = ((addr - plic->priority_base) >> 2) + 1;
 
-        plic->source_priority[irq] = value & 7;
+        /* Interrupt Priority registers are Write-Any Read-Legal. Cleanup
+         * incoming values before storing them.
+         */
+        plic->source_priority[irq] = value % (plic->num_priorities + 1);
         sifive_plic_update(plic);
     } else if (addr_between(addr, plic->pending_base,
                             plic->num_sources >> 3)) {
@@ -205,10 +208,11 @@ static void sifive_plic_write(void *opaque, hwaddr addr, uint64_t value,
         uint32_t contextid = (addr & (plic->context_stride - 1));
 
         if (contextid == 0) {
-            if (value <= plic->num_priorities) {
-                plic->target_priority[addrid] = value;
-                sifive_plic_update(plic);
-            }
+            /* Priority Thresholds registers are Write-Any Read-Legal. Cleanup
+             * incoming values before storing them.
+             */
+            plic->target_priority[addrid] = value % (plic->num_priorities + 1);
+            sifive_plic_update(plic);
         } else if (contextid == 4) {
             if (value < plic->num_sources) {
                 sifive_plic_set_claimed(plic, value, false);
