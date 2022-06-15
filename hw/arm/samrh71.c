@@ -157,6 +157,7 @@ static void samrh71_init(MachineState *args)
     qdev_prop_set_string(nvic, "cpu-type", args->cpu_type);
     object_property_set_link(OBJECT(nvic), "memory",
                              OBJECT(get_system_memory()), &error_abort);
+    qdev_connect_clock_in(nvic, "cpuclk", sysclk);
     /* This will exit with an error if the user passed us a bad cpu_type */
     sysbus_realize_and_unref(SYS_BUS_DEVICE(nvic), &error_fatal);
 
