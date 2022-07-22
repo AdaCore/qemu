@@ -1050,8 +1050,6 @@ for opt do
   ;;
   --static-glib) static_glib="yes"
   ;;
-  --static-glib) static_glib="yes"
-  ;;
   --enable-fuse-lseek) fuse_lseek="enabled"
   ;;
   # backwards compatibility options
