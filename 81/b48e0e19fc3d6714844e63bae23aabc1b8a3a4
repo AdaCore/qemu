@@ -1,0 +1,6 @@
+Code-Review+2: Fabien Chouteau <chouteau@adacore.com>
+Submitted-by: Clément Chigot <chigot@adacore.com>
+Submitted-at: Mon, 25 Jul 2022 09:11:17 +0000
+Reviewed-on: https://git.adacore-it.com/c/qemu/+/118973
+Project: qemu
+Branch: refs/heads/qemu-stable-7.0.0
