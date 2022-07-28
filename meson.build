@@ -691,6 +691,10 @@ if host_os == 'windows'
                                       depend_files: files('pc-bios/qemu-nsis.ico'),
                                       include_directories: include_directories('.'))
   host_dsosuf = '.dll'
+  # Threads are supported natively with GNAT on Windows.
+  # Thus, avoid using meson 'threads' dependency which will add
+  # '-pthread' flag.
+  threads = declare_dependency()
 elif host_os == 'darwin'
   coref = dependency('appleframeworks', modules: 'CoreFoundation')
   iokit = dependency('appleframeworks', modules: 'IOKit', required: false)
