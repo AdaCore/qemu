@@ -17,6 +17,7 @@ freebsd_dep = []
 if targetos == 'freebsd'
   freebsd_dep = util
 endif
+util_ss.add(when: 'CONFIG_POSIX', if_true: dependency('threads'))
 util_ss.add(when: 'CONFIG_POSIX', if_true: [files('oslib-posix.c'), freebsd_dep])
 util_ss.add(when: 'CONFIG_POSIX', if_true: files('qemu-thread-posix.c'))
 util_ss.add(when: 'CONFIG_POSIX', if_true: files('memfd.c'))
