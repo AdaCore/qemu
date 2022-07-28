@@ -5,7 +5,11 @@ trace_events_files = []
 foreach item : [ '.' ] + trace_events_subdirs + qapi_trace_events
   if item in qapi_trace_events
     trace_events_file = item
-    group_name = item.full_path().split('/')[-1].underscorify()
+    # Adjust the path separator based on the host OS.
+    # NOTE: cygwin might be needed too, but it seems ok with
+    # just windows in our case.
+    path_sep = host_machine.system() == 'windows' ? '\\' : '/'
+    group_name = item.full_path().split(path_sep)[-1].underscorify()
   else
     trace_events_file = meson.project_source_root() / item / 'trace-events'
     group_name = item == '.' ? 'root' : item.underscorify()
