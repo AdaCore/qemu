@@ -1029,7 +1029,10 @@ int cpu_exec(CPUState *cpu)
 #endif
             /* See if we can patch the calling TB. */
             if (last_tb) {
-                tb_add_jump(last_tb, tb_exit, tb);
+                if (!(tb->cflags & CF_INVALID)
+                    && !tracefile_history_for_tb(last_tb)) {
+                    tb_add_jump(last_tb, tb_exit, tb);
+                }
             }
 
             cpu_loop_exec_tb(cpu, tb, &last_tb, &tb_exit);
