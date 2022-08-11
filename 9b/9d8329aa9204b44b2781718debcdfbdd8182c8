@@ -1,0 +1,6 @@
+Code-Review+2: Cédric Landet <landet@adacore.com>
+Submitted-by: Clément Chigot <chigot@adacore.com>
+Submitted-at: Thu, 11 Aug 2022 12:19:52 +0000
+Reviewed-on: https://git.adacore-it.com/c/qemu/+/120115
+Project: qemu
+Branch: refs/heads/qemu-stable-7.0.0
