@@ -60,7 +60,7 @@ qio_channel_socket_new(void)
     qio_channel_set_feature(ioc, QIO_CHANNEL_FEATURE_SHUTDOWN);
 
 #ifdef WIN32
-    ioc->event = WSACreateEvent();
+    ioc->event = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 
     trace_qio_channel_socket_new(sioc);
