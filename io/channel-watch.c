@@ -114,46 +114,39 @@ qio_channel_socket_source_prepare(GSource *source G_GNUC_UNUSED,
 static gboolean
 qio_channel_socket_source_check(GSource *source)
 {
-    static struct timeval tv0;
-
     QIOChannelSocketSource *ssource = (QIOChannelSocketSource *)source;
     WSANETWORKEVENTS ev;
-    fd_set rfds, wfds, xfds;
 
     if (!ssource->condition) {
         return 0;
     }
 
-    WSAEnumNetworkEvents(ssource->socket, ssource->ioc->event, &ev);
-
-    FD_ZERO(&rfds);
-    FD_ZERO(&wfds);
-    FD_ZERO(&xfds);
-    if (ssource->condition & G_IO_IN) {
-        FD_SET((SOCKET)ssource->socket, &rfds);
-    }
-    if (ssource->condition & G_IO_OUT) {
-        FD_SET((SOCKET)ssource->socket, &wfds);
-    }
-    if (ssource->condition & G_IO_PRI) {
-        FD_SET((SOCKET)ssource->socket, &xfds);
-    }
-    ssource->revents = 0;
-    if (select(0, &rfds, &wfds, &xfds, &tv0) == 0) {
+    /* For now, we don't support G_IO_HUP checks.
+       We want to avoid calling WSAEnumNetworkEvents for any GSource
+       having just G_IO_HUP. It might hide events aimed to be retrieved by
+       other GSources waiting inputs or outputs (ie with G_IO_IN or G_IO_OUT).
+       The reason is that the Windows API is based on HANDLE but we often
+       create several GSources for the same HANDLE. Thus, input events might
+       be picked and cleared by the G_IO_HUP GSource.  */
+    if (ssource->condition == G_IO_HUP) {
         return 0;
     }
 
-    if (FD_ISSET(ssource->socket, &rfds)) {
-        ssource->revents |= G_IO_IN;
-    }
-    if (FD_ISSET(ssource->socket, &wfds)) {
-        ssource->revents |= G_IO_OUT;
-    }
-    if (FD_ISSET(ssource->socket, &xfds)) {
-        ssource->revents |= G_IO_PRI;
+    if (WSAEnumNetworkEvents(ssource->socket, ssource->ioc->event, &ev)) {
+        return 0;
     }
 
-    return ssource->revents;
+    ssource->revents = 0;
+
+    if (ev.lNetworkEvents & (FD_READ | FD_ACCEPT | FD_OOB)) {
+        ssource->revents |= G_IO_IN;
+    }
+
+    if (ev.lNetworkEvents & (FD_WRITE | FD_CONNECT)) {
+        ssource->revents |= G_IO_OUT;
+    }
+
+    return ssource->revents & ssource->condition;
 }
 
 
@@ -173,6 +166,7 @@ static void
 qio_channel_socket_source_finalize(GSource *source)
 {
     QIOChannelSocketSource *ssource = (QIOChannelSocketSource *)source;
+
 
     object_unref(OBJECT(ssource->ioc));
 }
@@ -286,9 +280,16 @@ GSource *qio_channel_create_socket_watch(QIOChannel *ioc,
     QIOChannelSocketSource *ssource;
 
 #ifdef WIN32
-    WSAEventSelect(socket, ioc->event,
-                   FD_READ | FD_ACCEPT | FD_CLOSE |
-                   FD_CONNECT | FD_WRITE | FD_OOB);
+    int ev = 0;
+
+    if (condition & G_IO_IN) {
+        ev |= (FD_READ | FD_ACCEPT | FD_OOB);
+    }
+    if (condition & G_IO_OUT) {
+        ev |= (FD_WRITE | FD_CONNECT);
+    }
+
+    WSAEventSelect(socket, ioc->event, ev);
 #endif
 
     source = g_source_new(&qio_channel_socket_source_funcs,
@@ -303,7 +304,7 @@ GSource *qio_channel_create_socket_watch(QIOChannel *ioc,
     ssource->revents = 0;
 
     ssource->fd.fd = (gintptr)ioc->event;
-    ssource->fd.events = G_IO_IN;
+    ssource->fd.events = condition;
 
     g_source_add_poll(source, &ssource->fd);
 
