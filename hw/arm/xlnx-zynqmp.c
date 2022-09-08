@@ -91,10 +91,6 @@
 
 #define SDHCI_CAPABILITIES  0x280737ec6481 /* Datasheet: UG1085 (v1.7) */
 
-/* No need to check for the RPU maximum, since smp is limited to 6.  */
-#define NUM_RPUS (ms->smp.cpus < XLNX_ZYNQMP_NUM_APU_CPUS ?     \
-                  0 : ms->smp.cpus - XLNX_ZYNQMP_NUM_APU_CPUS)
-
 static const uint64_t gem_addr[XLNX_ZYNQMP_NUM_GEMS] = {
     0xFF0B0000, 0xFF0C0000, 0xFF0D0000, 0xFF0E0000,
 };
@@ -223,8 +219,10 @@ static void xlnx_zynqmp_create_rpu(MachineState *ms, XlnxZynqMPState *s,
                                    const char *boot_cpu, Error **errp)
 {
     int i;
+    int num_rpus = MIN((int)(ms->smp.cpus - XLNX_ZYNQMP_NUM_APU_CPUS),
+                       XLNX_ZYNQMP_NUM_RPU_CPUS);
 
-    if (NUM_RPUS <= 0) {
+    if (num_rpus <= 0) {
         /* Don't create rpu-cluster object if there's nothing to put in it */
         return;
     }
@@ -233,7 +231,7 @@ static void xlnx_zynqmp_create_rpu(MachineState *ms, XlnxZynqMPState *s,
                             TYPE_CPU_CLUSTER);
     qdev_prop_set_uint32(DEVICE(&s->rpu_cluster), "cluster-id", 1);
 
-    for (i = 0; i < NUM_RPUS; i++) {
+    for (i = 0; i < num_rpus; i++) {
         const char *name;
 
         object_initialize_child(OBJECT(&s->rpu_cluster), "rpu-cpu[*]",
@@ -381,12 +379,6 @@ static void xlnx_zynqmp_init(Object *obj)
 
     object_initialize_child(obj, "gic", &s->gic, gic_class_name());
 
-    if (NUM_RPUS > 0) {
-        /* Do not create the rpu_gic in case we don't have rpus..  */
-        object_initialize_child(obj, "rpu_gic", &s->rpu_gic,
-                                gic_class_name());
-    }
-
     for (i = 0; i < XLNX_ZYNQMP_NUM_GEMS; i++) {
         object_initialize_child(obj, "gem[*]", &s->gem[i], TYPE_CADENCE_GEM);
     }
@@ -459,7 +451,6 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     uint8_t i;
     uint64_t ram_size;
     int num_apus = MIN(ms->smp.cpus, XLNX_ZYNQMP_NUM_APU_CPUS);
-
     const char *boot_cpu = s->boot_cpu ? s->boot_cpu : "apu-cpu[0]";
     ram_addr_t ddr_low_size, ddr_high_size;
     qemu_irq *gic_spi = g_new(qemu_irq, GIC_NUM_SPI_INTR);
@@ -516,14 +507,6 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     qdev_prop_set_bit(DEVICE(&s->gic), "has-security-extensions", s->secure);
     qdev_prop_set_bit(DEVICE(&s->gic),
                       "has-virtualization-extensions", s->virt);
-
-    if (NUM_RPUS > 0) {
-        qdev_prop_set_uint32(DEVICE(&s->rpu_gic), "num-irq",
-                             GIC_NUM_SPI_INTR + 32);
-        qdev_prop_set_uint32(DEVICE(&s->rpu_gic), "revision", 1);
-        qdev_prop_set_uint32(DEVICE(&s->rpu_gic), "num-cpu", NUM_RPUS);
-        qdev_prop_set_uint32(DEVICE(&s->rpu_gic), "first-cpu-index", 4);
-    }
 
     qdev_realize(DEVICE(&s->apu_cluster), NULL, &error_fatal);
 
@@ -629,58 +612,13 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         return;
     }
 
-    if (NUM_RPUS > 0) {
-        if (!sysbus_realize(SYS_BUS_DEVICE(&s->rpu_gic), errp)) {
-            return;
-        }
-
-        for (i = 0; i < NUM_RPUS; i++) {
-            qemu_irq irq;
-
-            sysbus_mmio_map(SYS_BUS_DEVICE(&s->rpu_gic), i + 1,
-                            GIC_BASE_ADDR + i * 0x1000);
-            sysbus_connect_irq(SYS_BUS_DEVICE(&s->rpu_gic), i,
-                               qdev_get_gpio_in(DEVICE(&s->rpu_cpu[i]),
-                                                ARM_CPU_IRQ));
-            sysbus_connect_irq(SYS_BUS_DEVICE(&s->rpu_gic), i + NUM_RPUS,
-                               qdev_get_gpio_in(DEVICE(&s->rpu_cpu[i]),
-                                                ARM_CPU_FIQ));
-            sysbus_connect_irq(SYS_BUS_DEVICE(&s->rpu_gic), i + NUM_RPUS * 2,
-                               qdev_get_gpio_in(DEVICE(&s->rpu_cpu[i]),
-                                                ARM_CPU_VIRQ));
-            sysbus_connect_irq(SYS_BUS_DEVICE(&s->rpu_gic), i + NUM_RPUS * 3,
-                               qdev_get_gpio_in(DEVICE(&s->rpu_cpu[i]),
-                                                ARM_CPU_VFIQ));
-            irq = qdev_get_gpio_in(DEVICE(&s->rpu_gic),
-                                   arm_gic_ppi_index(i, ARM_PHYS_TIMER_PPI));
-            qdev_connect_gpio_out(DEVICE(&s->rpu_cpu[i]), GTIMER_PHYS, irq);
-            irq = qdev_get_gpio_in(DEVICE(&s->rpu_gic),
-                                   arm_gic_ppi_index(i, ARM_VIRT_TIMER_PPI));
-            qdev_connect_gpio_out(DEVICE(&s->rpu_cpu[i]), GTIMER_VIRT, irq);
-            irq = qdev_get_gpio_in(DEVICE(&s->rpu_gic),
-                                   arm_gic_ppi_index(i, ARM_HYP_TIMER_PPI));
-            qdev_connect_gpio_out(DEVICE(&s->rpu_cpu[i]), GTIMER_HYP, irq);
-            irq = qdev_get_gpio_in(DEVICE(&s->rpu_gic),
-                                   arm_gic_ppi_index(i, ARM_SEC_TIMER_PPI));
-            qdev_connect_gpio_out(DEVICE(&s->rpu_cpu[i]), GTIMER_SEC, irq);
-        }
-
-        sysbus_mmio_map(SYS_BUS_DEVICE(&s->rpu_gic), 0, GIC_BASE_ADDR);
-    }
-
     if (!s->boot_cpu_ptr) {
         error_setg(errp, "ZynqMP Boot cpu %s not found", boot_cpu);
         return;
     }
 
     for (i = 0; i < GIC_NUM_SPI_INTR; i++) {
-        if (NUM_RPUS > 0) {
-            gic_spi[i] = qemu_irq_split(
-                qdev_get_gpio_in(DEVICE(&s->gic), i),
-                qdev_get_gpio_in(DEVICE(&s->rpu_gic), i));
-        } else {
-            gic_spi[i] = qdev_get_gpio_in(DEVICE(&s->gic), i);
-        }
+        gic_spi[i] = qdev_get_gpio_in(DEVICE(&s->gic), i);
     }
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_GEMS; i++) {
