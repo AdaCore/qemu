@@ -161,7 +161,3 @@ config MPC8641D
 
 config P3041DS
     bool
-
-config WRSBC834X
-    bool
-    select IPIC
