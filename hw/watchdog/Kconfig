@@ -20,6 +20,3 @@ config WDT_IMX2
 
 config WDT_SBSA
     bool
-
-config AVR_WDT
-    bool
