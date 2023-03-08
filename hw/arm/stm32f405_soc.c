@@ -30,6 +30,9 @@
 #include "hw/qdev-clock.h"
 #include "hw/misc/unimp.h"
 
+#include "hw/adacore/hostfs.h"
+#include "hw/adacore/gnat-bus.h"
+
 #define SYSCFG_ADD                     0x40013800
 static const uint32_t usart_addr[] = { 0x40011000, 0x40004400, 0x40004800,
                                        0x40004C00, 0x40005000, 0x40011400,
@@ -94,6 +97,8 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     DeviceState *dev, *armv7m;
     SysBusDevice *busdev;
     Error *err = NULL;
+    const int num_irq = 96;
+    qemu_irq *pic = g_new(qemu_irq, num_irq);
     int i;
 
     /*
@@ -142,7 +147,7 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     memory_region_add_subregion(system_memory, SRAM_BASE_ADDRESS, &s->sram);
 
     armv7m = DEVICE(&s->armv7m);
-    qdev_prop_set_uint32(armv7m, "num-irq", 96);
+    qdev_prop_set_uint32(armv7m, "num-irq", num_irq);
     qdev_prop_set_string(armv7m, "cpu-type", s->cpu_type);
     qdev_prop_set_bit(armv7m, "enable-bitband", true);
     qdev_connect_clock_in(armv7m, "cpuclk", s->sysclk);
@@ -293,6 +298,15 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
         return;
     }
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, RCC_OFFSET);
+
+    /* Initialize the GnatBus Master */
+    for (i = 0; i < num_irq; i++) {
+        pic[i] = qdev_get_gpio_in(armv7m, i);
+    }
+    gnatbus_master_init(pic, num_irq);
+    gnatbus_device_init();
+
+    hostfs_create(0x80001000, system_memory);
 }
 
 static Property stm32f405_soc_properties[] = {
