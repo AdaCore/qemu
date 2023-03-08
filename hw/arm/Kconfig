@@ -567,6 +567,8 @@ config ARMSSE
 
 config STM32
     bool
+    select STM32F2XX_PWR
+    select STM32F2XX_RCC
 
 config SAMRH71
     bool

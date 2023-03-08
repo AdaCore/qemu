@@ -103,11 +103,11 @@ static void stm32_init(MachineState *args)
     gnatbus_master_init(pic, num_irq);
     gnatbus_device_init();
 
-    dev = qdev_new("stm32_PWR");
+    dev = qdev_new("stm32f2xx-pwr");
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, PWR_OFFSET);
 
-    dev = qdev_new("stm32_RCC");
+    dev = qdev_new("stm32f2xx-rcc");
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, RCC_OFFSET);
 
