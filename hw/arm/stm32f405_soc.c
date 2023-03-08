@@ -42,6 +42,7 @@ static const uint32_t adc_addr[] = { 0x40012000, 0x40012100, 0x40012200,
 static const uint32_t spi_addr[] =   { 0x40013000, 0x40003800, 0x40003C00,
                                        0x40013400, 0x40015000, 0x40015400 };
 #define EXTI_ADDR                      0x40013C00
+#define PWR_OFFSET                     0x40007000
 
 #define SYSCFG_IRQ               71
 static const int usart_irq[] = { 37, 38, 39, 52, 53, 71, 82, 83 };
@@ -249,7 +250,7 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("I2C3",        0x40005C00, 0x400);
     create_unimplemented_device("CAN1",        0x40006400, 0x400);
     create_unimplemented_device("CAN2",        0x40006800, 0x400);
-    create_unimplemented_device("PWR",         0x40007000, 0x400);
+    /* create_unimplemented_device("PWR",         0x40007000, 0x400); */
     create_unimplemented_device("DAC",         0x40007400, 0x400);
     create_unimplemented_device("timer[1]",    0x40010000, 0x400);
     create_unimplemented_device("timer[8]",    0x40010400, 0x400);
@@ -277,6 +278,14 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("USB OTG FS",  0x50000000, 0x31000);
     create_unimplemented_device("DCMI",        0x50050000, 0x400);
     create_unimplemented_device("RNG",         0x50060800, 0x400);
+
+    /* Minimal Adacore PWR device */
+    dev = qdev_new("stm32f2xx-pwr");
+    if (!sysbus_realize(SYS_BUS_DEVICE(dev), errp)) {
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, PWR_OFFSET);
+
 }
 
 static Property stm32f405_soc_properties[] = {
