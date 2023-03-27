@@ -3935,6 +3935,6 @@ void qemu_init(int argc, char **argv, char **envp)
                                                false /* has_cpu_index */,
                                                0 /* cpu_index      */,
                                                NULL));
-        exit(1);
+        exit(0);
     }
 }
