@@ -336,10 +336,6 @@ if host_arch == 'i386' and not cc.links('''
   qemu_common_flags = ['-march=i486'] + qemu_common_flags
 endif
 
-if get_option('prefer_static')
-  qemu_ldflags += get_option('b_pie') ? '-static-pie' : '-static'
-endif
-
 # Meson currently only handles pie as a boolean for now, so if the user
 # has explicitly disabled PIE we need to extend our cflags.
 #
