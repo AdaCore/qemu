@@ -193,9 +193,9 @@ qemu_cflags = config_host['QEMU_CFLAGS'].split()
 qemu_objcflags = config_host['QEMU_OBJCFLAGS'].split()
 qemu_ldflags = config_host['QEMU_LDFLAGS'].split()
 
-if enable_static
-  qemu_ldflags += get_option('b_pie') ? '-static-pie' : '-static'
-endif
+# if enable_static
+#   qemu_ldflags += get_option('b_pie') ? '-static-pie' : '-static'
+# endif
 
 # Detect support for PT_GNU_RELRO + DT_BIND_NOW.
 # The combination is known as "full relro", because .got.plt is read-only too.
