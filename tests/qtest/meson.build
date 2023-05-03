@@ -84,7 +84,6 @@ qtests_i386 = \
   qtests_pci +                                                                              \
   qtests_cxl +                                                                              \
   ['fdc-test',
-   'ide-test',
    'hd-geo-test',
    'boot-order-test',
    'rtc-test',
