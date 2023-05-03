@@ -528,7 +528,7 @@ void gdb_handle_query_rcmd(GArray *params, void *user_ctx)
 
 void gdb_handle_query_attached(GArray *params, void *user_ctx)
 {
-    gdb_put_packet("1");
+    gdb_put_packet("0");
 }
 
 void gdb_continue(void)
