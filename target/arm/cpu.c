@@ -51,6 +51,8 @@
 #include "target/arm/cpu-qom.h"
 #include "target/arm/gtimer.h"
 
+#include "adacore/qemu-traces.h"
+
 static void arm_cpu_set_pc(CPUState *cs, vaddr value)
 {
     ARMCPU *cpu = ARM_CPU(cs);
@@ -1813,7 +1815,8 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
 
 #if defined(CONFIG_TCG) && !defined(CONFIG_USER_ONLY)
     /* Use pc-relative instructions in system-mode */
-    cs->tcg_cflags |= CF_PCREL;
+    if (!tracefile_enabled)
+        cs->tcg_cflags |= CF_PCREL;
 #endif
 
     /* If we needed to query the host kernel for the CPU features
