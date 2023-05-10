@@ -33,6 +33,8 @@
 #include "exec/helper-info.c.inc"
 #undef  HELPER_H
 
+#include "adacore/qemu-traces.h"
+
 #define ENABLE_ARCH_4T    arm_dc_feature(s, ARM_FEATURE_V4T)
 #define ENABLE_ARCH_5     arm_dc_feature(s, ARM_FEATURE_V5)
 /* currently all emulated v5 cores are also v5TE, so don't bother */
@@ -1304,9 +1306,13 @@ void write_neon_element64(TCGv_i64 src, int reg, int ele, MemOp memop)
     }
 }
 
-static void gen_goto_ptr(void)
+static inline void gen_goto_ptr(DisasContext *s, int n)
 {
-    tcg_gen_lookup_and_goto_ptr();
+    if (unlikely(tracefile_enabled)) {
+        tcg_gen_exit_tb(s->base.tb, TB_EXIT_NOPATCH | n);
+    } else {
+        tcg_gen_lookup_and_goto_ptr();
+    }
 }
 
 /* This will end the TB but doesn't guarantee we'll return to
@@ -1334,7 +1340,7 @@ static void gen_goto_tb(DisasContext *s, unsigned tb_slot_idx, target_long diff)
         tcg_gen_exit_tb(s->base.tb, tb_slot_idx);
     } else {
         gen_update_pc(s, diff);
-        gen_goto_ptr();
+        gen_goto_ptr(s, tb_slot_idx);
     }
     s->base.is_jmp = DISAS_NORETURN;
 }
@@ -1371,7 +1377,7 @@ static void gen_jmp_tb(DisasContext *s, target_long diff, int tbno)
          * and don't chain to another TB.
          */
         gen_update_pc(s, diff);
-        gen_goto_ptr();
+        gen_goto_ptr(s, tbno);
         s->base.is_jmp = DISAS_NORETURN;
         break;
     default:
@@ -6785,14 +6791,18 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             gen_update_pc(dc, curr_insn_len(dc));
             /* fall through */
         case DISAS_JUMP:
-            gen_goto_ptr();
+            gen_goto_ptr(dc, 0);
             break;
         case DISAS_UPDATE_EXIT:
             gen_update_pc(dc, curr_insn_len(dc));
             /* fall through */
         default:
             /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(NULL, 0);
+            if (unlikely(tracefile_enabled)) {
+                tcg_gen_exit_tb(dc->base.tb, TB_EXIT_NOPATCH);
+            } else {
+                tcg_gen_exit_tb(NULL, 0);
+            }
             break;
         case DISAS_NORETURN:
             /* nothing more to generate */
@@ -6803,7 +6813,11 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
              * The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(NULL, 0);
+            if (unlikely(tracefile_enabled)) {
+                tcg_gen_exit_tb(dc->base.tb, TB_EXIT_NOPATCH);
+            } else {
+                tcg_gen_exit_tb(NULL, 0);
+            }
             break;
         case DISAS_WFE:
             gen_helper_wfe(tcg_env);
