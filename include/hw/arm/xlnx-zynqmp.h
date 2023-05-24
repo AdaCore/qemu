@@ -43,6 +43,7 @@
 #include "hw/misc/xlnx-zynqmp-crf.h"
 #include "hw/timer/cadence_ttc.h"
 #include "hw/usb/hcd-dwc3.h"
+#include "hw/misc/xlnx_crl.h"
 
 #define TYPE_XLNX_ZYNQMP "xlnx-zynqmp"
 OBJECT_DECLARE_SIMPLE_TYPE(XlnxZynqMPState, XLNX_ZYNQMP)
@@ -135,6 +136,7 @@ struct XlnxZynqMPState {
     XlnxZynqMPCRF crf;
     CadenceTTCState ttc[XLNX_ZYNQMP_NUM_TTC];
     USBDWC3 usb[XLNX_ZYNQMP_NUM_USB];
+    XlnxCRL crl;
 
     char *boot_cpu;
     ARMCPU *boot_cpu_ptr;
