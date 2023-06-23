@@ -228,8 +228,8 @@ STUB_HELPER(write_crN, TCGv_env env, TCGv_i32 reg, TCGv val)
 STUB_HELPER(wrmsr, TCGv_env env)
 #endif
 
-static void gen_eob(DisasContext *s);
-static void gen_jr(DisasContext *s);
+static void gen_eob(DisasContext *s, int tb_num);
+static void gen_jr(DisasContext *s, int tb_num);
 static void gen_jmp_rel(DisasContext *s, MemOp ot, int diff, int tb_num);
 static void gen_jmp_rel_csize(DisasContext *s, int diff, int tb_num);
 static void gen_op(DisasContext *s1, int op, MemOp ot, int d);
@@ -2782,7 +2782,8 @@ static void gen_bnd_jmp(DisasContext *s)
    If RECHECK_TF, emit a rechecking helper for #DB, ignoring the state of
    S->TF.  This is used by the syscall/sysret insns.  */
 static void
-do_gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf, bool jr)
+do_gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf, bool jr,
+                  int tb_num)
 {
     gen_update_cc_op(s);
 
@@ -2798,40 +2799,40 @@ do_gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf, bool jr)
     }
     if (recheck_tf) {
         gen_helper_rechecking_single_step(cpu_env);
-        tcg_gen_exit_tb(NULL, 0);
+        tcg_gen_exit_tb(NULL, tb_num);
     } else if (s->flags & HF_TF_MASK) {
         gen_helper_single_step(cpu_env);
     } else if (jr) {
         tcg_gen_lookup_and_goto_ptr();
     } else {
-        tcg_gen_exit_tb(NULL, 0);
+        tcg_gen_exit_tb(NULL, tb_num);
     }
     s->base.is_jmp = DISAS_NORETURN;
 }
 
 static inline void
-gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf)
+gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf, int tb_num)
 {
-    do_gen_eob_worker(s, inhibit, recheck_tf, false);
+    do_gen_eob_worker(s, inhibit, recheck_tf, false, tb_num);
 }
 
 /* End of block.
    If INHIBIT, set HF_INHIBIT_IRQ_MASK if it isn't already set.  */
-static void gen_eob_inhibit_irq(DisasContext *s, bool inhibit)
+static void gen_eob_inhibit_irq(DisasContext *s, bool inhibit, int tb_num)
 {
-    gen_eob_worker(s, inhibit, false);
+    gen_eob_worker(s, inhibit, false, tb_num);
 }
 
 /* End of block, resetting the inhibit irq flag.  */
-static void gen_eob(DisasContext *s)
+static void gen_eob(DisasContext *s, int tb_num)
 {
-    gen_eob_worker(s, false, false);
+        gen_eob_worker(s, false, false, tb_num);
 }
 
 /* Jump to register */
-static void gen_jr(DisasContext *s)
+static void gen_jr(DisasContext *s, int tb_num)
 {
-    do_gen_eob_worker(s, false, false, true);
+    do_gen_eob_worker(s, false, false, true, tb_num);
 }
 
 /* Jump to eip+diff, truncating the result to OT. */
@@ -2885,9 +2886,9 @@ static void gen_jmp_rel(DisasContext *s, MemOp ot, int diff, int tb_num)
             tcg_gen_movi_tl(cpu_eip, new_eip);
         }
         if (s->jmp_opt) {
-            gen_jr(s);   /* jump to another page */
+            gen_jr(s, tb_num);   /* jump to another page */
         } else {
-            gen_eob(s);  /* exit to main loop */
+            gen_eob(s, tb_num);  /* exit to main loop */
         }
     }
 }
@@ -5579,7 +5580,7 @@ static bool disas_insn(DisasContext *s, CPUState *cpu)
             gen_set_eflags(s, IF_MASK);
             /* interruptions are enabled only the first insn after sti */
             gen_update_eip_next(s);
-            gen_eob_inhibit_irq(s, true);
+            gen_eob_inhibit_irq(s, true, 0);
         }
         break;
     case 0x62: /* bound */
@@ -5712,7 +5713,7 @@ static bool disas_insn(DisasContext *s, CPUState *cpu)
         /* TF handling for the syscall insn is different. The TF bit is  checked
            after the syscall insn completes. This allows #DB to not be
            generated after one has entered CPL0 if TF is set in FMASK.  */
-        gen_eob_worker(s, false, true);
+        gen_eob_worker(s, false, true, 0);
         break;
     case 0x107: /* sysret */
         if (!PE(s)) {
@@ -5727,7 +5728,7 @@ static bool disas_insn(DisasContext *s, CPUState *cpu)
                checked after the sysret insn completes. This allows #DB to be
                generated "as if" the syscall insn in userspace has just
                completed.  */
-            gen_eob_worker(s, false, true);
+            gen_eob_worker(s, false, true, 0);
         }
         break;
 #endif
@@ -7042,15 +7043,15 @@ static void i386_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         gen_update_eip_cur(dc);
         /* fall through */
     case DISAS_EOB_ONLY:
-        gen_eob(dc);
+        gen_eob(dc, 0);
         break;
     case DISAS_EOB_INHIBIT_IRQ:
         gen_update_cc_op(dc);
         gen_update_eip_cur(dc);
-        gen_eob_inhibit_irq(dc, true);
+        gen_eob_inhibit_irq(dc, true, 0);
         break;
     case DISAS_JUMP:
-        gen_jr(dc);
+        gen_jr(dc, 0);
         break;
     default:
         g_assert_not_reached();

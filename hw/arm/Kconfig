@@ -260,6 +260,16 @@ config STRONGARM
     bool
     select PXA2XX
 
+config TMS570
+    bool
+    select TMS570_GIO
+    select TMS570_RTI
+    select TMS570_SCI
+    select TMS570_VIM
+
+config SAMRH71
+    bool
+
 config COLLIE
     bool
     select PFLASH_CFI01
@@ -310,6 +320,7 @@ config ZYNQ
     select XILINX_SPI
     select XILINX_SPIPS
     select ZYNQ_DEVCFG
+    select ZYNQ_DDRC
 
 config ARM_V7M
     bool
@@ -373,6 +384,8 @@ config STM32F405_SOC
     select OR_IRQ
     select STM32F4XX_SYSCFG
     select STM32F4XX_EXTI
+    select STM32F2XX_PWR
+    select STM32F2XX_RCC
 
 config XLNX_ZYNQMP_ARM
     bool
@@ -388,6 +401,7 @@ config XLNX_ZYNQMP_ARM
     select XILINX_SPIPS
     select XLNX_CSU_DMA
     select XLNX_ZYNQMP
+    select XLNX_CRL
     select XLNX_ZDMA
     select USB_DWC3
 

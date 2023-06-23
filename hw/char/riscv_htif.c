@@ -29,6 +29,7 @@
 #include "chardev/char-fe.h"
 #include "qemu/timer.h"
 #include "qemu/error-report.h"
+#include "sysemu/runstate.h"
 
 #define RISCV_DEBUG_HTIF 0
 #define HTIF_DEBUG(fmt, ...)                                                   \
@@ -150,7 +151,8 @@ static void htif_handle_tohost_write(HTIFState *s, uint64_t val_written)
     int resp = 0;
 
     HTIF_DEBUG("mtohost write: device: %d cmd: %d what: %02" PRIx64
-        " -payload: %016" PRIx64 "\n", device, cmd, payload & 0xFF, payload);
+               " -payload: %016" PRIx64 "\n", device, cmd, payload & 0xFF,
+               payload);
 
     /*
      * Currently, there is a fixed mapping of devices:
@@ -161,9 +163,12 @@ static void htif_handle_tohost_write(HTIFState *s, uint64_t val_written)
         /* frontend syscall handler, shutdown and exit code support */
         if (cmd == HTIF_SYSTEM_CMD_SYSCALL) {
             if (payload & 0x1) {
-                /* exit code */
-                int exit_code = payload >> 1;
-                exit(exit_code);
+                /* int exit_code = payload >> 1;
+                 * Shutdown request is a clean way to stop the QEMU, compared to
+                 * a direct call to exit(). But we can't use the exit code with
+                 * a shutdown request.
+                 */
+                qemu_system_shutdown_request(SHUTDOWN_CAUSE_HOST_ERROR);
             } else {
                 uint64_t syscall[8];
                 cpu_physical_memory_read(payload, syscall, sizeof(syscall));
@@ -180,7 +185,7 @@ static void htif_handle_tohost_write(HTIFState *s, uint64_t val_written)
                 }
             }
         } else {
-            qemu_log("HTIF device %d: unknown command\n", device);
+            HTIF_DEBUG("HTIF device %d: unknown command\n", device);
         }
     } else if (likely(device == HTIF_DEV_CONSOLE)) {
         /* HTIF Console */
@@ -193,12 +198,13 @@ static void htif_handle_tohost_write(HTIFState *s, uint64_t val_written)
             qemu_chr_fe_write(&s->chr, (uint8_t *)&payload, 1);
             resp = 0x100 | (uint8_t)payload;
         } else {
-            qemu_log("HTIF device %d: unknown command\n", device);
+            HTIF_DEBUG("HTIF device %d: unknown command\n", device);
         }
     } else {
-        qemu_log("HTIF unknown device or command\n");
+        HTIF_DEBUG("HTIF unknown device or command\n");
         HTIF_DEBUG("device: %d cmd: %d what: %02" PRIx64
-            " payload: %016" PRIx64, device, cmd, payload & 0xFF, payload);
+                   " payload: %016" PRIx64, device, cmd, payload & 0xFF,
+                   payload);
     }
     /*
      * Latest bbl does not set fromhost to 0 if there is a value in tohost.
@@ -232,8 +238,8 @@ static uint64_t htif_mm_read(void *opaque, hwaddr addr, unsigned size)
     } else if (addr == FROMHOST_OFFSET2) {
         return (s->fromhost >> 32) & 0xFFFFFFFF;
     } else {
-        qemu_log("Invalid htif read: address %016" PRIx64 "\n",
-            (uint64_t)addr);
+        HTIF_DEBUG("Invalid htif read: address %016" PRIx64 "\n",
+                   (uint64_t)addr);
         return 0;
     }
 }
@@ -262,8 +268,8 @@ static void htif_mm_write(void *opaque, hwaddr addr,
         s->fromhost |= value << 32;
         s->fromhost_inprogress = 0;
     } else {
-        qemu_log("Invalid htif write: address %016" PRIx64 "\n",
-            (uint64_t)addr);
+        HTIF_DEBUG("Invalid htif write: address %016" PRIx64 "\n",
+                   (uint64_t)addr);
     }
 }
 

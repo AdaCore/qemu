@@ -37,6 +37,15 @@ void helper_raise_exception(CPUSPARCState *env, int tt)
     CPUState *cs = env_cpu(env);
 
     cs->exception_index = tt;
+
+#if !defined(CONFIG_USER_ONLY)
+    if (tt == (TT_TRAP + 1) &&
+        env->def.features & CPU_FEATURE_TA1_BREAKPOINT) {
+        /* GDB Breakpoint signal here */
+        cs->exception_index = EXCP_DEBUG;
+    }
+#endif
+
     cpu_loop_exit(cs);
 }
 
@@ -250,5 +259,12 @@ void helper_power_down(CPUSPARCState *env)
     env->pc = env->npc;
     env->npc = env->pc + 4;
     cpu_loop_exit(cs);
+}
+
+target_ulong helper_rdasr17(CPUSPARCState *env)
+{
+    CPUState *cs = env_cpu(env);
+
+    return (cs->cpu_index << 28) | (1 << 8) | (env->nwindows - 1);
 }
 #endif

@@ -414,6 +414,10 @@ static void zynq_slcr_reset_init(Object *obj, ResetType type)
     s->regs[R_DDRIOB + 4] = s->regs[R_DDRIOB + 5] = s->regs[R_DDRIOB + 6]
                           = 0x00000e00;
     s->regs[R_DDRIOB + 12] = 0x00000021;
+    /* This is probably not what happen in reality but since we don't model
+     * the registers properly and that it can hang the guest polling on this
+     * bit lets do it like that. */
+    s->regs[R_DDRIOB + 13] = 0x00002000;
 }
 
 static void zynq_slcr_reset_hold(Object *obj)

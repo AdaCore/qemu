@@ -240,7 +240,8 @@
 # Since: 1.4
 ##
 { 'struct': 'ChardevHostdev',
-  'data': { 'device': 'str' },
+  'data': { 'device': 'str',
+            '*server': 'bool' },
   'base': 'ChardevCommon' }
 
 ##
@@ -284,7 +285,8 @@
             '*telnet': 'bool',
             '*tn3270': 'bool',
             '*websocket': 'bool',
-            '*reconnect': 'int' },
+            '*reconnect': 'int',
+            '*timeout': 'int' },
   'base': 'ChardevCommon' }
 
 ##

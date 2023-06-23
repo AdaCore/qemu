@@ -1,7 +1,7 @@
 /*
  * QEMU GRLIB APB UART Emulator
  *
- * Copyright (c) 2010-2019 AdaCore
+ * Copyright (c) 2010-2021 AdaCore
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,10 +23,10 @@
  */
 
 #include "qemu/osdep.h"
+#include "hw/char/grlib_uart.h"
 #include "hw/irq.h"
 #include "hw/qdev-properties.h"
 #include "hw/qdev-properties-system.h"
-#include "hw/sparc/grlib.h"
 #include "hw/sysbus.h"
 #include "qemu/module.h"
 #include "chardev/char-fe.h"
@@ -268,8 +268,8 @@ static void grlib_apbuart_reset(DeviceState *d)
 
     /* Transmitter FIFO and shift registers are always empty in QEMU */
     uart->status =  UART_TRANSMIT_FIFO_EMPTY | UART_TRANSMIT_SHIFT_EMPTY;
-    /* Everything is off */
-    uart->control = 0;
+    /* Enable Tx and Rx as the bootloader would do */
+    uart->control = UART_RECEIVE_ENABLE | UART_TRANSMIT_ENABLE;
     /* Flush receive FIFO */
     uart->len = 0;
     uart->current = 0;

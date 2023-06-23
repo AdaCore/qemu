@@ -38,6 +38,17 @@ typedef struct QEMUResetEntry {
 
 static QTAILQ_HEAD(, QEMUResetEntry) reset_handlers =
     QTAILQ_HEAD_INITIALIZER(reset_handlers);
+static QTAILQ_HEAD(, QEMUResetEntry) late_reset_handlers =
+    QTAILQ_HEAD_INITIALIZER(late_reset_handlers);
+
+void qemu_register_late_reset(QEMUResetHandler *func, void *opaque)
+{
+    QEMUResetEntry *re = g_malloc0(sizeof(QEMUResetEntry));
+
+    re->func = func;
+    re->opaque = opaque;
+    QTAILQ_INSERT_TAIL(&late_reset_handlers, re, entry);
+}
 
 void qemu_register_reset(QEMUResetHandler *func, void *opaque)
 {
@@ -83,5 +94,8 @@ void qemu_devices_reset(ShutdownCause reason)
         }
         re->func(re->opaque);
     }
-}
 
+    QTAILQ_FOREACH_SAFE(re, &late_reset_handlers, entry, nre) {
+        re->func(re->opaque);
+    }
+}

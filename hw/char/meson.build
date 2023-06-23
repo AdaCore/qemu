@@ -1,3 +1,4 @@
+softmmu_ss.add(when: 'CONFIG_TMS570_SCI', if_true: files('tms570_sci.c'))
 softmmu_ss.add(when: 'CONFIG_CADENCE', if_true: files('cadence_uart.c'))
 softmmu_ss.add(when: 'CONFIG_CMSDK_APB_UART', if_true: files('cmsdk-apb-uart.c'))
 softmmu_ss.add(when: 'CONFIG_ESCC', if_true: files('escc.c'))
@@ -31,6 +32,8 @@ softmmu_ss.add(when: 'CONFIG_RENESAS_SCI', if_true: files('renesas_sci.c'))
 softmmu_ss.add(when: 'CONFIG_SIFIVE_UART', if_true: files('sifive_uart.c'))
 softmmu_ss.add(when: 'CONFIG_SH_SCI', if_true: files('sh_serial.c'))
 softmmu_ss.add(when: 'CONFIG_STM32F2XX_USART', if_true: files('stm32f2xx_usart.c'))
+softmmu_ss.add(when: 'CONFIG_STM32F2XX_PWR', if_true: files('stm32f2xx_rcc.c'))
+softmmu_ss.add(when: 'CONFIG_STM32F2XX_RCC', if_true: files('stm32f2xx_pwr.c'))
 softmmu_ss.add(when: 'CONFIG_MCHP_PFSOC_MMUART', if_true: files('mchp_pfsoc_mmuart.c'))
 
 specific_ss.add(when: 'CONFIG_HTIF', if_true: files('riscv_htif.c'))

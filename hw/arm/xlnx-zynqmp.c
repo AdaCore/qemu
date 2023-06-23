@@ -25,6 +25,13 @@
 #include "sysemu/kvm.h"
 #include "sysemu/sysemu.h"
 #include "kvm_arm.h"
+#include "sysemu/sysemu.h"
+#include "hw/adacore/gnat-bus.h"
+
+/* This has no meaning in the HW.  But the current gtimer model requires a
+ * value for that.  With our current runtimes setting that to 10 is correct
+ * and produce the correct delays. (eg: 100MHz ticks for gtimer) */
+#define XLNX_ZYNQMP_DEFAULT_GTIMER_SCALE (10)
 
 #define GIC_NUM_SPI_INTR 160
 
@@ -61,6 +68,8 @@
 
 #define DP_ADDR             0xfd4a0000
 #define DP_IRQ              0x77
+
+#define CRL_ADDR            0xff5e0000
 
 #define DPDMA_ADDR          0xfd4c0000
 #define DPDMA_IRQ           0x7a
@@ -213,7 +222,7 @@ static void xlnx_zynqmp_create_rpu(MachineState *ms, XlnxZynqMPState *s,
                                    const char *boot_cpu, Error **errp)
 {
     int i;
-    int num_rpus = MIN(ms->smp.cpus - XLNX_ZYNQMP_NUM_APU_CPUS,
+    int num_rpus = MIN((int)(ms->smp.cpus - XLNX_ZYNQMP_NUM_APU_CPUS),
                        XLNX_ZYNQMP_NUM_RPU_CPUS);
 
     if (num_rpus <= 0) {
@@ -334,7 +343,7 @@ static void xlnx_zynqmp_create_ttc(XlnxZynqMPState *s, qemu_irq *gic)
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_TTC; i++) {
         object_initialize_child(OBJECT(s), "ttc[*]", &s->ttc[i],
-                                TYPE_CADENCE_TTC);
+                                TYPE_ZYNQMP_TTC);
         sbd = SYS_BUS_DEVICE(&s->ttc[i]);
 
         sysbus_realize(sbd, &error_fatal);
@@ -425,6 +434,8 @@ static void xlnx_zynqmp_init(Object *obj)
 
     object_initialize_child(obj, "rtc", &s->rtc, TYPE_XLNX_ZYNQMP_RTC);
 
+    object_initialize_child(obj, "crl", &s->crl, TYPE_XLNX_CRL);
+
     for (i = 0; i < XLNX_ZYNQMP_NUM_GDMA_CH; i++) {
         object_initialize_child(obj, "gdma[*]", &s->gdma[i], TYPE_XLNX_ZDMA);
     }
@@ -452,7 +463,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     int num_apus = MIN(ms->smp.cpus, XLNX_ZYNQMP_NUM_APU_CPUS);
     const char *boot_cpu = s->boot_cpu ? s->boot_cpu : "apu-cpu[0]";
     ram_addr_t ddr_low_size, ddr_high_size;
-    qemu_irq gic_spi[GIC_NUM_SPI_INTR];
+    qemu_irq *gic_spi = g_new(qemu_irq, GIC_NUM_SPI_INTR);
     Error *err = NULL;
 
     ram_size = memory_region_size(s->ddr_ram);
@@ -532,6 +543,11 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
                                 GIC_BASE_ADDR, &error_abort);
         object_property_set_int(OBJECT(&s->apu_cpu[i]), "core-count",
                                 num_apus, &error_abort);
+        /* Forward the gtimer scale to the APUs.  */
+        object_property_set_int(OBJECT(&s->apu_cpu[i]), "cntfrq",
+                                s->gtimer_scale ? NANOSECONDS_PER_SECOND / s->gtimer_scale
+                                                : NANOSECONDS_PER_SECOND,
+                                &error_abort);
         if (!qdev_realize(DEVICE(&s->apu_cpu[i]), NULL, errp)) {
             return;
         }
@@ -741,6 +757,7 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     if (!sysbus_realize(SYS_BUS_DEVICE(&s->ipi), errp)) {
         return;
     }
+
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ipi), 0, IPI_ADDR);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->ipi), 0, gic_spi[IPI_IRQ]);
 
@@ -756,6 +773,10 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
     xlnx_zynqmp_create_crf(s, gic_spi);
     xlnx_zynqmp_create_ttc(s, gic_spi);
     xlnx_zynqmp_create_unimp_mmio(s);
+    if (!sysbus_realize(SYS_BUS_DEVICE(&s->crl), errp)) {
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->crl), 0, CRL_ADDR);
 
     for (i = 0; i < XLNX_ZYNQMP_NUM_GDMA_CH; i++) {
         if (!object_property_set_uint(OBJECT(&s->gdma[i]), "bus-width", 128,
@@ -850,6 +871,10 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->usb[i].sysbus_xhci), 3,
                            gic_spi[usb_intr[i] + 3]);
     }
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(gic_spi, 128);
+    gnatbus_device_init();
 }
 
 static Property xlnx_zynqmp_props[] = {
@@ -862,6 +887,10 @@ static Property xlnx_zynqmp_props[] = {
                      CanBusState *),
     DEFINE_PROP_LINK("canbus1", XlnxZynqMPState, canbus[1], TYPE_CAN_BUS,
                      CanBusState *),
+    /* Keeping this property for compatibility, a frequency property would have been
+     * better.  */
+    DEFINE_PROP_UINT32("gtimer-scale", XlnxZynqMPState,
+                       gtimer_scale, XLNX_ZYNQMP_DEFAULT_GTIMER_SCALE),
     DEFINE_PROP_END_OF_LIST()
 };
 

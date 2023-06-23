@@ -1,3 +1,12 @@
+config TMS570_GIO
+    bool
+
+config ZYNQ_DDRC
+    bool
+
+config XLNX_CRL
+    bool
+
 config APPLESMC
     bool
     depends on ISA_BUS
@@ -82,7 +91,10 @@ config STM32F4XX_SYSCFG
 config STM32F4XX_EXTI
     bool
 
-config MIPS_ITU
+config	MIPS_ITU
+    bool
+
+config	FMAN_V3
     bool
 
 config MPS2_FPGAIO

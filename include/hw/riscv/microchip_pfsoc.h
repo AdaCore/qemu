@@ -31,6 +31,7 @@
 #include "hw/misc/mchp_pfsoc_sysreg.h"
 #include "hw/net/cadence_gem.h"
 #include "hw/sd/cadence_sdhci.h"
+#include "hw/gpio/pse_gpio.h"
 #include "hw/riscv/riscv_hart.h"
 
 typedef struct MicrochipPFSoCState {
@@ -53,6 +54,9 @@ typedef struct MicrochipPFSoCState {
     MchpPfSoCMMUartState *serial4;
     MchpPfSoCSysregState sysreg;
     SiFivePDMAState dma;
+    PSEGPIOState gpio0;
+    PSEGPIOState gpio1;
+    PSEGPIOState gpio2;
     CadenceGEMState gem0;
     CadenceGEMState gem1;
     CadenceSDHCIState sdhci;
@@ -79,6 +83,7 @@ typedef struct MicrochipIcicleKitState {
 enum {
     MICROCHIP_PFSOC_RSVD0,
     MICROCHIP_PFSOC_DEBUG,
+    MICROCHIP_PFSOC_HOSTFS,
     MICROCHIP_PFSOC_E51_DTIM,
     MICROCHIP_PFSOC_BUSERR_UNIT0,
     MICROCHIP_PFSOC_BUSERR_UNIT1,
@@ -142,6 +147,9 @@ enum {
     MICROCHIP_PFSOC_DMA_IRQ5 = 10,
     MICROCHIP_PFSOC_DMA_IRQ6 = 11,
     MICROCHIP_PFSOC_DMA_IRQ7 = 12,
+    MICROCHIP_PFSOC_GPIO0_IRQ = 51,
+    MICROCHIP_PFSOC_GPIO1_IRQ = 52,
+    MICROCHIP_PFSOC_GPIO2_IRQ = 53,
     MICROCHIP_PFSOC_GEM0_IRQ = 64,
     MICROCHIP_PFSOC_GEM1_IRQ = 70,
     MICROCHIP_PFSOC_EMMC_SD_IRQ = 88,

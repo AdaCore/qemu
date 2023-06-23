@@ -1468,7 +1468,6 @@ static void nbd_client_close(BlockDriverState *bs)
     nbd_teardown_connection(bs);
 }
 
-
 /*
  * Parse nbd_open options
  */

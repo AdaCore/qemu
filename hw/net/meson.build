@@ -72,4 +72,7 @@ softmmu_ss.add(when: 'CONFIG_ROCKER', if_true: files(
 softmmu_ss.add(when: 'CONFIG_ALL', if_true: files('rocker/qmp-norocker.c'))
 softmmu_ss.add(files('rocker/rocker-hmp-cmds.c'))
 
+specific_ss.add(when: 'CONFIG_MEMAC', if_true: files('memac.c'))
+
 subdir('can')
+subdir('phy')

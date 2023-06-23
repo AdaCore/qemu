@@ -193,9 +193,9 @@ qemu_cflags = config_host['QEMU_CFLAGS'].split()
 qemu_objcflags = config_host['QEMU_OBJCFLAGS'].split()
 qemu_ldflags = config_host['QEMU_LDFLAGS'].split()
 
-if enable_static
-  qemu_ldflags += get_option('b_pie') ? '-static-pie' : '-static'
-endif
+# if enable_static
+#   qemu_ldflags += get_option('b_pie') ? '-static-pie' : '-static'
+# endif
 
 # Detect support for PT_GNU_RELRO + DT_BIND_NOW.
 # The combination is known as "full relro", because .got.plt is read-only too.
@@ -397,6 +397,10 @@ if targetos == 'windows'
                                       depend_files: files('pc-bios/qemu-nsis.ico'),
                                       include_directories: include_directories('.'))
   host_dsosuf = '.dll'
+  # Threads are supported natively with GNAT on Windows.
+  # Thus, avoid using meson 'threads' dependency which will add
+  # '-pthread' flag.
+  threads = declare_dependency()
 elif targetos == 'darwin'
   coref = dependency('appleframeworks', modules: 'CoreFoundation')
   iokit = dependency('appleframeworks', modules: 'IOKit', required: false)
@@ -2972,6 +2976,7 @@ if have_system
     'ebpf',
     'hw/9pfs',
     'hw/acpi',
+    'hw/adacore',
     'hw/adc',
     'hw/alpha',
     'hw/arm',
@@ -3147,6 +3152,8 @@ common_ss.add(files('cpus-common.c'))
 specific_ss.add(files('cpu.c'))
 
 subdir('softmmu')
+
+specific_ss.add(files('qemu-traces.c'))
 
 common_ss.add(capstone)
 specific_ss.add(files('disas.c'), capstone)
