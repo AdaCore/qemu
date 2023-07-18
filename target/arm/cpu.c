@@ -48,6 +48,8 @@
 #include "fpu/softfloat.h"
 #include "cpregs.h"
 
+#include "adacore/qemu-traces.h"
+
 static void arm_cpu_set_pc(CPUState *cs, vaddr value)
 {
     ARMCPU *cpu = ARM_CPU(cs);
@@ -1576,7 +1578,8 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
 
     /* Use pc-relative instructions in system-mode */
 #ifndef CONFIG_USER_ONLY
-    cs->tcg_cflags |= CF_PCREL;
+    if (!tracefile_enabled)
+        cs->tcg_cflags |= CF_PCREL;
 #endif
 
     /* If we needed to query the host kernel for the CPU features
