@@ -1352,7 +1352,7 @@ EOF
 # Meson currently only handles pie as a boolean for now so if we have
 # explicitly disabled PIE we need to extend our cflags because it wont.
 if test "$static" = "yes"; then
-  if test "$pie" != "no" && compile_prog "-Werror -fPIE -DPIE" "-static-pie"; then
+  if test "$pie" != "no" && compile_prog "-Werror -fPIE -DPIE"; then
     CONFIGURE_CFLAGS="-fPIE -DPIE $CONFIGURE_CFLAGS"
     pie="yes"
   elif test "$pie" = "yes"; then
