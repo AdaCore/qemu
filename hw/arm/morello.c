@@ -37,9 +37,14 @@
 #include "hw/boards.h"
 #include "hw/loader.h"
 #include "hw/arm/boot.h"
+#include "hw/intc/arm_gic.h"
+#include "hw/intc/arm_gicv3_common.h"
+#include "hw/qdev-properties.h"
+#include "hw/sysbus.h"
 #include "cheri_tagmem.h"
 #include "sysemu/sysemu.h"
 #include "hw/arm/armtrickbox.h"
+#include "target/arm/kvm_arm.h"
 
 /* A basic morello board. There is no need to use this if only a morello CPU
  * is required (use the virt board instead). This board is designed to be a
@@ -48,10 +53,46 @@
 
 #define MORELLO_MAX_CPUS 4
 
+/* Number of external interrupt lines to configure the GIC with */
+#define NUM_IRQS 608
+
+/* Private peripheral interrupt (PPI) numbers. The first PPI is 0. */
+#define PPI_GIC_MAINT_IRQ    9
+#define PPI_TIMER_VIRT_IRQ   11
+#define PPI_TIMER_S_EL1_IRQ  13
+#define PPI_TIMER_NS_EL1_IRQ 14
+#define PPI_TIMER_NS_EL2_IRQ 10
+#define PPI_PMU_IRQ          7
+
+enum {
+    MORELLO_GIC_DIST,
+    MORELLO_GIC_ITS0,
+    MORELLO_GIC_ITS1,
+    MORELLO_GIC_ITS2,
+    MORELLO_GIC_ITS3,
+    MORELLO_GIC_REDIST
+};
+
+/* The memory map is defined in Figure 5-2 of the Arm Morello System
+ * Development Platform Technical Reference Manual (Revision r0p1).
+ */
+static const MemMapEntry base_memmap[] = {
+    /* GIC distributor and CPU interfaces sit inside the CPU peripheral space */
+    [MORELLO_GIC_DIST] =   { 0x30000000, 0x00010000 },
+    /* The space in between here is reserved for GICA/GICT/GICP */
+    [MORELLO_GIC_ITS0] =    { 0x30040000, 0x00020000 },
+    [MORELLO_GIC_ITS1] =    { 0x30060000, 0x00020000 },
+    [MORELLO_GIC_ITS2] =    { 0x30080000, 0x00020000 },
+    [MORELLO_GIC_ITS3] =    { 0x300A0000, 0x00020000 },
+    /* This redistributor space allows up to 2*64kB*4 CPUs */
+    [MORELLO_GIC_REDIST] = { 0x300C0000, 0x00800000 },
+};
+
 typedef struct MorelloMachineState {
     /*< private >*/
     MachineState parent_obj;
     /*< public >*/
+    DeviceState *gic;
     struct {
         ARMCPU core;
     } cpus[MORELLO_MAX_CPUS];
@@ -124,6 +165,103 @@ static MemoryRegion *create_mem_from_desc(MemoryRegion *parent,
     return mem;
 }
 
+static void create_its(MorelloMachineState *mms, int instance)
+{
+    const char *itsclass = its_class_name();
+    DeviceState *dev;
+
+    if (!itsclass) {
+        /* Do nothing if not supported */
+        return;
+    }
+
+    dev = qdev_new(itsclass);
+
+    object_property_set_link(OBJECT(dev), "parent-gicv3", OBJECT(mms->gic),
+                             &error_abort);
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, base_memmap[instance].base);
+}
+
+static void create_gic(MorelloMachineState *mms)
+{
+    /* We create a standalone GIC */
+    SysBusDevice *gicbusdev;
+    MachineState *machine = MACHINE(mms);
+    int i;
+    unsigned int smp_cpus = machine->smp.cpus;
+
+    mms->gic = qdev_new(gicv3_class_name());
+    qdev_prop_set_uint32(mms->gic, "revision", 3);
+    qdev_prop_set_uint32(mms->gic, "num-cpu", smp_cpus);
+    /* Note that the num-irq property counts both internal and external
+     * interrupts; there are always 32 of the former (mandated by GIC spec).
+     */
+    qdev_prop_set_uint32(mms->gic, "num-irq", GIC_INTERNAL + NUM_IRQS);
+    if (!kvm_irqchip_in_kernel()) {
+        qdev_prop_set_bit(mms->gic, "has-security-extensions", true);
+    }
+
+    uint32_t redist0_capacity =
+                base_memmap[MORELLO_GIC_REDIST].size / GICV3_REDIST_SIZE;
+    uint32_t redist0_count = MIN(smp_cpus, redist0_capacity);
+
+    qdev_prop_set_uint32(mms->gic, "len-redist-region-count", 1);
+    qdev_prop_set_uint32(mms->gic, "redist-region-count[0]", redist0_count);
+
+    gicbusdev = SYS_BUS_DEVICE(mms->gic);
+    sysbus_realize_and_unref(gicbusdev, &error_fatal);
+    sysbus_mmio_map(gicbusdev, 0, base_memmap[MORELLO_GIC_DIST].base);
+    sysbus_mmio_map(gicbusdev, 1, base_memmap[MORELLO_GIC_REDIST].base);
+
+    /* Wire the outputs from each CPU's generic timer and the GICv3
+     * maintenance interrupt signal to the appropriate GIC PPI inputs,
+     * and the GIC's IRQ/FIQ/VIRQ/VFIQ interrupt outputs to the CPU's inputs.
+     */
+    for (i = 0; i < smp_cpus; i++) {
+        DeviceState *cpudev = DEVICE(qemu_get_cpu(i));
+        int ppibase = NUM_IRQS + i * GIC_INTERNAL + GIC_NR_SGIS;
+        int irqn;
+        /* Mapping from the output timer irq lines from the CPU to the
+         * GIC PPI inputs.
+         */
+        const int timer_irq[] = {
+            [GTIMER_PHYS] = PPI_TIMER_NS_EL1_IRQ,
+            [GTIMER_VIRT] = PPI_TIMER_VIRT_IRQ,
+            [GTIMER_HYP]  = PPI_TIMER_NS_EL2_IRQ,
+            [GTIMER_SEC]  = PPI_TIMER_S_EL1_IRQ,
+        };
+
+        for (irqn = 0; irqn < ARRAY_SIZE(timer_irq); irqn++) {
+            qdev_connect_gpio_out(cpudev, irqn,
+                                  qdev_get_gpio_in(mms->gic,
+                                                   ppibase + timer_irq[irqn]));
+        }
+
+        qemu_irq irq = qdev_get_gpio_in(mms->gic,
+                                        ppibase + PPI_GIC_MAINT_IRQ);
+        qdev_connect_gpio_out_named(cpudev, "gicv3-maintenance-interrupt",
+                                    0, irq);
+
+        qdev_connect_gpio_out_named(cpudev, "pmu-interrupt", 0,
+                                    qdev_get_gpio_in(mms->gic, ppibase
+                                                     + PPI_PMU_IRQ));
+
+        sysbus_connect_irq(gicbusdev, i, qdev_get_gpio_in(cpudev, ARM_CPU_IRQ));
+        sysbus_connect_irq(gicbusdev, i + smp_cpus,
+                           qdev_get_gpio_in(cpudev, ARM_CPU_FIQ));
+        sysbus_connect_irq(gicbusdev, i + 2 * smp_cpus,
+                           qdev_get_gpio_in(cpudev, ARM_CPU_VIRQ));
+        sysbus_connect_irq(gicbusdev, i + 3 * smp_cpus,
+                           qdev_get_gpio_in(cpudev, ARM_CPU_VFIQ));
+    }
+
+    create_its(mms, MORELLO_GIC_ITS0);
+    create_its(mms, MORELLO_GIC_ITS1);
+    create_its(mms, MORELLO_GIC_ITS2);
+    create_its(mms, MORELLO_GIC_ITS3);
+}
+
 static void morello_machine_init(MachineState *machine)
 {
     MorelloMachineState *morelloMachineState = MORELLO_MACHINE(machine);
@@ -189,6 +327,9 @@ static void morello_machine_init(MachineState *machine)
             assert(0);
         }
     }
+
+    /* Add GIC */
+    create_gic(morelloMachineState);
 
     /* Create the trickbox used for testing */
     SysBusDevice *trickbox = arm_trickbox_mm_init_default();
