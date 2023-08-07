@@ -170,7 +170,7 @@ static int vfp_gdb_set_reg(CPUARMState *env, uint8_t *buf, int reg)
         nregs += 16;
         if (reg < nregs) {
             uint64_t *q = aa32_vfp_qreg(env, reg - 32);
-#ifdef TARGET_BIG_ENDIAN
+#if TARGET_BIG_ENDIAN
             q[0] = tswap64(ldq_le_p(buf + 8));
             q[1] = tswap64(ldq_le_p(buf));
 #else
