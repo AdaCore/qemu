@@ -355,7 +355,7 @@ static void arm_cpu_reset_hold(Object *obj)
         env->uncached_cpsr = ARM_CPU_MODE_SVC;
     }
 
-#ifdef TARGET_BIG_ENDIAN
+#if TARGET_BIG_ENDIAN
     env->uncached_cpsr |= CPSR_E;
 #endif
     env->daif = PSTATE_D | PSTATE_A | PSTATE_I | PSTATE_F;
