@@ -29,6 +29,7 @@
 #include "hw/boards.h"
 #include "hw/qdev-properties.h"
 #include "qapi/error.h"
+#include "qapi/qapi-commands-misc.h"
 #include "qemu-version.h"
 #include "qemu/cutils.h"
 #include "qemu/help_option.h"
@@ -2941,6 +2942,45 @@ static char *find_datadir(void)
     }
 
     return get_relocated_path(CONFIG_QEMU_DATADIR);
+}
+
+void qemu_exit_with_debug(const char *fmt, ...)
+{
+    va_list ap;
+    Error *local_err = NULL;
+    Error **errp = &local_err;
+    char *retval = NULL;
+    int i;
+    const char *cmds[] = {
+        "info version",
+        "info status",
+        "info registers",
+        "print/x $pc",
+        "x/16i $pc - 32",
+        "info roms",
+
+        /* mtree and tlb are creating too much output and may cause freezes in
+         * excross.
+         */
+        /* "info mtree", */
+        /* "info tlb", */
+        NULL,
+    };
+
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+
+    for (i = 0; cmds[i] != NULL; i++) {
+        retval = qmp_human_monitor_command(cmds[i],
+                                           false /* has_cpu_index */,
+                                           0 /*cpu_index */,
+                                           errp);
+        fprintf(stderr, "===== %s\n%s\n",
+                cmds[i], retval);
+    }
+
+    exit(1);
 }
 
 void qemu_init(int argc, char **argv, char **envp)
