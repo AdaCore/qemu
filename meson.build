@@ -2316,7 +2316,7 @@ capstone_opt = get_option('capstone')
 if capstone_opt in ['enabled', 'auto', 'system']
   have_internal = fs.exists(meson.current_source_dir() / 'capstone/Makefile')
   capstone = dependency('capstone', version: '>=4.0',
-                        kwargs: static_kwargs, method: 'pkg-config',
+                        kwargs: static_kwargs, static: true, method: 'pkg-config',
                         required: capstone_opt == 'system' or
                                   capstone_opt == 'enabled' and not have_internal)
 
@@ -2532,7 +2532,7 @@ if have_system
   fdt_opt = get_option('fdt')
   if fdt_opt in ['enabled', 'auto', 'system']
     have_internal = fs.exists(meson.current_source_dir() / 'dtc/libfdt/Makefile.libfdt')
-    fdt = cc.find_library('fdt', kwargs: static_kwargs,
+    fdt = cc.find_library('fdt', kwargs: static_kwargs, static: true,
                           required: fdt_opt == 'system' or
                                     fdt_opt == 'enabled' and not have_internal)
     if fdt.found() and cc.links('''
