@@ -419,6 +419,7 @@ type_init(register_types);
 void gdb_exit(int code)
 {
     char buf[4];
+    int i;
 
     if (!gdbserver_state.init) {
         return;
@@ -427,9 +428,23 @@ void gdb_exit(int code)
     trace_gdbstub_op_exiting((uint8_t)code);
 
     if (gdbserver_state.allow_stop_reply) {
-        snprintf(buf, sizeof(buf), "W%02x", (uint8_t)code);
-        gdb_put_packet(buf);
+        for(i = 0; i < 2; i++) {
+            uint8_t ch;
+            snprintf(buf, sizeof(buf), "W%02x", (uint8_t)code);
+            gdb_put_packet(buf);
+
+            /*
+             * Wait for an answer to avoid closing the connection too early.
+             * The expected output is ACK. However, perform another retry if
+             * NACK is detected. Ignore everything else, including errors, in
+             * case the debugger closes its connection without sending anything.
+             */
+            qemu_chr_fe_read_all(&gdbserver_system_state.chr, &ch, sizeof(ch));
+            if (ch != '-') {
+                break;
+            }
         gdbserver_state.allow_stop_reply = false;
+        }
     }
 
     qemu_chr_fe_deinit(&gdbserver_system_state.chr, true);
