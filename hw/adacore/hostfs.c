@@ -30,7 +30,6 @@
 #include "sysemu/runstate.h"
 #include "trace.h"
 #include "hw/adacore/hostfs.h"
-#include "hw/target_size.h"
 #include "qapi/error.h"
 
 /* #define DEBUG_HOSTFS */
@@ -51,11 +50,8 @@ typedef struct hostfs_Register_Definition {
 #define ACC_w1c     4           /* Write 1 to clear */
 #define ACC_UNKNOWN 4           /* Unknown register */
 
-#ifndef TARGET_IS_64BITS
-#error "Unknown error"
-#endif
-
-#if TARGET_IS_64BITS
+#if defined(TARGET_AARCH64) || defined(TARGET_PPC64) || \
+    defined(TARGET_X86_64) || defined(TARGET_RISCV64)
 #define HOSTFS_REG_SIZE (8)
 #else
 #define HOSTFS_REG_SIZE (4)
