@@ -167,6 +167,8 @@ bool boot_strict;
 uint8_t *boot_splash_filedata;
 int only_migratable; /* turn it off unless user states otherwise */
 bool wakeup_suspend_enabled;
+const char *quick_monitor_cmd;
+
 int icount_align_option;
 static const char *qtest_chrdev;
 static const char *qtest_log;
@@ -499,6 +501,32 @@ static QemuOptsList qemu_mem_opts = {
         {
             .name = "maxmem",
             .type = QEMU_OPT_SIZE,
+        },
+        { /* end of list */ }
+    },
+};
+
+static QemuOptsList qemu_add_memory_opts = {
+    .name = "add-memory",
+    .implied_opt_name = "",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_add_memory_opts.head),
+    .merge_lists = false,
+    .desc = {
+        {
+            .name = "size",
+            .type = QEMU_OPT_SIZE,
+        },
+        {
+            .name = "addr",
+            .type = QEMU_OPT_NUMBER,
+        },
+        {
+            .name = "name",
+            .type = QEMU_OPT_STRING,
+        },
+        {
+            .name = "read-only",
+            .type = QEMU_OPT_BOOL,
         },
         { /* end of list */ }
     },
@@ -2944,6 +2972,44 @@ static char *find_datadir(void)
     return get_relocated_path(CONFIG_QEMU_DATADIR);
 }
 
+static int foreach_add_memory(void *opaque, QemuOpts *opts, Error **errp)
+{
+    uint64_t size, addr;
+    bool readonly;
+    const char *name;
+    MemoryRegion *ram;
+
+    size = qemu_opt_get_size(opts, "size", 0);
+    addr = qemu_opt_get_number(opts, "addr", 0);
+    readonly = qemu_opt_get_bool(opts, "read-only", false);
+    name  = qemu_opt_get(opts, "name");
+
+    if (name == NULL) {
+        error_report("missing name");
+        return 1;
+    }
+    if (qemu_opt_get(opts, "addr") == NULL) {
+        error_report("missing address (addr)");
+        return 1;
+    }
+    if (qemu_opt_get(opts, "size") == NULL) {
+        error_report("missing size");
+        return 1;
+    }
+
+    if (size == 0) {
+        error_report("size cannot be zero");
+        return 1;
+    }
+
+    ram = g_new(MemoryRegion, 1);
+    memory_region_init_ram(ram, NULL, name, size, &error_fatal);
+    memory_region_add_subregion_overlap(get_system_memory(), addr, ram,
+                                        1 /* priority */);
+    memory_region_set_readonly(ram, readonly);
+    return 0;
+}
+
 void qemu_exit_with_debug(const char *fmt, ...)
 {
     va_list ap;
@@ -3101,6 +3167,7 @@ void qemu_init(int argc, char **argv, char **envp)
     qemu_add_opts(&qemu_boot_opts);
     qemu_add_opts(&qemu_add_fd_opts);
     qemu_add_opts(&qemu_object_opts);
+    qemu_add_opts(&qemu_add_memory_opts);
     qemu_add_opts(&qemu_tpmdev_opts);
     qemu_add_opts(&qemu_realtime_opts);
     qemu_add_opts(&qemu_overcommit_opts);
@@ -3360,6 +3427,13 @@ void qemu_init(int argc, char **argv, char **envp)
                 }
                 break;
 #endif
+            case QEMU_OPTION_add_memory:
+                opts = qemu_opts_parse_noisily(qemu_find_opts("add-memory"),
+                                               optarg, true);
+                if (!opts) {
+                    exit(EXIT_FAILURE);
+                }
+                break;
             case QEMU_OPTION_mempath:
                 mem_path = optarg;
                 break;
@@ -4056,6 +4130,14 @@ void qemu_init(int argc, char **argv, char **envp)
             case QEMU_OPTION_rlimit:
                 rlimit_set_value(optarg);
                 break;
+            case QEMU_OPTION_monitor_cmd:
+                if (quick_monitor_cmd) {
+                    fprintf(stderr,
+                            "qemu: only one monitor-cmd option may be given\n");
+                    exit(1);
+                }
+                quick_monitor_cmd = optarg;
+                break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
                     error_report("Option not supported in this build");
@@ -4387,6 +4469,12 @@ void qemu_init(int argc, char **argv, char **envp)
      */
     configure_blockdev(&bdo_queue, machine_class, snapshot);
     audio_init_audiodevs();
+
+    if (qemu_opts_foreach(qemu_find_opts("add-memory"),
+                          foreach_add_memory,
+                          NULL, NULL)) {
+        exit(1);
+    }
 
     machine_opts = qemu_get_machine_opts();
     qemu_opt_foreach(machine_opts, machine_set_property, current_machine,
@@ -4769,6 +4857,14 @@ void qemu_init(int argc, char **argv, char **envp)
 
     accel_setup_post(current_machine);
     os_setup_post();
+
+    if (quick_monitor_cmd != NULL) {
+        printf("%s", qmp_human_monitor_command(quick_monitor_cmd,
+                                               false /* has_cpu_index */,
+                                               0 /* cpu_index      */,
+                                               NULL));
+        exit(0);
+    }
 
     return;
 }
