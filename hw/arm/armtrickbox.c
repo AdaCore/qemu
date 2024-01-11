@@ -44,7 +44,7 @@
 #define BUF_SIZE 100
 
 /* 0: none. 1: warn. 2: info */
-#define TRICKBOX_LOG_LEVEL 2
+#define TRICKBOX_LOG_LEVEL 0
 
 /* It is quite useful when debugging to stop tracing on first failure. Just set
  * this to an appropriate string. */
