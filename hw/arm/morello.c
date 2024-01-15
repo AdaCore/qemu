@@ -47,6 +47,8 @@
 #include "hw/arm/armtrickbox.h"
 #include "target/arm/kvm_arm.h"
 
+#include "hw/adacore/hostfs.h"
+
 /* A basic morello board. There is no need to use this if only a morello CPU
  * is required (use the virt board instead). This board is designed to be a
  * minimal platform for testing, with optional support for the ARM ACK.
@@ -74,13 +76,16 @@ enum {
     MORELLO_GIC_ITS1,
     MORELLO_GIC_ITS2,
     MORELLO_GIC_ITS3,
-    MORELLO_GIC_REDIST
+    MORELLO_GIC_REDIST,
+    MORELLO_HOSTFS,
 };
 
 /* The memory map is defined in Figure 5-2 of the Arm Morello System
  * Development Platform Technical Reference Manual (Revision r0p1).
  */
 static const MemMapEntry base_memmap[] = {
+    /* Adacore HostFS */
+    [MORELLO_HOSTFS] = { 0x22110000, 0x00001000 },
     /* Non-secure AP UARTs */
     [MORELLO_APUART0] =    { 0x2A400000, 0x00002000 },
     [MORELLO_APUART1] =    { 0x2A410000, 0x00002000 },
@@ -403,6 +408,10 @@ static void morello_machine_init(MachineState *machine)
         assert(RVBAR_exec != 0);
         binfo.entry = RVBAR_exec;
     }
+
+    /* HostFS */
+    hostfs_create(base_memmap[MORELLO_HOSTFS].base, sysmem);
+
 }
 
 static bool morello_get_ack(Object *obj, Error **errp)
