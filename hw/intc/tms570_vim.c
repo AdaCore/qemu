@@ -181,7 +181,7 @@ static uint64_t vim_read(void *opaque, hwaddr offset, unsigned size)
 {
     vim_state *s = (vim_state *)opaque;
 
-    DPRINTF("%s: offset:0x" TARGET_FMT_plx " size:%u\n", __func__, offset,
+    DPRINTF("%s: offset:0x" HWADDR_FMT_plx " size:%u\n", __func__, offset,
             size);
 
     switch (offset) {
@@ -255,7 +255,7 @@ static void vim_write(void *opaque, hwaddr offset, uint64_t val,
 {
     vim_state *s = (vim_state *)opaque;
 
-    DPRINTF("%s: offset:0x" TARGET_FMT_plx " size:%u val:0x%" PRIx64 "\n",
+    DPRINTF("%s: offset:0x" HWADDR_FMT_plx " size:%u val:0x%" PRIx64 "\n",
             __func__, offset, size, val);
 
     switch (offset) {
