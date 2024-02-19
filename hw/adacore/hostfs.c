@@ -276,7 +276,7 @@ static uint64_t hostfs_read(void *opaque, hwaddr addr, unsigned size)
     }
 
 #ifdef DEBUG_HOSTFS
-    printf("Read  0x%08x @ 0x" TARGET_FMT_plx
+    printf("Read  0x%08x @ 0x" HWADDR_FMT_plx
            "                            : %s (%s)\n",
            ret, addr, reg->name, reg->desc);
 #endif
@@ -328,7 +328,7 @@ static void hostfs_write(void *opaque, hwaddr addr, uint64_t value,
     }
 
 #ifdef DEBUG_HOSTFS
-    printf("Write 0x%08x @ 0x" TARGET_FMT_plx" val:0x%08x->0x%08x : %s (%s)\n",
+    printf("Write 0x%08x @ 0x" HWADDR_FMT_plx" val:0x%08x->0x%08x : %s (%s)\n",
            (unsigned int)value, addr, before, reg->value, reg->name,
            reg->desc);
 #else
