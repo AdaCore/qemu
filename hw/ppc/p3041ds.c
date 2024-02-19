@@ -86,21 +86,21 @@ fprintf(stderr, fmt, ## __VA_ARGS__); \
 
 #define PRINT_WRITE_UNSUPPORTED_REGISTER(name, addr, val, nip)          \
 do {                                                                    \
- printf("%s\t: Unsupported addr:0x" TARGET_FMT_plx " val:0x%08lx nip:"  \
+ printf("%s\t: Unsupported addr:0x" HWADDR_FMT_plx " val:0x%08lx nip:"  \
         TARGET_FMT_lx " '" name "'\n",                                  \
         __func__, (addr), (long unsigned int)(val), (nip));             \
  } while (0)
 
 #define PRINT_READ_UNSUPPORTED_REGISTER(name, addr, nip)                \
 do {                                                                    \
-    printf("%s\t: Unsupported addr:0x" TARGET_FMT_plx "                nip:" \
+    printf("%s\t: Unsupported addr:0x" HWADDR_FMT_plx "                nip:" \
            TARGET_FMT_lx " '" name "'\n",                               \
            __func__, (addr), (nip));                                    \
  } while (0)
 
 #define PRINT_SUPPORTED_REGISTER(name, addr, val, nip)                  \
 do {                                                                    \
-    printf("%s\t: Supported addr:0x" TARGET_FMT_plx " val:0x%08lx nip:" \
+    printf("%s\t: Supported addr:0x" HWADDR_FMT_plx " val:0x%08lx nip:" \
            TARGET_FMT_lx " '" name "'\n",                               \
            __func__, (addr), (long unsigned int)(val), (nip));          \
  } while (0)
@@ -1370,7 +1370,7 @@ static void write_qtrace(void *opaque, hwaddr addr, uint64_t value,
         break;
     default:
 #ifdef DEBUG_P3041
-        printf("%s: writing non implemented register 0x" TARGET_FMT_plx "\n",
+        printf("%s: writing non implemented register 0x" HWADDR_FMT_plx "\n",
                __func__, QTRACE_START + addr);
 #endif
         break;
