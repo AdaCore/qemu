@@ -81,7 +81,7 @@ static void sys_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
     tms570_sys_data *sys_data = (tms570_sys_data *)opaque;
     int              offset;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u val:0x%" PRIx64 "\n",
+    DPRINTF("%s: offset:0x"HWADDR_FMT_plx" size:%u val:0x%" PRIx64 "\n",
             __func__, addr, size, val);
 
     switch (addr) {
@@ -117,7 +117,7 @@ static uint64_t sys_read(void *opaque, hwaddr addr, unsigned size)
     int              offset;
     uint32_t         ret;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u\n", __func__, addr, size);
+    DPRINTF("%s: offset:0x"HWADDR_FMT_plx" size:%u\n", __func__, addr, size);
 
     switch (addr) {
     case 0xB0 ... 0xBC: /* System Software Interrupt Request n */
