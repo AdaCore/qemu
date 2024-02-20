@@ -203,7 +203,7 @@ static uint64_t sci_read(void *opaque, hwaddr offset, unsigned size)
     sci_state *s = (sci_state *)opaque;
     uint32_t ret;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u\n", __func__, offset, size);
+    DPRINTF("%s: offset:0x"HWADDR_FMT_plx" size:%u\n", __func__, offset, size);
 
     switch (offset) {
     case 0x00:
@@ -282,7 +282,7 @@ static void sci_write(void *opaque, hwaddr offset, uint64_t val, unsigned size)
     sci_state     *s = (sci_state *)opaque;
     unsigned char  c = 0;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u val:0x%" PRIx64 "\n",
+    DPRINTF("%s: offset:0x"HWADDR_FMT_plx" size:%u val:0x%" PRIx64 "\n",
             __func__, offset, size, val);
 
     if (!s->reset && offset != 0) {

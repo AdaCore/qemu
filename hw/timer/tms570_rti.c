@@ -260,7 +260,7 @@ static uint64_t rti_read(void *opaque, hwaddr offset, unsigned size)
     int        cmp_id;
     int        reg_offset;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u\n", __func__, offset, size);
+    DPRINTF("%s: offset:0x"HWADDR_FMT_plx" size:%u\n", __func__, offset, size);
 
     switch (offset) {
     case 0x00: /* RTIGCTRL */
@@ -330,7 +330,7 @@ static void rti_write(void *opaque, hwaddr offset, uint64_t val, unsigned size)
     int            cmp_id;
     int            reg_offset;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u val:0x%" PRIx64 "\n",
+    DPRINTF("%s: offset:0x"HWADDR_FMT_plx" size:%u val:0x%" PRIx64 "\n",
             __func__, offset, size, val);
 
     switch (offset) {

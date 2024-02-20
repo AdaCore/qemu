@@ -63,9 +63,14 @@ static const uint32_t SSIR_key[4] = {0x7500, 0x8400, 0x9300, 0xA200};
 
 static  void update_software_interrupt(tms570_sys_data *sys_data)
 {
-
     if (sys_data->SSI_flag != 0) {
-        sys_data->SSI_vec = __builtin_ctzll(sys_data->SSI_flag) + 1 ;
+        /*
+         * Update SSI_vec according to the SSIR value corresponding
+         * of the highest priority; SSIR1 being the highest and SSIR4
+         * the lowest.
+         */
+        int ssirn = __builtin_ctzll(sys_data->SSI_flag);
+        sys_data->SSI_vec = (sys_data->SSIR[ssirn] << 8) + ssirn + 1;
         DPRINTF("%s: qemu_irq_raise(sys_data->SSIR_irq);"
                 " sys_data->SSI_vec = 0x%x\n", __func__, sys_data->SSI_vec);
         qemu_irq_raise(sys_data->SSIR_irq);
@@ -81,7 +86,7 @@ static void sys_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
     tms570_sys_data *sys_data = (tms570_sys_data *)opaque;
     int              offset;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u val:0x%" PRIx64 "\n",
+    DPRINTF("%s: offset:0x"HWADDR_FMT_plx" size:%u val:0x%" PRIx64 "\n",
             __func__, addr, size, val);
 
     switch (addr) {
@@ -117,7 +122,7 @@ static uint64_t sys_read(void *opaque, hwaddr addr, unsigned size)
     int              offset;
     uint32_t         ret;
 
-    DPRINTF("%s: offset:0x"TARGET_FMT_plx" size:%u\n", __func__, addr, size);
+    DPRINTF("%s: offset:0x"HWADDR_FMT_plx" size:%u\n", __func__, addr, size);
 
     switch (addr) {
     case 0xB0 ... 0xBC: /* System Software Interrupt Request n */
@@ -125,7 +130,8 @@ static uint64_t sys_read(void *opaque, hwaddr addr, unsigned size)
         return sys_data->SSIR[offset];
     case 0xF4: /* System Software Interrupt Vector */
         ret = sys_data->SSI_vec;
-        sys_data->SSI_flag &= ~(1 << (ret - 1));
+        /* Clean SSI_flag cooresponding to the current SSIRn  */
+        sys_data->SSI_flag &= ~(1 << ((ret & 0xFF) - 1));
         update_software_interrupt(sys_data);
         return ret;
         break;
