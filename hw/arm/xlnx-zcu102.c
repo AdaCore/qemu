@@ -151,10 +151,6 @@ static void xlnx_zcu102_init(MachineState *machine)
 
     object_initialize_child(OBJECT(machine), "soc", &s->soc, TYPE_XLNX_ZYNQMP);
 
-    if (machine->audiodev) {
-        qdev_prop_set_string(DEVICE(&s->soc.dp), "audiodev", machine->audiodev);
-    }
-
     object_property_set_link(OBJECT(&s->soc), "ddr-ram", OBJECT(machine->ram),
                              &error_abort);
     object_property_set_bool(OBJECT(&s->soc), "secure", s->secure,

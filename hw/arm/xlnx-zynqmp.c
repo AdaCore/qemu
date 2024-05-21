@@ -427,10 +427,6 @@ static void xlnx_zynqmp_init(Object *obj)
 
     object_initialize_child(obj, "qspi", &s->qspi, TYPE_XLNX_ZYNQMP_QSPIPS);
 
-    object_initialize_child(obj, "xxxdp", &s->dp, TYPE_XLNX_DP);
-
-    object_initialize_child(obj, "dp-dma", &s->dpdma, TYPE_XLNX_DPDMA);
-
     object_initialize_child(obj, "ipi", &s->ipi, TYPE_XLNX_ZYNQMP_IPI);
 
     object_initialize_child(obj, "rtc", &s->rtc, TYPE_XLNX_ZYNQMP_RTC);
@@ -734,20 +730,6 @@ static void xlnx_zynqmp_realize(DeviceState *dev, Error **errp)
                                   OBJECT(&s->spi[i]), "spi0");
         g_free(bus_name);
     }
-
-    if (!sysbus_realize(SYS_BUS_DEVICE(&s->dp), errp)) {
-        return;
-    }
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->dp), 0, DP_ADDR);
-    sysbus_connect_irq(SYS_BUS_DEVICE(&s->dp), 0, gic_spi[DP_IRQ]);
-
-    if (!sysbus_realize(SYS_BUS_DEVICE(&s->dpdma), errp)) {
-        return;
-    }
-    object_property_set_link(OBJECT(&s->dp), "dpdma", OBJECT(&s->dpdma),
-                             &error_abort);
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->dpdma), 0, DPDMA_ADDR);
-    sysbus_connect_irq(SYS_BUS_DEVICE(&s->dpdma), 0, gic_spi[DPDMA_IRQ]);
 
     if (!sysbus_realize(SYS_BUS_DEVICE(&s->ipi), errp)) {
         return;
