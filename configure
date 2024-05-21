@@ -1059,7 +1059,7 @@ static THREAD int tls_var;
 int main(void) { return tls_var; }
 EOF
 
-if test "$host_os" = windows || test "$host_os" = haiku; then
+if test "$host_os" = haiku; then
   if test "$pie" = "yes"; then
     error_exit "PIE not available due to missing OS support"
   fi
