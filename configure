@@ -973,7 +973,12 @@ $mkvenv ensuregroup --dir "${source_path}/python/wheels" \
 # We ignore PATH completely here: we want to use the venv's Meson
 # *exclusively*.
 
-meson="$(cd pyvenv/bin; pwd)/meson"
+if test "$host_os" = "windows" ; then
+    # On Windows, /bin is named /Scripts.
+    meson="$(cd pyvenv/Scripts; pwd)/meson"
+else
+    meson="$(cd pyvenv/bin; pwd)/meson"
+fi
 
 # Conditionally ensure Sphinx is installed.
 
