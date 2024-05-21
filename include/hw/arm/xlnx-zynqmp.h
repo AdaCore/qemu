@@ -25,9 +25,7 @@
 #include "hw/ide/ahci-sysbus.h"
 #include "hw/sd/sdhci.h"
 #include "hw/ssi/xilinx_spips.h"
-#include "hw/dma/xlnx_dpdma.h"
 #include "hw/dma/xlnx-zdma.h"
-#include "hw/display/xlnx_dp.h"
 #include "hw/intc/xlnx-zynqmp-ipi.h"
 #include "hw/rtc/xlnx-zynqmp-rtc.h"
 #include "hw/cpu/cluster.h"
@@ -129,8 +127,6 @@ struct XlnxZynqMPState {
     SDHCIState sdhci[XLNX_ZYNQMP_NUM_SDHCI];
     XilinxSPIPS spi[XLNX_ZYNQMP_NUM_SPIS];
     XlnxZynqMPQSPIPS qspi;
-    XlnxDPState dp;
-    XlnxDPDMAState dpdma;
     XlnxZynqMPIPI ipi;
     XlnxZynqMPRTC rtc;
     XlnxZDMA gdma[XLNX_ZYNQMP_NUM_GDMA_CH];
