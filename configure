@@ -951,7 +951,12 @@ if test "$?" -ne 0 ; then
 fi
 
 # Suppress writing compiled files
-python="$python -B"
+if test "$host_os" = "windows" ; then
+    # Convert to a path bash can executed.
+    python="$(cygpath $python) -B"
+else
+    python="$python -B"
+fi
 mkvenv="$python ${source_path}/python/scripts/mkvenv.py"
 
 # Finish preparing the virtual environment using vendored .whl files
