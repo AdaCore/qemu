@@ -998,7 +998,13 @@ get_pwd() {
     fi
 }
 
-meson="$(cd pyvenv/bin; get_pwd)/meson"
+if test "$host_os" = "windows" ; then
+    # On Windows, /bin is named /Scripts.
+    meson="$(cd pyvenv/Scripts; get_pwd)/meson"
+else
+    meson="$(cd pyvenv/bin; get_pwd)/meson"
+fi
+
 if [ -f "$meson$EXESUF" ]; then
   meson="$meson$EXESUF"
 fi
