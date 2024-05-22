@@ -43,7 +43,7 @@ def generate_h(event, group):
         '    }',
         cond=cond,
         event_lineno=event.lineno,
-        event_filename=os.path.relpath(event.filename),
+        event_filename=os.path.relpath(event.filename).replace("\\", "/"),
         name=event.name,
         fmt=event.fmt.rstrip("\n"),
         argnames=argnames)
