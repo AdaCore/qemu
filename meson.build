@@ -873,6 +873,7 @@ glib_req_ver = '>=2.56.0'
 glib_pc = dependency('glib-2.0', version: glib_req_ver, required: true,
                     method: 'pkg-config')
 glib_cflags = []
+glib_ldflags = []
 if enable_modules
   gmodule = dependency('gmodule-export-2.0', version: glib_req_ver, required: true,
                        method: 'pkg-config')
@@ -887,6 +888,7 @@ endif
 # doesn't define GLIB_STATIC_COMPILATION for pkg-config --static
 if host_os == 'windows' and get_option('prefer_static')
   glib_cflags += ['-DGLIB_STATIC_COMPILATION']
+  glib_ldflags += ['-Wl,-l:libiconv.a']
 endif
 
 # Sanity check that the current size_t matches the
@@ -926,6 +928,7 @@ if not cc.compiles('''
 endif
 glib = declare_dependency(dependencies: [glib_pc, gmodule],
                           compile_args: glib_cflags,
+                          link_args: glib_ldflags,
                           version: glib_pc.version())
 
 # Check whether glib has gslice, which we have to avoid for correctness.
