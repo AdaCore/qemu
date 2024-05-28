@@ -700,29 +700,29 @@ else
 endif
 
 rbd = not_found
-if not get_option('rbd').auto() or have_block
-  librados = cc.find_library('rados', required: get_option('rbd'),
-                             kwargs: static_kwargs)
-  librbd = cc.find_library('rbd', has_headers: ['rbd/librbd.h'],
-                           required: get_option('rbd'),
-                           kwargs: static_kwargs)
-  if librados.found() and librbd.found()
-    if cc.links('''
-      #include <stdio.h>
-      #include <rbd/librbd.h>
-      int main(void) {
-        rados_t cluster;
-        rados_create(&cluster, NULL);
-        return 0;
-      }''', dependencies: [librbd, librados])
-      rbd = declare_dependency(dependencies: [librbd, librados])
-    elif get_option('rbd').enabled()
-      error('could not link librados')
-    else
-      warning('could not link librados, disabling')
-    endif
-  endif
-endif
+#if not get_option('rbd').auto() or have_block
+#  librados = cc.find_library('rados', required: get_option('rbd'),
+#                             kwargs: static_kwargs)
+#  librbd = cc.find_library('rbd', has_headers: ['rbd/librbd.h'],
+#                           required: get_option('rbd'),
+#                           kwargs: static_kwargs)
+#  if librados.found() and librbd.found()
+#    if cc.links('''
+#      #include <stdio.h>
+#      #include <rbd/librbd.h>
+#      int main(void) {
+#        rados_t cluster;
+#        rados_create(&cluster, NULL);
+#        return 0;
+#      }''', dependencies: [librbd, librados])
+#      rbd = declare_dependency(dependencies: [librbd, librados])
+#    elif get_option('rbd').enabled()
+#      error('could not link librados')
+#    else
+#      warning('could not link librados, disabling')
+#    endif
+#  endif
+#endif
 
 glusterfs = not_found
 glusterfs_ftruncate_has_stat = false
