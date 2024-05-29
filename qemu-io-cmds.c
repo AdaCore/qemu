@@ -23,6 +23,20 @@
 #include "qemu/cutils.h"
 #include "qemu/memalign.h"
 
+#ifdef _WIN32
+/* Provide a workaround when clock_gettime is not defined. */
+#define CLOCK_MONOTONIC 0
+typedef int clockid_t;
+void clock_gettime(clockid_t clk_id, struct timespec *tp);
+void clock_gettime(clockid_t clk_id, struct timespec *tp) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    tp->tv_sec = tv.tv_sec;
+    tp->tv_nsec = tv.tv_usec * 1000;
+}
+
+#endif
+
 #define CMD_NOFILE_OK   0x01
 
 bool qemuio_misalign;

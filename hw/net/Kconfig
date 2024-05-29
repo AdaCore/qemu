@@ -158,3 +158,9 @@ config CAN_CTUCANFD_PCI
     default y if PCI_DEVICES
     depends on PCI && CAN_CTUCANFD
     select CAN_BUS
+
+config MEMAC
+    bool
+    select DP83667
+
+source phy/Kconfig

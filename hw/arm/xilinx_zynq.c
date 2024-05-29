@@ -45,6 +45,9 @@ OBJECT_DECLARE_SIMPLE_TYPE(ZynqMachineState, ZYNQ_MACHINE)
 /* board base frequency: 33.333333 MHz */
 #define PS_CLK_FREQUENCY (100 * 1000 * 1000 / 3)
 
+#include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
+
 #define NUM_SPI_FLASHES 4
 #define NUM_QSPI_FLASHES 2
 #define NUM_QSPI_BUSSES 2
@@ -182,6 +185,7 @@ static void zynq_init(MachineState *machine)
     DeviceState *dev, *slcr;
     SysBusDevice *busdev;
     qemu_irq pic[64];
+    qemu_irq *gnatbus_irqs;
     int n;
 
     /* max 2GB ram */
@@ -236,6 +240,10 @@ static void zynq_init(MachineState *machine)
     sysbus_realize_and_unref(SYS_BUS_DEVICE(slcr), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(slcr), 0, 0xF8000000);
 
+    dev = qdev_new("xilinx-zynq_ddrc");
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, 0xF8006000);
+
     dev = qdev_new(TYPE_A9MPCORE_PRIV);
     qdev_prop_set_uint32(dev, "num-cpu", 1);
     busdev = SYS_BUS_DEVICE(dev);
@@ -246,8 +254,12 @@ static void zynq_init(MachineState *machine)
     sysbus_connect_irq(busdev, 1,
                        qdev_get_gpio_in(DEVICE(cpu), ARM_CPU_FIQ));
 
+    /* gnatbus IRQs */
+    gnatbus_irqs = qemu_allocate_irqs(NULL, NULL, 64);
+
     for (n = 0; n < 64; n++) {
         pic[n] = qdev_get_gpio_in(dev, n);
+        gnatbus_irqs[n] = qdev_get_gpio_in(dev, n);
     }
 
     n = zynq_init_spi_flashes(0xE0006000, pic[58 - IRQ_OFFSET], false, 0);
@@ -259,7 +271,7 @@ static void zynq_init(MachineState *machine)
 
     dev = qdev_new(TYPE_CADENCE_UART);
     busdev = SYS_BUS_DEVICE(dev);
-    qdev_prop_set_chr(dev, "chardev", serial_hd(0));
+    qdev_prop_set_chr(dev, "chardev", serial_hd(1));
     qdev_connect_clock_in(dev, "refclk",
                           qdev_get_clock_out(slcr, "uart0_ref_clk"));
     sysbus_realize_and_unref(busdev, &error_fatal);
@@ -267,7 +279,7 @@ static void zynq_init(MachineState *machine)
     sysbus_connect_irq(busdev, 0, pic[59 - IRQ_OFFSET]);
     dev = qdev_new(TYPE_CADENCE_UART);
     busdev = SYS_BUS_DEVICE(dev);
-    qdev_prop_set_chr(dev, "chardev", serial_hd(1));
+    qdev_prop_set_chr(dev, "chardev", serial_hd(0));
     qdev_connect_clock_in(dev, "refclk",
                           qdev_get_clock_out(slcr, "uart1_ref_clk"));
     sysbus_realize_and_unref(busdev, &error_fatal);
@@ -342,6 +354,13 @@ static void zynq_init(MachineState *machine)
     sysbus_realize_and_unref(busdev, &error_fatal);
     sysbus_connect_irq(busdev, 0, pic[40 - IRQ_OFFSET]);
     sysbus_mmio_map(busdev, 0, 0xF8007000);
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(gnatbus_irqs, 64);
+    gnatbus_device_init();
+
+    /* HostFS */
+    hostfs_create(0xF800F000, get_system_memory());
 
     zynq_binfo.ram_size = machine->ram_size;
     zynq_binfo.board_id = 0xd32;

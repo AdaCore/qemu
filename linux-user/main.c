@@ -61,6 +61,8 @@
 #include "semihosting/semihost.h"
 #endif
 
+#include "adacore/qemu-traces.h"
+
 #ifndef AT_FLAGS_PRESERVE_ARGV0
 #define AT_FLAGS_PRESERVE_ARGV0_BIT 0
 #define AT_FLAGS_PRESERVE_ARGV0 (1 << AT_FLAGS_PRESERVE_ARGV0_BIT)
@@ -421,6 +423,11 @@ static void handle_arg_strace(const char *arg)
     enable_strace = true;
 }
 
+static void handle_arg_exec_trace(const char *arg)
+{
+    qemu_trace_init(arg);
+}
+
 static void handle_arg_version(const char *arg)
 {
     printf("qemu-" TARGET_NAME " version " QEMU_FULL_VERSION
@@ -515,6 +522,8 @@ static const struct qemu_argument arg_table[] = {
     {"plugin",     "QEMU_PLUGIN",      true,  handle_arg_plugin,
      "",           "[file=]<file>[,<argname>=<argvalue>]"},
 #endif
+    {"exec-trace", "QEMU_EXEC_TRACE",  true,  handle_arg_exec_trace,
+     "",           "log execution trace"},
     {"version",    "QEMU_VERSION",     false, handle_arg_version,
      "",           "display version information and exit"},
 #if defined(TARGET_XTENSA)

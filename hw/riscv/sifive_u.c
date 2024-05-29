@@ -50,6 +50,7 @@
 #include "hw/ssi/ssi.h"
 #include "target/riscv/cpu.h"
 #include "hw/riscv/riscv_hart.h"
+#include "hw/misc/sifive_test.h"
 #include "hw/riscv/sifive_u.h"
 #include "hw/riscv/boot.h"
 #include "hw/char/sifive_uart.h"
@@ -61,6 +62,9 @@
 #include "sysemu/runstate.h"
 #include "sysemu/sysemu.h"
 
+#include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
+
 #include <libfdt.h>
 
 /* CLINT timebase frequency */
@@ -69,6 +73,8 @@
 static const MemMapEntry sifive_u_memmap[] = {
     [SIFIVE_U_DEV_DEBUG] =    {        0x0,      0x100 },
     [SIFIVE_U_DEV_MROM] =     {     0x1000,     0xf000 },
+    [SIFIVE_U_DEV_TEST] =     {   0x100000,     0x1000 },
+    [SIFIVE_U_DEV_HOSTFS] =   {   0x101000,     0x1000 },
     [SIFIVE_U_DEV_CLINT] =    {  0x2000000,    0x10000 },
     [SIFIVE_U_DEV_L2CC] =     {  0x2010000,     0x1000 },
     [SIFIVE_U_DEV_PDMA] =     {  0x3000000,   0x100000 },
@@ -750,7 +756,7 @@ static void sifive_u_soc_instance_init(Object *obj)
     SiFiveUSoCState *s = RISCV_U_SOC(obj);
 
     object_initialize_child(obj, "e-cluster", &s->e_cluster, TYPE_CPU_CLUSTER);
-    qdev_prop_set_uint32(DEVICE(&s->e_cluster), "cluster-id", 0);
+    qdev_prop_set_uint32(DEVICE(&s->e_cluster), "cluster-id", 1);
 
     object_initialize_child(OBJECT(&s->e_cluster), "e-cpus", &s->e_cpus,
                             TYPE_RISCV_HART_ARRAY);
@@ -760,7 +766,7 @@ static void sifive_u_soc_instance_init(Object *obj)
     qdev_prop_set_uint64(DEVICE(&s->e_cpus), "resetvec", 0x1004);
 
     object_initialize_child(obj, "u-cluster", &s->u_cluster, TYPE_CPU_CLUSTER);
-    qdev_prop_set_uint32(DEVICE(&s->u_cluster), "cluster-id", 1);
+    qdev_prop_set_uint32(DEVICE(&s->u_cluster), "cluster-id", 0);
 
     object_initialize_child(OBJECT(&s->u_cluster), "u-cpus", &s->u_cpus,
                             TYPE_RISCV_HART_ARRAY);
@@ -786,6 +792,7 @@ static void sifive_u_soc_realize(DeviceState *dev, Error **errp)
     MemoryRegion *l2lim_mem = g_new(MemoryRegion, 1);
     char *plic_hart_config;
     int i, j;
+    qemu_irq *cpu_irqs;
 
     qdev_prop_set_uint32(DEVICE(&s->u_cpus), "num-harts", ms->smp.cpus - 1);
     qdev_prop_set_uint32(DEVICE(&s->u_cpus), "hartid-base", 1);
@@ -934,6 +941,17 @@ static void sifive_u_soc_realize(DeviceState *dev, Error **errp)
                     memmap[SIFIVE_U_DEV_QSPI2].base);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->spi2), 0,
                        qdev_get_gpio_in(DEVICE(s->plic), SIFIVE_U_QSPI2_IRQ));
+
+    /* Initialize the GnatBus Master */
+    cpu_irqs = qemu_allocate_irqs(NULL, NULL, SIFIVE_U_PLIC_NUM_SOURCES);
+    for (i = 0; i < SIFIVE_U_PLIC_NUM_SOURCES; i++) {
+        cpu_irqs[i] = qdev_get_gpio_in(DEVICE(s->plic), i);
+    }
+    gnatbus_master_init(cpu_irqs, SIFIVE_U_PLIC_NUM_SOURCES);
+    gnatbus_device_init();
+
+    /* HostFS */
+    hostfs_create(memmap[SIFIVE_U_DEV_HOSTFS].base, get_system_memory());
 }
 
 static Property sifive_u_soc_props[] = {

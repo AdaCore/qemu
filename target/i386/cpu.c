@@ -7468,6 +7468,9 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         goto out;
     }
 #endif /* !CONFIG_USER_ONLY */
+
+    x86_cpu_init_gdb(cpu);
+
     cpu_reset(cs);
 
     xcc->parent_realize(dev, &local_err);

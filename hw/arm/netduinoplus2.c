@@ -57,6 +57,7 @@ static void netduinoplus2_machine_init(MachineClass *mc)
 {
     static const char * const valid_cpu_types[] = {
         ARM_CPU_TYPE_NAME("cortex-m4"),
+        ARM_CPU_TYPE_NAME("cortex-m4f"),
         NULL
     };
 

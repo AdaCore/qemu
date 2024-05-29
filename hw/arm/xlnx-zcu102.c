@@ -26,6 +26,11 @@
 #include "qom/object.h"
 #include "net/can_emu.h"
 #include "audio/audio.h"
+#include "hw/adacore/hostfs.h"
+
+#define PARAMS_ADDR  (0xff080000)
+#define PARAMS_SIZE  (0x01000)
+#define HOSTFS_START (0xff082000)
 
 struct XlnxZCU102 {
     MachineState parent_obj;
@@ -129,6 +134,7 @@ static void xlnx_zcu102_init(MachineState *machine)
     XlnxZCU102 *s = ZCU102_MACHINE(machine);
     int i;
     uint64_t ram_size = machine->ram_size;
+    MemoryRegion *params;
 
     /* Create the memory region to pass to the SoC */
     if (ram_size > XLNX_ZYNQMP_MAX_RAM_SIZE) {
@@ -238,6 +244,18 @@ static void xlnx_zcu102_init(MachineState *machine)
 
         sysbus_connect_irq(SYS_BUS_DEVICE(&s->soc.qspi), i + 1, cs_line);
     }
+
+    /* HostFS */
+    hostfs_create(HOSTFS_START, get_system_memory());
+
+    /* Parameters */
+    params = g_new(MemoryRegion, 1);
+    memory_region_init_ram(params, NULL, "params", PARAMS_SIZE,
+                           &error_fatal);
+    memory_region_add_subregion(get_system_memory(), PARAMS_ADDR, params);
+    /* Clear the first byte of the parameter to have "" has a default
+     * command-line. */
+    cpu_physical_memory_write(PARAMS_ADDR, "", 1);
 
     /* TODO create and connect IDE devices for ide_drive_get() */
 

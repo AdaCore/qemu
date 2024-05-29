@@ -38,6 +38,7 @@
 #include "chardev/char.h"
 #include "sysemu/device_tree.h"
 #include "sysemu/sysemu.h"
+#include "hw/adacore/gnat-bus.h"
 
 #include <libfdt.h>
 
@@ -197,6 +198,7 @@ static void spike_board_init(MachineState *machine)
     SpikeState *s = SPIKE_MACHINE(machine);
     MemoryRegion *system_memory = get_system_memory();
     MemoryRegion *mask_rom = g_new(MemoryRegion, 1);
+    MemoryRegion *hack = g_new(MemoryRegion, 1);
     target_ulong firmware_end_addr = memmap[SPIKE_DRAM].base;
     target_ulong kernel_start_addr;
     char *firmware_name;
@@ -259,6 +261,17 @@ static void spike_board_init(MachineState *machine)
     /* register system main memory (actual RAM) */
     memory_region_add_subregion(system_memory, memmap[SPIKE_DRAM].base,
         machine->ram);
+
+    /*
+     * GDB writes some data @0xffffffffffffffe0 to break the execution flow
+     * when we issue a 'call foo(1234)' command.. So we need to cover this
+     * area with a ram region because we can't execute from there without a
+     * ram region..
+     */
+    memory_region_init_ram(hack, NULL, "riscv.spike.hack", 0x10000,
+                           &error_fatal);
+    memory_region_add_subregion(system_memory, 0xffffffffffff0000, hack);
+
 
     /* boot rom */
     memory_region_init_rom(mask_rom, NULL, "riscv.spike.mrom",
@@ -328,6 +341,10 @@ static void spike_board_init(MachineState *machine)
     /* initialize HTIF using symbols found in load_kernel */
     htif_mm_init(system_memory, serial_hd(0), memmap[SPIKE_HTIF].base,
                  htif_custom_base);
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(NULL, 0);
+    gnatbus_device_init();
 }
 
 static void spike_set_signature(Object *obj, const char *val, Error **errp)

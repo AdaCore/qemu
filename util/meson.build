@@ -16,6 +16,7 @@ if host_os != 'windows'
   if host_os == 'freebsd'
     freebsd_dep = util
   endif
+  util_ss.add(dependency('threads'))
   util_ss.add(files('oslib-posix.c'), freebsd_dep)
   util_ss.add(files('qemu-thread-posix.c'))
   util_ss.add(files('memfd.c'))

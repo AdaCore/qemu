@@ -271,7 +271,7 @@ static int tcp_set_msgfds(Chardev *chr, int *fds, int num)
     return 0;
 }
 
-static ssize_t tcp_chr_recv(Chardev *chr, char *buf, size_t len)
+ssize_t tcp_chr_recv(Chardev *chr, char *buf, size_t len)
 {
     SocketChardev *s = SOCKET_CHARDEV(chr);
     struct iovec iov = { .iov_base = buf, .iov_len = len };
@@ -958,7 +958,8 @@ static int tcp_chr_connect_client_sync(Chardev *chr, Error **errp)
     QIOChannelSocket *sioc = qio_channel_socket_new();
     tcp_chr_change_state(s, TCP_CHARDEV_STATE_CONNECTING);
     tcp_chr_set_client_ioc_name(chr, sioc);
-    if (qio_channel_socket_connect_sync(sioc, s->addr, errp) < 0) {
+    if (qio_channel_socket_connect_sync(sioc, s->addr, errp,
+                                        s->timeout) < 0) {
         tcp_chr_change_state(s, TCP_CHARDEV_STATE_DISCONNECTED);
         object_unref(OBJECT(sioc));
         return -1;
@@ -1144,10 +1145,10 @@ static void tcp_chr_connect_client_task(QIOTask *task,
                                         gpointer opaque)
 {
     QIOChannelSocket *ioc = QIO_CHANNEL_SOCKET(qio_task_get_source(task));
-    SocketAddress *addr = opaque;
+    SocketChardev *s = SOCKET_CHARDEV(opaque);
     Error *err = NULL;
 
-    qio_channel_socket_connect_sync(ioc, addr, &err);
+    qio_channel_socket_connect_sync(ioc, s->addr, &err, s->timeout);
 
     qio_task_set_error(task, err);
 }
@@ -1181,7 +1182,7 @@ static void tcp_chr_connect_client_async(Chardev *chr)
                                    (GDestroyNotify)object_unref);
     qio_task_run_in_thread(s->connect_task,
                            tcp_chr_connect_client_task,
-                           s->addr,
+                           s,
                            NULL,
                            chr->gcontext);
 }
@@ -1357,6 +1358,7 @@ static void qmp_chardev_open_socket(Chardev *chr,
     bool is_waitconnect = sock->has_wait    ? sock->wait    : false;
     bool is_websock     = sock->has_websocket ? sock->websocket : false;
     int64_t reconnect   = sock->has_reconnect ? sock->reconnect : 0;
+    int64_t timeout     = sock->has_timeout ? sock->timeout : 0;
     SocketAddress *addr;
 
     s->is_listen = is_listen;
@@ -1417,6 +1419,7 @@ static void qmp_chardev_open_socket(Chardev *chr,
     }
     s->registered_yank = true;
 
+    s->timeout = timeout;
     /* be isn't opened until we get a connection */
     *be_opened = false;
 
@@ -1496,6 +1499,8 @@ static void qemu_chr_parse_socket(QemuOpts *opts, ChardevBackend *backend,
     sock->reconnect = qemu_opt_get_number(opts, "reconnect", 0);
     sock->tls_creds = g_strdup(qemu_opt_get(opts, "tls-creds"));
     sock->tls_authz = g_strdup(qemu_opt_get(opts, "tls-authz"));
+    sock->has_timeout = qemu_opt_find(opts, "timeout");
+    sock->timeout = qemu_opt_get_number(opts, "timeout", 0);
 
     addr = g_new0(SocketAddressLegacy, 1);
     if (path) {

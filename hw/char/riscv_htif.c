@@ -161,7 +161,8 @@ static void htif_handle_tohost_write(HTIFState *s, uint64_t val_written)
     int resp = 0;
 
     HTIF_DEBUG("mtohost write: device: %d cmd: %d what: %02" PRIx64
-        " -payload: %016" PRIx64 "\n", device, cmd, payload & 0xFF, payload);
+               " -payload: %016" PRIx64 "\n", device, cmd, payload & 0xFF,
+               payload);
 
     /*
      * Currently, there is a fixed mapping of devices:
@@ -226,7 +227,7 @@ static void htif_handle_tohost_write(HTIFState *s, uint64_t val_written)
                 }
             }
         } else {
-            qemu_log("HTIF device %d: unknown command\n", device);
+            HTIF_DEBUG("HTIF device %d: unknown command\n", device);
         }
     } else if (likely(device == HTIF_DEV_CONSOLE)) {
         /* HTIF Console */
@@ -240,12 +241,13 @@ static void htif_handle_tohost_write(HTIFState *s, uint64_t val_written)
             qemu_chr_fe_write(&s->chr, &ch, 1);
             resp = 0x100 | (uint8_t)payload;
         } else {
-            qemu_log("HTIF device %d: unknown command\n", device);
+            HTIF_DEBUG("HTIF device %d: unknown command\n", device);
         }
     } else {
-        qemu_log("HTIF unknown device or command\n");
+        HTIF_DEBUG("HTIF unknown device or command\n");
         HTIF_DEBUG("device: %d cmd: %d what: %02" PRIx64
-            " payload: %016" PRIx64, device, cmd, payload & 0xFF, payload);
+                   " payload: %016" PRIx64, device, cmd, payload & 0xFF,
+                   payload);
     }
     /*
      * Latest bbl does not set fromhost to 0 if there is a value in tohost.
@@ -279,8 +281,8 @@ static uint64_t htif_mm_read(void *opaque, hwaddr addr, unsigned size)
     } else if (addr == FROMHOST_OFFSET2) {
         return (s->fromhost >> 32) & 0xFFFFFFFF;
     } else {
-        qemu_log("Invalid htif read: address %016" PRIx64 "\n",
-            (uint64_t)addr);
+        HTIF_DEBUG("Invalid htif read: address %016" PRIx64 "\n",
+                   (uint64_t)addr);
         return 0;
     }
 }
@@ -309,8 +311,8 @@ static void htif_mm_write(void *opaque, hwaddr addr,
         s->fromhost |= value << 32;
         s->fromhost_inprogress = 0;
     } else {
-        qemu_log("Invalid htif write: address %016" PRIx64 "\n",
-            (uint64_t)addr);
+        HTIF_DEBUG("Invalid htif write: address %016" PRIx64 "\n",
+                   (uint64_t)addr);
     }
 }
 

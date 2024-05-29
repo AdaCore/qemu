@@ -171,3 +171,14 @@ config FDT_PPC
 
 config VOF
     bool
+
+config T2080RDB
+    bool
+    select FMAN_V3
+    select MEMAC
+
+config MPC8641D
+    bool
+
+config P3041DS
+    bool

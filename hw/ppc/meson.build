@@ -95,3 +95,7 @@ ppc_ss.add(when: 'CONFIG_VOF', if_true: files('vof.c'))
 ppc_ss.add(when: ['CONFIG_VOF', 'CONFIG_PSERIES'], if_true: files('spapr_vof.c'))
 
 hw_arch += {'ppc': ppc_ss}
+
+ppc_ss.add(when: 'CONFIG_T2080RDB', if_true: files('t2080rdb.c'))
+ppc_ss.add(when: 'CONFIG_MPC8641D', if_true: files('mpc8641d.c'))
+ppc_ss.add(when: 'CONFIG_P3041DS', if_true: files('p3041ds.c'))

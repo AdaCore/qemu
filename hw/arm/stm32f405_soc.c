@@ -30,6 +30,9 @@
 #include "hw/qdev-clock.h"
 #include "hw/misc/unimp.h"
 
+#include "hw/adacore/hostfs.h"
+#include "hw/adacore/gnat-bus.h"
+
 #define SYSCFG_ADD                     0x40013800
 static const uint32_t usart_addr[] = { 0x40011000, 0x40004400, 0x40004800,
                                        0x40004C00, 0x40005000, 0x40011400,
@@ -42,6 +45,8 @@ static const uint32_t adc_addr[] = { 0x40012000, 0x40012100, 0x40012200,
 static const uint32_t spi_addr[] =   { 0x40013000, 0x40003800, 0x40003C00,
                                        0x40013400, 0x40015000, 0x40015400 };
 #define EXTI_ADDR                      0x40013C00
+#define PWR_OFFSET                     0x40007000
+#define RCC_OFFSET                     0x40023800
 
 #define SYSCFG_IRQ               71
 static const int usart_irq[] = { 37, 38, 39, 52, 53, 71, 82, 83 };
@@ -92,6 +97,8 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     DeviceState *dev, *armv7m;
     SysBusDevice *busdev;
     Error *err = NULL;
+    const int num_irq = 96;
+    qemu_irq *pic = g_new(qemu_irq, num_irq);
     int i;
 
     /*
@@ -148,7 +155,7 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     memory_region_add_subregion(system_memory, CCM_BASE_ADDRESS, &s->ccm);
 
     armv7m = DEVICE(&s->armv7m);
-    qdev_prop_set_uint32(armv7m, "num-irq", 96);
+    qdev_prop_set_uint32(armv7m, "num-irq", num_irq);
     qdev_prop_set_uint8(armv7m, "num-prio-bits", 4);
     qdev_prop_set_string(armv7m, "cpu-type", ARM_CPU_TYPE_NAME("cortex-m4"));
     qdev_prop_set_bit(armv7m, "enable-bitband", true);
@@ -258,7 +265,7 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("I2C3",        0x40005C00, 0x400);
     create_unimplemented_device("CAN1",        0x40006400, 0x400);
     create_unimplemented_device("CAN2",        0x40006800, 0x400);
-    create_unimplemented_device("PWR",         0x40007000, 0x400);
+    /* create_unimplemented_device("PWR",         0x40007000, 0x400); */
     create_unimplemented_device("DAC",         0x40007400, 0x400);
     create_unimplemented_device("timer[1]",    0x40010000, 0x400);
     create_unimplemented_device("timer[8]",    0x40010400, 0x400);
@@ -276,7 +283,7 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("GPIOH",       0x40021C00, 0x400);
     create_unimplemented_device("GPIOI",       0x40022000, 0x400);
     create_unimplemented_device("CRC",         0x40023000, 0x400);
-    create_unimplemented_device("RCC",         0x40023800, 0x400);
+    /* create_unimplemented_device("RCC",         0x40023800, 0x400); */
     create_unimplemented_device("Flash Int",   0x40023C00, 0x400);
     create_unimplemented_device("BKPSRAM",     0x40024000, 0x400);
     create_unimplemented_device("DMA1",        0x40026000, 0x400);
@@ -286,6 +293,29 @@ static void stm32f405_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("USB OTG FS",  0x50000000, 0x31000);
     create_unimplemented_device("DCMI",        0x50050000, 0x400);
     create_unimplemented_device("RNG",         0x50060800, 0x400);
+
+    /* Minimal Adacore PWR device */
+    dev = qdev_new("stm32f2xx-pwr");
+    if (!sysbus_realize(SYS_BUS_DEVICE(dev), errp)) {
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, PWR_OFFSET);
+
+    /* Minimal Adacore RCC device */
+    dev = qdev_new("stm32f2xx-rcc");
+    if (!sysbus_realize(SYS_BUS_DEVICE(dev), errp)) {
+        return;
+    }
+    sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, RCC_OFFSET);
+
+    /* Initialize the GnatBus Master */
+    for (i = 0; i < num_irq; i++) {
+        pic[i] = qdev_get_gpio_in(armv7m, i);
+    }
+    gnatbus_master_init(pic, num_irq);
+    gnatbus_device_init();
+
+    hostfs_create(0x80001000, system_memory);
 }
 
 static void stm32f405_soc_class_init(ObjectClass *klass, void *data)

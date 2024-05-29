@@ -103,6 +103,9 @@ config STM32L4X5_RCC
 config MIPS_ITU
     bool
 
+config	FMAN_V3
+    bool
+
 config MPS2_FPGAIO
     bool
     select LED
@@ -118,6 +121,12 @@ config TZ_MSC
     bool
 
 config TZ_PPC
+    bool
+
+config XLNX_CRL
+    bool
+
+config ZYNQ_DDRC
     bool
 
 config IOTKIT_SECCTL

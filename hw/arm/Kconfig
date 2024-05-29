@@ -314,6 +314,11 @@ config STRONGARM
     bool
     select PXA2XX
 
+config SAMRH71
+    bool
+    default y
+    depends on TCG && ARM
+
 config COLLIE
     bool
     default y
@@ -374,6 +379,7 @@ config ZYNQ
     select XILINX_SPI
     select XILINX_SPIPS
     select ZYNQ_DEVCFG
+    select ZYNQ_DDRC
 
 config ARM_V7M
     bool
@@ -462,6 +468,8 @@ config STM32F405_SOC
     select OR_IRQ
     select STM32F4XX_SYSCFG
     select STM32F4XX_EXTI
+    select STM32F2XX_PWR
+    select STM32F2XX_RCC
 
 config B_L475E_IOT01A
     bool
@@ -495,6 +503,7 @@ config XLNX_ZYNQMP_ARM
     select XLNX_CSU_DMA
     select XLNX_DISPLAYPORT
     select XLNX_ZYNQMP
+    select XLNX_CRL
     select XLNX_ZDMA
     select USB_DWC3
 

@@ -70,4 +70,7 @@ system_ss.add(when: 'CONFIG_ROCKER', if_true: files(
 ), if_false: files('rocker/qmp-norocker.c'))
 system_ss.add(files('rocker/rocker-hmp-cmds.c'))
 
+specific_ss.add(when: 'CONFIG_MEMAC', if_true: files('memac.c'))
+
 subdir('can')
+subdir('phy')

@@ -39,6 +39,7 @@
 #include "hw/boards.h"
 #endif
 #include "internal-target.h"
+#include "adacore/qemu-traces.h"
 
 struct TCGState {
     AccelState parent_obj;
@@ -70,6 +71,11 @@ DECLARE_INSTANCE_CHECKER(TCGState, TCG_STATE,
 
 static bool default_mttcg_enabled(void)
 {
+    /* Don't activate mttcg when using trace.  */
+    if (tracefile_enabled) {
+        return false;
+    }
+
     if (icount_enabled() || TCG_OVERSIZED_GUEST) {
         return false;
     }
@@ -139,7 +145,9 @@ static void tcg_set_thread(Object *obj, const char *value, Error **errp)
     TCGState *s = TCG_STATE(obj);
 
     if (strcmp(value, "multi") == 0) {
-        if (TCG_OVERSIZED_GUEST) {
+        if (tracefile_enabled) {
+            error_setg(errp, "No MTTCG when traces are enabled");
+        } else if (TCG_OVERSIZED_GUEST) {
             error_setg(errp, "No MTTCG when guest word size > hosts");
         } else if (icount_enabled()) {
             error_setg(errp, "No MTTCG when icount is enabled");

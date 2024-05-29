@@ -233,10 +233,13 @@
 # @device: The name of the special file for the device, i.e.
 #     /dev/ttyS0 on Unix or COM1: on Windows
 #
+# @server: create server socket (default: true)
+#
 # Since: 1.4
 ##
 { 'struct': 'ChardevHostdev',
-  'data': { 'device': 'str' },
+  'data': { 'device': 'str',
+            '*server': 'bool' },
   'base': 'ChardevCommon' }
 
 ##
@@ -275,6 +278,10 @@
 #     attempt a reconnect after the given number of seconds.  Setting
 #     this to zero disables this function.  (default: 0) (Since: 2.2)
 #
+# @timeout: make several attemps to connect (1 every seconds for N
+#     seconds) instead of failing directly if the connection is
+#     refused
+#
 # Since: 1.4
 ##
 { 'struct': 'ChardevSocket',
@@ -287,7 +294,8 @@
             '*telnet': 'bool',
             '*tn3270': 'bool',
             '*websocket': 'bool',
-            '*reconnect': 'int' },
+            '*reconnect': 'int',
+            '*timeout': 'int' },
   'base': 'ChardevCommon' }
 
 ##

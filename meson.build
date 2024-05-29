@@ -336,10 +336,6 @@ if host_arch == 'i386' and not cc.links('''
   qemu_common_flags = ['-march=i486'] + qemu_common_flags
 endif
 
-if get_option('prefer_static')
-  qemu_ldflags += get_option('b_pie') ? '-static-pie' : '-static'
-endif
-
 # Meson currently only handles pie as a boolean for now, so if the user
 # has explicitly disabled PIE we need to extend our cflags.
 #
@@ -691,6 +687,10 @@ if host_os == 'windows'
                                       depend_files: files('pc-bios/qemu-nsis.ico'),
                                       include_directories: include_directories('.'))
   host_dsosuf = '.dll'
+  # Threads are supported natively with GNAT on Windows.
+  # Thus, avoid using meson 'threads' dependency which will add
+  # '-pthread' flag.
+  threads = declare_dependency()
 elif host_os == 'darwin'
   coref = dependency('appleframeworks', modules: 'CoreFoundation')
   iokit = dependency('appleframeworks', modules: 'IOKit', required: false)
@@ -873,6 +873,7 @@ glib_req_ver = '>=2.56.0'
 glib_pc = dependency('glib-2.0', version: glib_req_ver, required: true,
                     method: 'pkg-config')
 glib_cflags = []
+glib_ldflags = []
 if enable_modules
   gmodule = dependency('gmodule-export-2.0', version: glib_req_ver, required: true,
                        method: 'pkg-config')
@@ -887,6 +888,7 @@ endif
 # doesn't define GLIB_STATIC_COMPILATION for pkg-config --static
 if host_os == 'windows' and get_option('prefer_static')
   glib_cflags += ['-DGLIB_STATIC_COMPILATION']
+  glib_ldflags += ['-Wl,-l:libiconv.a']
 endif
 
 # Sanity check that the current size_t matches the
@@ -926,6 +928,7 @@ if not cc.compiles('''
 endif
 glib = declare_dependency(dependencies: [glib_pc, gmodule],
                           compile_args: glib_cflags,
+                          link_args: glib_ldflags,
                           version: glib_pc.version())
 
 # Check whether glib has gslice, which we have to avoid for correctness.
@@ -3331,6 +3334,7 @@ if have_system
     'ebpf',
     'hw/9pfs',
     'hw/acpi',
+    'hw/adacore',
     'hw/adc',
     'hw/alpha',
     'hw/arm',
@@ -3535,6 +3539,7 @@ common_ss.add(files('cpu-common.c'))
 specific_ss.add(files('cpu-target.c'))
 
 subdir('system')
+specific_ss.add(files('qemu-traces.c'))
 
 # Work around a gcc bug/misfeature wherein constant propagation looks
 # through an alias:

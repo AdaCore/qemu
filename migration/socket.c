@@ -52,7 +52,7 @@ QIOChannel *socket_send_channel_create_sync(Error **errp)
         return NULL;
     }
 
-    if (qio_channel_socket_connect_sync(sioc, outgoing_args.saddr, errp) < 0) {
+    if (qio_channel_socket_connect_sync(sioc, outgoing_args.saddr, errp, 0) < 0) {
         object_unref(OBJECT(sioc));
         return NULL;
     }
