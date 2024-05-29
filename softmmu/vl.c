@@ -34,6 +34,7 @@
 #include "qapi/error.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qjson.h"
+#include "qapi/qapi-commands-misc.h"
 #include "qemu-version.h"
 #include "qemu/cutils.h"
 #include "qemu/help_option.h"
@@ -166,6 +167,7 @@ static const char *log_mask;
 static const char *log_file;
 static bool list_data_dirs;
 static const char *watchdog;
+const char *quick_monitor_cmd;
 static const char *qtest_chrdev;
 static const char *qtest_log;
 
@@ -471,6 +473,32 @@ static QemuOptsList qemu_mem_opts = {
         {
             .name = "maxmem",
             .type = QEMU_OPT_SIZE,
+        },
+        { /* end of list */ }
+    },
+};
+
+static QemuOptsList qemu_add_memory_opts = {
+    .name = "add-memory",
+    .implied_opt_name = "",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_add_memory_opts.head),
+    .merge_lists = false,
+    .desc = {
+        {
+            .name = "size",
+            .type = QEMU_OPT_SIZE,
+        },
+        {
+            .name = "addr",
+            .type = QEMU_OPT_NUMBER,
+        },
+        {
+            .name = "name",
+            .type = QEMU_OPT_STRING,
+        },
+        {
+            .name = "read-only",
+            .type = QEMU_OPT_BOOL,
         },
         { /* end of list */ }
     },
@@ -2730,6 +2758,120 @@ void qmp_x_exit_preconfig(Error **errp)
     }
 }
 
+static int foreach_add_memory(void *opaque, QemuOpts *opts, Error **errp)
+{
+    uint64_t size, addr;
+    bool readonly;
+    const char *name;
+    MemoryRegion *ram;
+
+    size = qemu_opt_get_size(opts, "size", 0);
+    addr = qemu_opt_get_number(opts, "addr", 0);
+    readonly = qemu_opt_get_bool(opts, "read-only", false);
+    name  = qemu_opt_get(opts, "name");
+
+    if (name == NULL) {
+        error_report("missing name");
+        return 1;
+    }
+    if (qemu_opt_get(opts, "addr") == NULL) {
+        error_report("missing address (addr)");
+        return 1;
+    }
+    if (qemu_opt_get(opts, "size") == NULL) {
+        error_report("missing size");
+        return 1;
+    }
+
+    if (size == 0) {
+        error_report("size cannot be zero");
+        return 1;
+    }
+
+    ram = g_new(MemoryRegion, 1);
+    memory_region_init_ram(ram, NULL, name, size, &error_fatal);
+    memory_region_add_subregion_overlap(get_system_memory(), addr, ram,
+                                        1 /* priority */);
+    memory_region_set_readonly(ram, readonly);
+    return 0;
+}
+
+void qemu_exit_with_debug(const char *fmt, ...)
+{
+    va_list ap;
+    Error *local_err = NULL;
+    Error **errp = &local_err;
+    char *retval = NULL;
+    int i;
+    const char *cmds[] = {
+        "info version",
+        "info status",
+        "info registers",
+        "print/x $pc",
+        "x/16i $pc - 32",
+        "info roms",
+
+        /* mtree and tlb are creating too much output and may cause freezes in
+         * excross.
+         */
+        /* "info mtree", */
+        /* "info tlb", */
+        NULL,
+    };
+
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+
+    for (i = 0; cmds[i] != NULL; i++) {
+        retval = qmp_human_monitor_command(cmds[i],
+                                           false /* has_cpu_index */,
+                                           0 /*cpu_index */,
+                                           errp);
+        fprintf(stderr, "===== %s\n%s\n",
+                cmds[i], retval);
+    }
+
+    exit(1);
+}
+
+/***********************************************************/
+/* rLimit */
+static uint64_t rlimit;
+
+static void rlimit_timer_tick(void *opaque)
+{
+    qemu_exit_with_debug("\nQEMU rlimit exceeded (%"PRId64"s)\n", rlimit);
+}
+
+static void rlimit_set_value(const char *optarg)
+{
+    char *endptr = NULL;
+
+    rlimit = strtol(optarg, &endptr, 10);
+
+    if (endptr == optarg) {
+        fprintf(stderr, "Invalid rlimit value '%s'\n", optarg);
+        abort();
+    }
+}
+
+static void rlimit_init(void)
+{
+    uint64_t now;
+    QEMUTimer *timer;
+
+    if (rlimit != 0) {
+        timer = timer_new_ns(QEMU_CLOCK_HOST, rlimit_timer_tick, NULL);
+        if (timer == NULL) {
+            fprintf(stderr, "%s: Cannot allocate timer\n", __func__);
+            abort();
+        }
+        now = qemu_clock_get_ns(QEMU_CLOCK_HOST);
+        timer_mod_ns(timer, now + rlimit * 1000000000ULL);
+    }
+}
+
 void qemu_init(int argc, char **argv, char **envp)
 {
     QemuOpts *opts;
@@ -2764,6 +2906,7 @@ void qemu_init(int argc, char **argv, char **envp)
     qemu_add_opts(&qemu_boot_opts);
     qemu_add_opts(&qemu_add_fd_opts);
     qemu_add_opts(&qemu_object_opts);
+    qemu_add_opts(&qemu_add_memory_opts);
     qemu_add_opts(&qemu_tpmdev_opts);
     qemu_add_opts(&qemu_overcommit_opts);
     qemu_add_opts(&qemu_msg_opts);
@@ -3000,6 +3143,13 @@ void qemu_init(int argc, char **argv, char **envp)
                 }
                 break;
 #endif
+            case QEMU_OPTION_add_memory:
+                opts = qemu_opts_parse_noisily(qemu_find_opts("add-memory"),
+                                               optarg, true);
+                if (!opts) {
+                    exit(EXIT_FAILURE);
+                }
+                break;
             case QEMU_OPTION_mempath:
                 mem_path = optarg;
                 break;
@@ -3673,6 +3823,17 @@ void qemu_init(int argc, char **argv, char **envp)
             case QEMU_OPTION_nouserconfig:
                 /* Nothing to be parsed here. Especially, do not error out below. */
                 break;
+            case QEMU_OPTION_rlimit:
+                rlimit_set_value(optarg);
+                break;
+            case QEMU_OPTION_monitor_cmd:
+                if (quick_monitor_cmd) {
+                    fprintf(stderr,
+                            "qemu: only one monitor-cmd option may be given\n");
+                    exit(1);
+                }
+                quick_monitor_cmd = optarg;
+                break;
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
                     error_report("Option not supported in this build");
@@ -3731,6 +3892,12 @@ void qemu_init(int argc, char **argv, char **envp)
     qemu_apply_machine_options();
     phase_advance(PHASE_MACHINE_CREATED);
 
+    if (qemu_opts_foreach(qemu_find_opts("add-memory"),
+                          foreach_add_memory,
+                          NULL, NULL)) {
+        exit(1);
+    }
+
     /*
      * Note: uses machine properties such as kernel-irqchip, must run
      * after machine_set_property().
@@ -3767,6 +3934,7 @@ void qemu_init(int argc, char **argv, char **envp)
     migration_object_init();
 
     qemu_create_late_backends();
+    rlimit_init();
 
     /* parse features once if machine provides default cpu_type */
     current_machine->cpu_type = machine_class->default_cpu_type;
@@ -3792,4 +3960,12 @@ void qemu_init(int argc, char **argv, char **envp)
     accel_setup_post(current_machine);
     os_setup_post();
     resume_mux_open();
+
+    if (quick_monitor_cmd != NULL) {
+        printf("%s", qmp_human_monitor_command(quick_monitor_cmd,
+                                               false /* has_cpu_index */,
+                                               0 /* cpu_index      */,
+                                               NULL));
+        exit(0);
+    }
 }
