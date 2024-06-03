@@ -488,7 +488,7 @@ config STM32L4X5_SOC
 
 config XLNX_ZYNQMP_ARM
     bool
-    default y if PIXMAN
+    default y
     depends on TCG && AARCH64
     select AHCI
     select ARM_GIC
@@ -501,7 +501,6 @@ config XLNX_ZYNQMP_ARM
     select XILINX_AXI
     select XILINX_SPIPS
     select XLNX_CSU_DMA
-    select XLNX_DISPLAYPORT
     select XLNX_ZYNQMP
     select XLNX_CRL
     select XLNX_ZDMA
