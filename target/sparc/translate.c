@@ -31,6 +31,8 @@
 #include "exec/log.h"
 #include "asi.h"
 
+#include "adacore/qemu-traces.h"
+
 #define HELPER_H "helper.h"
 #include "exec/helper-info.c.inc"
 #undef  HELPER_H
@@ -361,7 +363,11 @@ static void gen_goto_tb(DisasContext *s, int tb_num,
         /* jump to another page: we can use an indirect jump */
         tcg_gen_movi_tl(cpu_pc, pc);
         tcg_gen_movi_tl(cpu_npc, npc);
-        tcg_gen_lookup_and_goto_ptr();
+        if (unlikely (tracefile_enabled)) {
+            tcg_gen_exit_tb(s->base.tb, tb_num | TB_EXIT_NOPATCH);
+        } else {
+            tcg_gen_lookup_and_goto_ptr();
+        }
     }
 }
 
@@ -4995,7 +5001,17 @@ static void sparc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
         if (dc->npc & 3) {
             switch (dc->npc) {
             case JUMP_PC:
-                gen_generic_branch(dc);
+                if (unlikely(tracefile_enabled)) {
+                    TCGLabel *l1 = gen_new_label();
+
+                    tcg_gen_brcondi_tl(tcg_invert_cond(dc->jump.cond), dc->jump.c1, dc->jump.c2, l1);
+                    gen_goto_tb(dc, 0, dc->pc, dc->jump_pc[0]);
+
+                    gen_set_label(l1);
+                    gen_goto_tb(dc, 1, dc->pc, dc->jump_pc[1]);
+                } else {
+                    gen_generic_branch(dc);
+                }
                 break;
             case DYNAMIC_PC:
                 may_lookup = false;
@@ -5009,7 +5025,11 @@ static void sparc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
             tcg_gen_movi_tl(cpu_npc, dc->npc);
         }
         if (may_lookup) {
-            tcg_gen_lookup_and_goto_ptr();
+            if (unlikely(tracefile_enabled)) {
+                tcg_gen_exit_tb(dc->base.tb, TB_EXIT_NOPATCH);
+            } else {
+                tcg_gen_lookup_and_goto_ptr();
+            }
         } else {
             tcg_gen_exit_tb(NULL, 0);
         }
