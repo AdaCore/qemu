@@ -662,9 +662,9 @@ endif
 # Host-specific libraries and flags #
 #####################################
 
-libm = cc.find_library('m', required: false)
+libm = cc.find_library('m', required: false, static: false)
 threads = dependency('threads')
-util = cc.find_library('util', required: false)
+util = cc.find_library('util', required: false, static: false)
 winmm = []
 socket = []
 version_res = []
