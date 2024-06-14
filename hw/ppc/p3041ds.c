@@ -148,7 +148,8 @@ struct epapr_data {
 
 /* No device tree provided we need to create one from scratch... */
 static void *p3041ds_create_dtb(uint64_t ram_size, uint64_t load_addr,
-                                int *size, unsigned int smp_cpus)
+                                int *size, unsigned int smp_cpus,
+                                fsl_e500_config *config)
 {
     void *fdt;
     const char *cur_node;
@@ -296,7 +297,7 @@ static void *p3041ds_create_dtb(uint64_t ram_size, uint64_t load_addr,
     cur_node = "/socp3041/clockgen@e1000";
     qemu_fdt_add_subnode(fdt, cur_node);
     qemu_fdt_setprop_cells(fdt, cur_node, "reg", 0xe1000, 0x1000);
-    qemu_fdt_setprop_cell(fdt, cur_node, "clock-frequency", 0x0);
+    qemu_fdt_setprop_cell(fdt, cur_node, "clock-frequency", config->freq);
     const char clockgen_compat[] = "fsl,p3041-clockgen\0"
                                    "fsl,qoriq-clockgen-2.0";
     qemu_fdt_setprop(fdt, cur_node, "compatible", clockgen_compat,
@@ -436,7 +437,8 @@ static void *p3041ds_create_dtb(uint64_t ram_size, uint64_t load_addr,
  */
 static void p3041ds_compute_dtb(char *filename, uint64_t ram_size,
                                 uint64_t load_addr, int *size,
-                                unsigned int smp_cpus)
+                                unsigned int smp_cpus,
+                                fsl_e500_config *config)
 {
     void *fdt;
     Error *err = NULL;
@@ -444,7 +446,7 @@ static void p3041ds_compute_dtb(char *filename, uint64_t ram_size,
 
     if (!filename) {
         /* Create the dtb */
-        fdt = p3041ds_create_dtb(ram_size, load_addr, size, smp_cpus);
+        fdt = p3041ds_create_dtb(ram_size, load_addr, size, smp_cpus, config);
     } else {
         /* Load it */
         fdt = load_device_tree(filename, size);
@@ -1590,7 +1592,7 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *machine)
         dt_base = (elf_lowaddr + kernel_size + DTC_LOAD_PAD) & ~DTC_PAD_MASK;
 
         p3041ds_compute_dtb(machine->dtb, machine->ram_size, dt_base,
-                            &dtb_size, machine->smp.cpus);
+                            &dtb_size, machine->smp.cpus, config);
         if (dtb_size < 0) {
             fprintf(stderr, "device tree error\n");
             exit(1);
