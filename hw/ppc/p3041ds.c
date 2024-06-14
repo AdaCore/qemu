@@ -1633,7 +1633,7 @@ static void fsl_e500_init(fsl_e500_config *config, MachineState *machine)
 
 
 static fsl_e500_config p3041ds_config = {
-    .freq = 700000000UL >> 3,
+    .freq = 1500*1000*1000,
     .serial_irq = 16 + 20,
     .cfi01_flash = FALSE,
 };
