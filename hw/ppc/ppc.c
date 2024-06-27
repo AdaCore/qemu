@@ -729,10 +729,12 @@ static inline int64_t __cpu_ppc_load_decr(CPUPPCState *env, int64_t now,
     int64_t decr;
 
     n = ns_to_tb(tb_env->decr_freq, now);
-    if (next > n && tb_env->flags & PPC_TIMER_BOOKE) {
-        decr = 0;
-    } else {
+
+    /* BookE timers stop when reaching 0.  */
+    if (next > n || !tb_env->flags & PPC_TIMER_BOOKE) {
         decr = next - n;
+    } else {
+        decr = 0;
     }
 
     trace_ppc_decr_load(decr);
