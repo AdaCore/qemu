@@ -1,0 +1,19 @@
+# Gitlab CI specific to Adacore
+
+.aci_qemu_mr:
+  services:
+    - image:pe-base
+    - cpu:8
+    - disk:100
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - generic_anod_ci
+    - . /tmp/ci_env.sh
+    - anod run --plan $CI_PROJECT_DIR/.gitlab-ci.d/adacore-qemu.plan $ACI_QEMU_MASTER_ENTRYPOINT
+
+aci_qemu_rebuild:
+  extends: .aci_qemu_mr
+  stage: build
+  variables:
+    ACI_QEMU_MASTER_ENTRYPOINT: aci_qemu_rebuild
