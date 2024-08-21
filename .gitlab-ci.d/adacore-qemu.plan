@@ -1,0 +1,26 @@
+# Various plans triggered by the Gitlab CI.
+
+
+def _aci_qemu_preset():
+    # Software to always be installed for any qemu plans.
+    anod_install("gcc", latest=True)
+    anod_install("gnat", latest=True)
+
+
+def aci_qemu_rebuild():
+    _aci_qemu_preset()
+
+    qemu_cpus = (
+        "aarch64",
+        "arm",
+        "i386",
+        "ppc",
+        "ppc64",
+        "riscv32",
+        "riscv64",
+        "sparc",
+        "x86_64",
+    )
+
+    for cpu in qemu_cpus:
+        anod_build("qemu", qualifier="cpu=" + cpu)

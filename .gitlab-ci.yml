@@ -21,4 +21,4 @@
 #
 
 include:
-  - local: '/.gitlab-ci.d/qemu-project.yml'
+  - local: '/.gitlab-ci.d/adacore.yml'
