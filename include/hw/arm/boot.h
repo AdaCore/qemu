@@ -132,6 +132,12 @@ struct arm_boot_info {
     bool secure_board_setup;
 
     arm_endianness endianness;
+
+    /*
+     * CPU were the kernel has been loaded and that should be the first
+     * to boot.
+     */
+    ARMCPU *primary_cpu;
 };
 
 /**
