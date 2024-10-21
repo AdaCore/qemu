@@ -43,12 +43,33 @@ static uint64_t stm32_rcc_read(void *opaque, hwaddr addr, unsigned int size)
     STM32RccState *s = STM32_RCC(opaque);
 
     uint32_t value = 0;
-    if (addr > STM32_RCC_DCKCFGR2) {
-        qemu_log_mask(LOG_GUEST_ERROR, "%s: Bad offset 0x%"HWADDR_PRIx"\n",
-                      __func__, addr);
-    } else {
-        value = s->regs[addr >> 2];
+
+    /*
+     * Hardcode the values expected by the run-time.
+     *   CR   = HCSIRDY | HSERDY | PLLRDY
+     *   CFGR = SWS1
+     *   CSR  = LSIRDY
+     */
+    switch(addr) {
+    case STM32_RCC_CR:
+        value = (1 << 1) | (1 << 17) | (1 << 25);
+        break;
+    case STM32_RCC_CFGR:
+        value = 1 << 3;
+        break;
+    case STM32_RCC_CSR:
+        value = 1 << 1;
+        break;
+    default:
+        if (addr > STM32_RCC_DCKCFGR2) {
+            qemu_log_mask(LOG_GUEST_ERROR, "%s: Bad offset 0x%"HWADDR_PRIx"\n",
+                          __func__, addr);
+        } else {
+            value = s->regs[addr >> 2];
+        }
+        break;
     }
+
     trace_stm32_rcc_read(addr, value);
     return value;
 }
