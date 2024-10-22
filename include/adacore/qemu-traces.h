@@ -64,20 +64,40 @@ struct trace_header {
     uint16_t _pad;
 };
 
-/* Header is followed by trace entries.  */
-struct trace_entry32 {
+/*
+ * Header is followed by trace entries.
+ *
+ * The following structures are the external format of this trace
+ * mechanism. They must not be modified as gnatcov must always be
+ * compatible with previous versions.
+ */
+struct external_trace_entry32 {
     uint32_t pc;
     uint16_t size;
     uint8_t  op;
     uint8_t  _pad[1];
 };
 
-struct trace_entry64 {
+struct external_trace_entry64 {
     uint64_t pc;
     uint16_t size;
     uint8_t  op;
     uint8_t  _pad[5];
 };
+
+/*
+ * The structure is internal to the trace mechanism and can be
+ * modified at will.
+ */
+struct trace_entry {
+    uint64_t pc;
+    uint16_t size;
+    uint8_t  op;
+};
+
+typedef struct external_trace_entry32 external_trace_entry32;
+typedef struct external_trace_entry64 external_trace_entry64;
+typedef struct trace_entry trace_entry;
 
 /*
  * Trace operations for RAW and HISTORY
