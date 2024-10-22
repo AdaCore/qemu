@@ -94,7 +94,6 @@
 #error "Unknown architecture"
 #endif
 
-static uint64_t tracefile_limit = 0;
 static FILE *tracefile;
 
 #define MAX_TRACE_ENTRIES 1024
@@ -102,9 +101,9 @@ static trace_entry trace_entries[MAX_TRACE_ENTRIES];
 static TranslationBlock *trace_current_tb;
 
 static trace_entry *trace_current = trace_entries;
+
+static struct exec_trace_config config;
 int                 tracefile_enabled;
-static int          tracefile_nobuf;
-static int          tracefile_history;
 
 static int           nbr_histmap_entries;
 static target_ulong *histmap_entries;
@@ -144,7 +143,7 @@ void tracefile_history_for_tb_search(TranslationBlock *tb)
 {
     tb->tflags |= TRACE_OP_HIST_CACHE;
 
-    if (tracefile_history) {
+    if (config.history) {
         tb->tflags |= TRACE_OP_HIST_SET;
         return;
     }
@@ -188,9 +187,9 @@ static void exec_trace_flush(void)
         return;
     }
 
-    if (tracefile_limit) {
+    if (config.tracefile_limit) {
         written += len;
-        if ((tracefile_limit < written)) {
+        if ((config.tracefile_limit < written)) {
             if (!limit_hit) {
                 /* Don't throw the debug message more than one time.. in
                  * particular this code can be triggered from the atexit
@@ -199,7 +198,7 @@ static void exec_trace_flush(void)
                  */
                 limit_hit++;
                 qemu_exit_with_debug("\nQEMU exec-trace limit exceeded (%u)"
-                                     "\n", tracefile_limit);
+                                     "\n", config.tracefile_limit);
             } else {
                 /* Don't write anything we already reached the limit. */
                 return;
@@ -223,7 +222,7 @@ static void exec_trace_flush(void)
     }
 
     trace_current = trace_entries;
-    if (tracefile_nobuf) {
+    if (config.nobuf) {
         fflush(tracefile);
     }
 }
@@ -232,14 +231,15 @@ void exec_trace_cleanup(void)
 {
     if (tracefile_enabled) {
         exec_trace_flush();
+        if (config.histmap_filename) {
+            free(config.histmap_filename);
+        }
         fclose(tracefile);
     }
 }
 
-static void exec_read_map_file(char **poptarg)
+static void exec_read_map_file(char *filename)
 {
-    char *filename = *poptarg;
-    char *efilename = strchr(filename, ',');
     FILE *histfile;
     off_t length;
     int i;
@@ -250,13 +250,6 @@ static void exec_read_map_file(char **poptarg)
 #else
     external_trace_entry32 ent;
 #endif
-
-    if (efilename == NULL) {
-        fprintf(stderr, "missing ',' after filename for --trace histmap=");
-        exit(1);
-    }
-    *efilename = 0;
-    *poptarg = efilename + 1;
 
     histfile = fopen(filename, "rb");
     if (histfile == NULL) {
@@ -329,48 +322,61 @@ static void exec_read_map_file(char **poptarg)
     }
 
     fclose(histfile);
-    *efilename = ',';
 }
 
 void exec_trace_init(const char *optarg)
 {
-    static struct trace_header hdr  = { QEMU_TRACE_MAGIC };
-    static int opt_trace_seen;
-    int noappend = 0;
-    int kind = QEMU_TRACE_KIND_RAW;
+    static struct trace_header hdr = { QEMU_TRACE_MAGIC };
+    static bool opt_trace_seen;
+
+    /* Default is RAW. */
+    config.kind = QEMU_TRACE_KIND_RAW;
 
     if (opt_trace_seen) {
         fprintf(stderr, "option -trace already specified\n");
         exit(1);
     }
-    opt_trace_seen = 1;
+    opt_trace_seen = true;
 
     while (1) {
         if (strstart(optarg, "nobuf,", &optarg)) {
-            tracefile_nobuf = 1;
+            config.nobuf = true;
         } else if (strstart(optarg, "history,", &optarg)) {
-            tracefile_history = 1;
-            kind = QEMU_TRACE_KIND_HISTORY;
+            config.history = true;
+            config.kind = QEMU_TRACE_KIND_HISTORY;
         } else if (strstart(optarg, "noappend,", &optarg)) {
-            noappend = 1;
+            config.noappend = true;
         } else if (strstart(optarg, "histmap=", &optarg)) {
-            exec_read_map_file((char **)&optarg);
-            kind = QEMU_TRACE_KIND_HISTORY;
+            char *efilename = strchr(optarg, ',');
+            if (efilename == NULL) {
+                fprintf(stderr, "missing ',' after filename for --trace histmap=");
+                exit(1);
+            }
+            config.histmap_filename=g_strndup(optarg, efilename - optarg);
+            config.kind = QEMU_TRACE_KIND_HISTORY;
+
+            optarg = efilename + 1;
         } else {
             break;
         }
     }
 
-    tracefile = fopen(optarg, noappend ? "wb" : "ab");
+
+    config.trace_filename = g_strdup(optarg);
+    tracefile = fopen(config.trace_filename, config.noappend ? "wb" : "ab");
 
     if (tracefile == NULL) {
         fprintf(stderr, "can't open file %s\n", optarg);
         exit(1);
     }
+    if (config.histmap_filename) {
+        exec_read_map_file(config.histmap_filename);
+    }
 
+    /* Write header */
     hdr.version = QEMU_TRACE_VERSION;
     hdr.sizeof_target_pc = sizeof(target_ulong);
-    hdr.kind = kind;
+    hdr.kind = config.kind;
 #ifdef WORDS_BIGENDIAN
     hdr.big_endian = 1;
 #else
@@ -389,7 +395,7 @@ void exec_trace_init(const char *optarg)
 
 void exec_trace_limit(const char *optarg)
 {
-    parse_option_size("maxsize", optarg, &tracefile_limit, NULL);
+    parse_option_size("maxsize", optarg, &config.tracefile_limit, NULL);
 }
 
 void exec_trace_push_entry(void)
@@ -401,7 +407,7 @@ void exec_trace_push_entry(void)
 #endif
 
     if (++trace_current == trace_entries + MAX_TRACE_ENTRIES
-        || tracefile_nobuf) {
+        || config.nobuf) {
         exec_trace_flush();
     }
 }
@@ -421,7 +427,7 @@ void exec_trace_special(uint16_t subop, uint32_t data)
       histmap_loadaddr = data;
 
     if (++trace_current == trace_entries + MAX_TRACE_ENTRIES
-        || tracefile_nobuf) {
+        || config.nobuf) {
         exec_trace_flush();
     }
 }
