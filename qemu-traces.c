@@ -94,12 +94,6 @@
 #error "Unknown architecture"
 #endif
 
-#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
-typedef struct trace_entry64 trace_entry;
-#else
-typedef struct trace_entry32 trace_entry;
-#endif
-
 static uint64_t tracefile_limit = 0;
 static FILE *tracefile;
 
@@ -118,6 +112,33 @@ static target_ulong histmap_loadaddr;
 
 /* Implemented in vl.c  */
 void qemu_exit_with_debug(const char *fmt, ...);
+
+#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
+static void to_external_entry_64(const trace_entry *ent, external_trace_entry64 *ent64) {
+    ent64->pc = ent->pc;
+    ent64->size = ent->size;
+    ent64->op = ent->op;
+}
+
+static void to_internal_entry_64(const external_trace_entry64 *ent64, trace_entry *ent) {
+    ent->pc = ent64->pc;
+    ent->size = ent64->size;
+    ent->op = ent64->op;
+}
+#else
+static void to_external_entry_32(const trace_entry *ent, external_trace_entry32 *ent32) {
+    ent32->pc = ent->pc;
+    ent32->size = ent->size;
+    ent32->op = ent->op;
+}
+
+static void to_internal_entry_32(const external_trace_entry32 *ent32, trace_entry *ent) {
+    ent->pc = ent32->pc;
+    ent->size = ent32->size;
+    ent->op = ent32->op;
+}
+#endif
+
 
 void tracefile_history_for_tb_search(TranslationBlock *tb)
 {
@@ -155,7 +176,13 @@ static void exec_trace_flush(void)
      */
     static uint64_t written = sizeof(struct trace_header);
     static int limit_hit = 0;
-    size_t len = (trace_current - trace_entries) * sizeof(trace_entries[0]);
+#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
+    external_trace_entry64 *to_be_written;
+#else
+    external_trace_entry32 *to_be_written;
+#endif
+
+    size_t len = (trace_current - trace_entries) * sizeof(*to_be_written);
 
     if (!len) {
         return;
@@ -180,7 +207,17 @@ static void exec_trace_flush(void)
         }
     }
 
-    if (fwrite(trace_entries, len, 1, tracefile) != 1) {
+    /* Allocate external entries  */
+    to_be_written = g_malloc0(len);
+    for (int i = 0; i < (trace_current - trace_entries) ; i++) {
+#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
+        to_external_entry_64(trace_entries + i, to_be_written + i);
+#else
+        to_external_entry_32(trace_entries + i, to_be_written + i);
+#endif
+    }
+
+    if (fwrite(to_be_written, len, 1, tracefile) != 1) {
         fprintf(stderr, "exec_trace_flush failed\n");
         exit(1);
     }
@@ -208,7 +245,11 @@ static void exec_read_map_file(char **poptarg)
     int i;
     int my_endian;
     struct trace_header hdr;
-    trace_entry ent;
+#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
+    external_trace_entry64 ent;
+#else
+    external_trace_entry32 ent;
+#endif
 
     if (efilename == NULL) {
         fprintf(stderr, "missing ',' after filename for --trace histmap=");
@@ -249,11 +290,11 @@ static void exec_read_map_file(char **poptarg)
     }
     length -= sizeof(hdr);
 
-    if ((length % sizeof(trace_entry)) != 0) {
+    if ((length % sizeof(ent)) != 0) {
         fprintf(stderr, "bad length of histmap file '%s'\n", filename);
         exit(1);
     }
-    nbr_histmap_entries = length / sizeof(trace_entry);
+    nbr_histmap_entries = length / sizeof(ent);
     if (nbr_histmap_entries) {
         histmap_entries =
             g_malloc(nbr_histmap_entries * sizeof(target_ulong));
