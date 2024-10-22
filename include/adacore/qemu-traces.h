@@ -99,6 +99,18 @@ typedef struct external_trace_entry32 external_trace_entry32;
 typedef struct external_trace_entry64 external_trace_entry64;
 typedef struct trace_entry trace_entry;
 
+/* Structure recording the configuration for the trace generation.  */
+struct exec_trace_config {
+    /* Properties has set by the command line options.  */
+    char *trace_filename;
+    char *histmap_filename;
+    bool nobuf;
+    bool noappend;
+    bool history;
+    uint8_t kind;
+    uint64_t tracefile_limit;
+};
+
 /*
  * Trace operations for RAW and HISTORY
  */
