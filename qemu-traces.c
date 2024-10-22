@@ -90,16 +90,6 @@
 #define ELF_MACHINE EM_RISCV
 #define TRACE_TARGET_SIZE TRACE_TARGET_32BIT
 
-#elif defined(TARGET_M68K)
-
-#define ELF_MACHINE EM_68K
-#define TRACE_TARGET_SIZE TRACE_TARGET_32BIT
-
-#elif defined(TARGET_AVR)
-
-#define ELF_MACHINE EM_AVR
-#define TRACE_TARGET_SIZE TRACE_TARGET_32BIT
-
 #else
 #error "Unknown architecture"
 #endif
