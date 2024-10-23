@@ -324,9 +324,12 @@ static void exec_read_map_file(char *filename)
     fclose(histfile);
 }
 
-void exec_trace_init(const char *optarg)
+/*
+ * This function retrieves -exec-trace arguments and fill
+ * config structure aaccordingly.
+ */
+void exec_trace_opts_parse(const char *optarg)
 {
-    static struct trace_header hdr = { QEMU_TRACE_MAGIC };
     static bool opt_trace_seen;
 
     /* Default is RAW. */
@@ -361,8 +364,24 @@ void exec_trace_init(const char *optarg)
         }
     }
 
-
     config.trace_filename = g_strdup(optarg);
+
+    atexit(exec_trace_cleanup);
+    tracefile_enabled = 1;
+}
+
+/*
+ * This function initialized the trace mechanism based on the options
+ * parsed earlier. It expects the machine to be instantiated to
+ * retrieve various informations.
+ */
+void exec_trace_init(void)
+{
+    if (!tracefile_enabled) {
+        return;
+    }
+
+    static struct trace_header hdr = { QEMU_TRACE_MAGIC };
     tracefile = fopen(config.trace_filename, config.noappend ? "wb" : "ab");
 
     if (tracefile == NULL) {
@@ -388,9 +407,6 @@ void exec_trace_init(const char *optarg)
         fprintf(stderr, "can't write trace header on %s\n", optarg);
         exit(1);
     }
-
-    atexit(exec_trace_cleanup);
-    tracefile_enabled = 1;
 }
 
 void exec_trace_limit(const char *optarg)
