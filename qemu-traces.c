@@ -27,6 +27,7 @@
 #include "qemu/osdep.h"
 #include "qemu/cutils.h"
 #include "elf.h"
+#include "hw/boards.h"
 #include "qemu/option.h"
 #include "tcg/tcg.h"
 
@@ -40,55 +41,30 @@
    defines are forbidden to be included in "non-target" files such
    as vl.c or cpu-exec.c.
    Thus, we must controlled target related definitions here.  */
-#if defined(TARGET_PPC)
+#if defined(TARGET_PPC) || defined(TARGET_PPC64)
 
-#define ELF_MACHINE EM_PPC
-#define TRACE_TARGET_SIZE TRACE_TARGET_32BIT
+#define ELF_MACHINE32 EM_PPC
+#define ELF_MACHINE64 EM_PPC64
 
-#elif defined(TARGET_PPC64)
+#elif defined(TARGET_ARM) || defined(TARGET_AARCH64)
 
-#define ELF_MACHINE EM_PPC64
-#define TRACE_TARGET_SIZE TRACE_TARGET_64BIT
+#define ELF_MACHINE32 EM_ARM
+#define ELF_MACHINE64 EM_AARCH64
 
-#elif defined(TARGET_AARCH64)
+#elif defined(TARGET_SPARC) || defined(TARGET_SPARC64)
 
-#define ELF_MACHINE EM_AARCH64
-#define TRACE_TARGET_SIZE TRACE_TARGET_64BIT
+#define ELF_MACHINE32 EM_SPARC
+#define ELF_MACHINE64 EM_SPARCV9
 
-#elif defined(TARGET_ARM)
+#elif defined(TARGET_I386) || defined(TARGET_X86_64)
 
-#define ELF_MACHINE EM_ARM
-#define TRACE_TARGET_SIZE TRACE_TARGET_32BIT
+#define ELF_MACHINE32 EM_386
+#define ELF_MACHINE64 EM_386
 
-#elif defined(TARGET_SPARC)
+#elif defined(TARGET_RISCV32) || defined(TARGET_RISCV64)
 
-#define ELF_MACHINE EM_SPARC
-#define TRACE_TARGET_SIZE TRACE_TARGET_32BIT
-
-#elif defined(TARGET_SPARC64)
-
-#define ELF_MACHINE EM_SPARCV9
-#define TRACE_TARGET_SIZE TRACE_TARGET_64BIT
-
-#elif defined(TARGET_I386)
-
-#define ELF_MACHINE EM_386
-#define TRACE_TARGET_SIZE TRACE_TARGET_32BIT
-
-#elif defined(TARGET_X86_64)
-
-#define ELF_MACHINE EM_386_64
-#define TRACE_TARGET_SIZE TRACE_TARGET_64BIT
-
-#elif defined(TARGET_RISCV64)
-
-#define ELF_MACHINE EM_RISCV
-#define TRACE_TARGET_SIZE TRACE_TARGET_64BIT
-
-#elif defined(TARGET_RISCV32)
-
-#define ELF_MACHINE EM_RISCV
-#define TRACE_TARGET_SIZE TRACE_TARGET_32BIT
+#define ELF_MACHINE32 EM_RISCV
+#define ELF_MACHINE64 EM_RISCV
 
 #else
 #error "Unknown architecture"
@@ -112,7 +88,6 @@ static target_ulong histmap_loadaddr;
 /* Implemented in vl.c  */
 void qemu_exit_with_debug(const char *fmt, ...);
 
-#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
 static void to_external_entry_64(const trace_entry *ent, external_trace_entry64 *ent64) {
     ent64->pc = ent->pc;
     ent64->size = ent->size;
@@ -124,7 +99,7 @@ static void to_internal_entry_64(const external_trace_entry64 *ent64, trace_entr
     ent->size = ent64->size;
     ent->op = ent64->op;
 }
-#else
+
 static void to_external_entry_32(const trace_entry *ent, external_trace_entry32 *ent32) {
     ent32->pc = ent->pc;
     ent32->size = ent->size;
@@ -136,7 +111,6 @@ static void to_internal_entry_32(const external_trace_entry32 *ent32, trace_entr
     ent->size = ent32->size;
     ent->op = ent32->op;
 }
-#endif
 
 
 void tracefile_history_for_tb_search(TranslationBlock *tb)
@@ -175,13 +149,14 @@ static void exec_trace_flush(void)
      */
     static uint64_t written = sizeof(struct trace_header);
     static int limit_hit = 0;
-#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
-    external_trace_entry64 *to_be_written;
-#else
-    external_trace_entry32 *to_be_written;
-#endif
+    void *to_be_written;
+    size_t len;
 
-    size_t len = (trace_current - trace_entries) * sizeof(*to_be_written);
+    if (config.is_32bit) {
+        len = (trace_current - trace_entries) * sizeof(struct external_trace_entry32);
+    } else {
+        len = (trace_current - trace_entries) * sizeof(struct external_trace_entry64);
+    }
 
     if (!len) {
         return;
@@ -209,11 +184,15 @@ static void exec_trace_flush(void)
     /* Allocate external entries  */
     to_be_written = g_malloc0(len);
     for (int i = 0; i < (trace_current - trace_entries) ; i++) {
-#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
-        to_external_entry_64(trace_entries + i, to_be_written + i);
-#else
-        to_external_entry_32(trace_entries + i, to_be_written + i);
-#endif
+        if (config.is_32bit) {
+            to_external_entry_32(
+                trace_entries + i,
+                ((struct external_trace_entry32*) to_be_written ) + i);
+        } else {
+            to_external_entry_64(
+                trace_entries + i,
+                ((struct external_trace_entry64*) to_be_written ) + i);
+        }
     }
 
     if (fwrite(to_be_written, len, 1, tracefile) != 1) {
@@ -251,13 +230,14 @@ static void exec_read_map_file(char *filename)
     FILE *histfile;
     off_t length;
     int i;
-    int my_endian;
     struct trace_header hdr;
-#if TRACE_TARGET_SIZE == TRACE_TARGET_64BIT
-    external_trace_entry64 ent;
-#else
-    external_trace_entry32 ent;
-#endif
+    size_t ent_size;
+
+    if (config.is_32bit) {
+        ent_size = sizeof(struct external_trace_entry32);
+    } else {
+        ent_size = sizeof(struct external_trace_entry64);
+    }
 
     histfile = fopen(filename, "rb");
     if (histfile == NULL) {
@@ -281,13 +261,15 @@ static void exec_read_map_file(char *filename)
         hdr.kind != QEMU_TRACE_KIND_DECISION_MAP,
         "kind", filename);
     exec_trace_check_hdr_helper(
-        hdr.sizeof_target_pc != sizeof(target_ulong),
+        hdr.sizeof_target_pc != (config.is_32bit ? 4 : 8),
         "sizeof pc", filename);
     exec_trace_check_hdr_helper(
         hdr.big_endian != 0 && hdr.big_endian != 1,
         "endianness", filename);
     exec_trace_check_hdr_helper(
-        hdr.machine[0] != (ELF_MACHINE >> 8) || hdr.machine[1] != (ELF_MACHINE & 0xff),
+        config.is_32bit ?
+        (hdr.machine[0] != (ELF_MACHINE32 >> 8) || hdr.machine[1] != (ELF_MACHINE32 & 0xff)):
+        (hdr.machine[0] != (ELF_MACHINE64 >> 8) || hdr.machine[1] != (ELF_MACHINE64 & 0xff)),
         "machine", filename);
     exec_trace_check_hdr_helper(hdr._pad != 0, "padding", filename);
 
@@ -301,29 +283,34 @@ static void exec_read_map_file(char *filename)
     }
     length -= sizeof(hdr);
 
-    if ((length % sizeof(ent)) != 0) {
+    if ((length % ent_size) != 0) {
         fprintf(stderr, "bad length of histmap file '%s'\n", filename);
         exit(1);
     }
-    nbr_histmap_entries = length / sizeof(ent);
+    nbr_histmap_entries = length / ent_size;
     if (nbr_histmap_entries) {
         histmap_entries =
             g_malloc(nbr_histmap_entries * sizeof(target_ulong));
     }
 
-#ifdef WORDS_BIGENDIAN
-    my_endian = 1;
-#else
-    my_endian = 0;
-#endif
-
     for (i = 0; i < nbr_histmap_entries; i++) {
-        if (fread(&ent, sizeof(ent), 1, histfile) != 1) {
+        trace_entry ent;
+        void *raw_ent = g_malloc(ent_size);
+
+        if (fread(raw_ent, ent_size, 1, histfile) != 1) {
             fprintf(stderr, "cannot read histmap file entry from '%s'\n",
                     filename);
             exit(1);
         }
-        if (my_endian != hdr.big_endian) {
+
+        /* Retrieve PC */
+        if (config.is_32bit) {
+            to_internal_entry_32((struct external_trace_entry32*) raw_ent, &ent);
+        } else {
+            to_internal_entry_64((struct external_trace_entry64*) raw_ent, &ent);
+        }
+
+        if (config.big_endian != hdr.big_endian) {
             if (sizeof(ent.pc) == 4) {
                 ent.pc = bswap32(ent.pc);
             } else {
@@ -337,7 +324,9 @@ static void exec_read_map_file(char *filename)
         }
 
         histmap_entries[i] = ent.pc;
+        free(raw_ent);
     }
+
 
     fclose(histfile);
 }
@@ -388,20 +377,50 @@ void exec_trace_opts_parse(const char *optarg)
     tracefile_enabled = 1;
 }
 
+/* Fetch machine-dependenty configuration, such as 32bit or 64bit CPUs. */
+static void exec_trace_finalize_config(void) {
+#if defined(TARGET_PPC) || defined(TARGET_SPARC) \
+    || defined(TARGET_RISCV32) || defined(TARGET_I386)
+    config.is_32bit = true;
+#elif defined(TARGET_PPC64) || defined(TARGET_SPACEV9)      \
+    || defined(TARGET_RISCV64) || defined(TARGET_X86_64)
+    config.is_32bit = false;
+#elif defined(TARGET_ARM) || defined(TARGET_AARCH64)
+    /*
+     * Get architecture information for the CPUs.
+     * XXX: doesn't work with boards having CPUs with different
+     * architectures.
+     */
+    ARMCPU *cpu = ARM_CPU(qemu_get_cpu(0));
+    CPUARMState *env = &cpu->env;
+
+    config.is_32bit = !is_a64(env);
+#endif
+
+#ifdef WORDS_BIGENDIAN
+    config.big_endian = 1;
+#else
+    config.big_endian = 0;
+#endif
+
+}
+
 /* Write the trace file header.  */
 static void exec_trace_write_header(void){
     struct trace_header hdr = { QEMU_TRACE_MAGIC };
 
     hdr.version = QEMU_TRACE_VERSION;
-    hdr.sizeof_target_pc = sizeof(target_ulong);
     hdr.kind = config.kind;
-#ifdef WORDS_BIGENDIAN
-    hdr.big_endian = 1;
-#else
-    hdr.big_endian = 0;
-#endif
-    hdr.machine[0] = ELF_MACHINE >> 8;
-    hdr.machine[1] = ELF_MACHINE & 0xff;
+    hdr.big_endian = config.big_endian ? 1 : 0;
+    if (config.is_32bit) {
+        hdr.sizeof_target_pc = 4;
+        hdr.machine[0] = ELF_MACHINE32 >> 8;
+        hdr.machine[1] = ELF_MACHINE32 & 0xff;
+    } else {
+        hdr.sizeof_target_pc = 8;
+        hdr.machine[0] = ELF_MACHINE64 >> 8;
+        hdr.machine[1] = ELF_MACHINE64 & 0xff;
+    }
     if (fwrite(&hdr, sizeof(hdr), 1, tracefile) != 1) {
         fprintf(stderr, "can't write trace header on %s\n", optarg);
         exit(1);
@@ -425,6 +444,10 @@ void exec_trace_init(void)
         fprintf(stderr, "can't open file %s\n", optarg);
         exit(1);
     }
+
+    /* Initialize missing part of the configuration.  */
+    exec_trace_finalize_config();
+
     if (config.histmap_filename) {
         exec_read_map_file(config.histmap_filename);
     }

@@ -109,6 +109,10 @@ struct exec_trace_config {
     bool history;
     uint8_t kind;
     uint64_t tracefile_limit;
+
+    /* Target configuration */
+    bool is_32bit;
+    bool big_endian;
 };
 
 /*
