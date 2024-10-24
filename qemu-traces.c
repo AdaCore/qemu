@@ -370,29 +370,10 @@ void exec_trace_opts_parse(const char *optarg)
     tracefile_enabled = 1;
 }
 
-/*
- * This function initialized the trace mechanism based on the options
- * parsed earlier. It expects the machine to be instantiated to
- * retrieve various informations.
- */
-void exec_trace_init(void)
-{
-    if (!tracefile_enabled) {
-        return;
-    }
+/* Write the trace file header.  */
+static void exec_trace_write_header(void){
+    struct trace_header hdr = { QEMU_TRACE_MAGIC };
 
-    static struct trace_header hdr = { QEMU_TRACE_MAGIC };
-    tracefile = fopen(config.trace_filename, config.noappend ? "wb" : "ab");
-
-    if (tracefile == NULL) {
-        fprintf(stderr, "can't open file %s\n", optarg);
-        exit(1);
-    }
-    if (config.histmap_filename) {
-        exec_read_map_file(config.histmap_filename);
-    }
-
-    /* Write header */
     hdr.version = QEMU_TRACE_VERSION;
     hdr.sizeof_target_pc = sizeof(target_ulong);
     hdr.kind = config.kind;
@@ -407,6 +388,30 @@ void exec_trace_init(void)
         fprintf(stderr, "can't write trace header on %s\n", optarg);
         exit(1);
     }
+}
+
+/*
+ * This function initialized the trace mechanism based on the options
+ * parsed earlier. It expects the machine to be instantiated to
+ * retrieve various informations.
+ */
+void exec_trace_init(void)
+{
+    if (!tracefile_enabled) {
+        return;
+    }
+
+    tracefile = fopen(config.trace_filename, config.noappend ? "wb" : "ab");
+
+    if (tracefile == NULL) {
+        fprintf(stderr, "can't open file %s\n", optarg);
+        exit(1);
+    }
+    if (config.histmap_filename) {
+        exec_read_map_file(config.histmap_filename);
+    }
+
+    exec_trace_write_header();
 }
 
 void exec_trace_limit(const char *optarg)
