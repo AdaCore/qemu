@@ -238,6 +238,14 @@ void exec_trace_cleanup(void)
     }
 }
 
+/* Helper function to verify the validity for histmap file header.  */
+static void exec_trace_check_hdr_helper(bool cond, const char *msg, char *filename) {
+    if (cond) {
+        fprintf(stderr, "bad header (%s) for histmap file '%s'\n", msg, filename);
+        exit(1);
+    }
+}
+
 static void exec_read_map_file(char *filename)
 {
     FILE *histfile;
@@ -261,17 +269,27 @@ static void exec_read_map_file(char *filename)
                 filename);
         exit(1);
     }
-    if (memcmp(hdr.magic, QEMU_TRACE_MAGIC, sizeof(hdr.magic)) != 0
-        || hdr.version != QEMU_TRACE_VERSION
-        || hdr.kind != QEMU_TRACE_KIND_DECISION_MAP
-        || hdr.sizeof_target_pc != sizeof(target_ulong)
-        || (hdr.big_endian != 0 && hdr.big_endian != 1)
-        || hdr.machine[0] != (ELF_MACHINE >> 8)
-        || hdr.machine[1] != (ELF_MACHINE & 0xff)
-        || hdr._pad != 0) {
-        fprintf(stderr, "bad header for histmap file '%s'\n", filename);
-        exit(1);
-    }
+
+    /* Verify header fields.  */
+    exec_trace_check_hdr_helper(
+        memcmp(hdr.magic, QEMU_TRACE_MAGIC, sizeof(hdr.magic)) != 0,
+        "magic", filename);
+    exec_trace_check_hdr_helper(
+        hdr.version != QEMU_TRACE_VERSION,
+        "version", filename);
+    exec_trace_check_hdr_helper(
+        hdr.kind != QEMU_TRACE_KIND_DECISION_MAP,
+        "kind", filename);
+    exec_trace_check_hdr_helper(
+        hdr.sizeof_target_pc != sizeof(target_ulong),
+        "sizeof pc", filename);
+    exec_trace_check_hdr_helper(
+        hdr.big_endian != 0 && hdr.big_endian != 1,
+        "endianness", filename);
+    exec_trace_check_hdr_helper(
+        hdr.machine[0] != (ELF_MACHINE >> 8) || hdr.machine[1] != (ELF_MACHINE & 0xff),
+        "machine", filename);
+    exec_trace_check_hdr_helper(hdr._pad != 0, "padding", filename);
 
     /* Get number of entries. */
     if (fseek(histfile, 0, SEEK_END) != 0
