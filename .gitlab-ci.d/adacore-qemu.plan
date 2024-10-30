@@ -12,7 +12,6 @@ def aci_qemu_rebuild():
 
     qemu_cpus = (
         "aarch64",
-        "arm",
         "i386",
         "ppc",
         "ppc64",
