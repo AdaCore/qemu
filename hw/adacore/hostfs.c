@@ -26,6 +26,7 @@
 #include "hw/qdev-core.h"
 #include "hw/hw.h"
 #include "hw/sysbus.h"
+#include "cpu.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/runstate.h"
 #include "trace.h"
@@ -40,22 +41,10 @@ typedef struct hostfs_Register_Definition {
     uint32_t offset;
     const char *name;
     const char *desc;
-    uint32_t access;
     uint64_t reset;
 } hostfs_Register_Definition;
 
-#define ACC_RW      1           /* Read/Write */
-#define ACC_RO      2           /* Read Only */
-#define ACC_WO      3           /* Write Only */
-#define ACC_w1c     4           /* Write 1 to clear */
-#define ACC_UNKNOWN 4           /* Unknown register */
-
-#if defined(TARGET_AARCH64) || defined(TARGET_PPC64) || \
-    defined(TARGET_X86_64) || defined(TARGET_RISCV64)
 #define HOSTFS_REG_SIZE (8)
-#else
-#define HOSTFS_REG_SIZE (4)
-#endif
 
 /* Index of each register */
 #define HOSTFS_SYSCALL_ID (0)
@@ -75,20 +64,19 @@ typedef struct hostfs_Register_Definition {
 #define HOSTFS_ARG5_OFFSET       (HOSTFS_ARG5 * HOSTFS_REG_SIZE)
 
 const hostfs_Register_Definition hostfs_registers_def[] = {
-    {HOSTFS_SYSCALL_ID_OFFSET, "SYSCALL_ID", "Syscall ID", ACC_RW, 0},
-    {HOSTFS_ARG1_OFFSET, "ARG1", "1st argument", ACC_RW, 0},
-    {HOSTFS_ARG2_OFFSET, "ARG2", "2nd argument", ACC_RW, 0},
-    {HOSTFS_ARG3_OFFSET, "ARG3", "3rd argument", ACC_RW, 0},
-    {HOSTFS_ARG4_OFFSET, "ARG4", "4th argument", ACC_RW, 0},
-    {HOSTFS_ARG5_OFFSET, "ARG5", "5th argument", ACC_RW, 0},
+    {HOSTFS_SYSCALL_ID_OFFSET, "SYSCALL_ID", "Syscall ID", 0},
+    {HOSTFS_ARG1_OFFSET, "ARG1", "1st argument", 0},
+    {HOSTFS_ARG2_OFFSET, "ARG2", "2nd argument", 0},
+    {HOSTFS_ARG3_OFFSET, "ARG3", "3rd argument", 0},
+    {HOSTFS_ARG4_OFFSET, "ARG4", "4th argument", 0},
+    {HOSTFS_ARG5_OFFSET, "ARG5", "5th argument", 0},
     /* End Of Table */
-    {0x0, 0x0, 0x0, 0x0, 0x0}
+    {0x0, 0x0, 0x0, 0x0}
 };
 
 typedef struct hostfs_Register {
     const char *name;
     const char *desc;
-    uint32_t access;
     uint64_t value;
 } hostfs_Register;
 
@@ -262,23 +250,34 @@ static uint64_t hostfs_read(void *opaque, hwaddr addr, unsigned size)
 
     reg = &hfs->regs[reg_index];
 
-    switch (reg->access) {
-    case ACC_WO:
-        ret = 0x00000000;
-        break;
-
-    case ACC_RW:
-    case ACC_w1c:
-    case ACC_RO:
-    default:
+    if (size == 8) {
         ret = reg->value;
-        break;
+    } else {
+        /* 32bit targets will split the operation into two 4-size access.  */
+        assert (size == 4);
+#if TARGET_BIG_ENDIAN
+        if (addr % HOSTFS_REG_SIZE) {
+            ret = reg->value & 0xFFFFFFFF;
+        } else {
+            ret = reg->value >> 32;
+        }
+#else
+        if (addr % HOSTFS_REG_SIZE) {
+            ret = reg->value >> 32;
+        } else {
+            ret = reg->value & 0xFFFFFFFF;
+        }
+#endif
     }
 
 #ifdef DEBUG_HOSTFS
-    printf("Read  0x%08x @ 0x" HWADDR_FMT_plx
-           "                            : %s (%s)\n",
-           ret, addr, reg->name, reg->desc);
+    if (size == 4) {
+        printf("Read  0x%08lx @ 0lx" HWADDR_FMT_plx" %s (%s)\n",
+               ret, addr, reg->name, reg->desc);
+    } else {
+        printf("Read  0x%016lx @ 0lx" HWADDR_FMT_plx" %s (%s)\n",
+               ret, addr, reg->name, reg->desc);
+    }
 #endif
 
     return ret;
@@ -290,16 +289,44 @@ static void hostfs_write(void *opaque, hwaddr addr, uint64_t value,
     hostfs *hfs = opaque;
     uint64_t reg_index = HOSTFS_REG_INDEX(addr);
     hostfs_Register *reg = NULL;
-    uint64_t before = 0x0;
+    uint64_t before = 0x0, n_value = 0x0;
 
     assert(reg_index < REG_NUMBER);
-    assert(!(addr % HOSTFS_REG_SIZE));
 
     reg = &hfs->regs[reg_index];
     before = reg->value;
 
+
+    if (size == 8) {
+        n_value = value;
+    } else {
+        /* 32bit targets will split the operation into two 4-size access.  */
+        assert (size == 4);
+#if TARGET_BIG_ENDIAN
+        if (addr % HOSTFS_REG_SIZE) {
+            n_value = before | value;
+        } else {
+            n_value = value << 32;
+        }
+#else
+        if (addr % HOSTFS_REG_SIZE) {
+            n_value = value << 32 | before;
+        } else {
+            n_value = value;
+        }
+
+#endif
+    }
+
     switch (reg_index) {
     case HOSTFS_SYSCALL_ID:
+        /*
+         *  32bit targets second access: aborted to avoid calling
+         *  do_syscall twice.
+         */
+        if (size == 4 && value == 0) {
+            break;
+        }
         hfs->regs[HOSTFS_SYSCALL_ID].value = value;
         hfs->regs[HOSTFS_ARG1].value = do_syscall(hfs);
         hfs->regs[HOSTFS_ARG2].value = 0;
@@ -308,29 +335,20 @@ static void hostfs_write(void *opaque, hwaddr addr, uint64_t value,
         hfs->regs[HOSTFS_ARG5].value = 0;
         break;
     default:
-        /* Default handling */
-        switch (reg->access) {
+        reg->value = n_value;
 
-        case ACC_RW:
-        case ACC_WO:
-            reg->value = value;
-            break;
-
-        case ACC_w1c:
-            reg->value &= ~value;
-            break;
-
-        case ACC_RO:
-        default:
-            /* Read Only or Unknown register */
-            break;
-        }
     }
 
 #ifdef DEBUG_HOSTFS
-    printf("Write 0x%08x @ 0x" HWADDR_FMT_plx" val:0x%08x->0x%08x : %s (%s)\n",
-           (unsigned int)value, addr, before, reg->value, reg->name,
-           reg->desc);
+    if (size == 4) {
+        printf("Write 0x%08lx @ 0x" HWADDR_FMT_plx" val:0x%016lx->0x%016lx : %s (%s)\n",
+               value, addr, before, reg->value, reg->name,
+               reg->desc);
+    } else {
+        printf("Write 0x%016lx @ 0x" HWADDR_FMT_plx" val:0x%016lx->0x%016lx : %s (%s)\n",
+               value, addr, before, reg->value, reg->name,
+               reg->desc);
+    }
 #else
     (void)before;
 #endif
@@ -342,12 +360,12 @@ static const MemoryRegionOps hostfs_ops = {
     .write = hostfs_write,
     .endianness = DEVICE_NATIVE_ENDIAN,
     .valid = {
-        .min_access_size = HOSTFS_REG_SIZE,
-        .max_access_size = HOSTFS_REG_SIZE,
+        .min_access_size = 4,
+        .max_access_size = 8,
     },
     .impl = {
-        .min_access_size = HOSTFS_REG_SIZE,
-        .max_access_size = HOSTFS_REG_SIZE,
+        .min_access_size = 4,
+        .max_access_size = 8,
     },
 };
 
@@ -361,7 +379,6 @@ static void hostfs_reset(DeviceState *d)
     for (i = 0; i < REG_NUMBER; i++) {
         hfs->regs[i].name   = "Reserved";
         hfs->regs[i].desc   = "";
-        hfs->regs[i].access = ACC_UNKNOWN;
         hfs->regs[i].value  = 0x00000000;
     }
 
@@ -372,7 +389,6 @@ static void hostfs_reset(DeviceState *d)
 
         hfs->regs[reg_index].name   = hostfs_registers_def[i].name;
         hfs->regs[reg_index].desc   = hostfs_registers_def[i].desc;
-        hfs->regs[reg_index].access = hostfs_registers_def[i].access;
         hfs->regs[reg_index].value  = hostfs_registers_def[i].reset;
     }
 }
