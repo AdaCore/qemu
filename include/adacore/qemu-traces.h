@@ -64,19 +64,55 @@ struct trace_header {
     uint16_t _pad;
 };
 
-/* Header is followed by trace entries.  */
-struct trace_entry32 {
+/*
+ * Header is followed by trace entries.
+ *
+ * The following structures are the external format of this trace
+ * mechanism. They must not be modified as gnatcov must always be
+ * compatible with previous versions.
+ */
+struct external_trace_entry32 {
     uint32_t pc;
     uint16_t size;
     uint8_t  op;
     uint8_t  _pad[1];
 };
 
-struct trace_entry64 {
+struct external_trace_entry64 {
     uint64_t pc;
     uint16_t size;
     uint8_t  op;
     uint8_t  _pad[5];
+};
+
+/*
+ * The structure is internal to the trace mechanism and can be
+ * modified at will.
+ */
+struct trace_entry {
+    uint64_t pc;
+    uint16_t size;
+    uint8_t  op;
+};
+
+typedef struct external_trace_entry32 external_trace_entry32;
+typedef struct external_trace_entry64 external_trace_entry64;
+typedef struct trace_entry trace_entry;
+
+/* Structure recording the configuration for the trace generation.  */
+struct exec_trace_config {
+    /* Properties has set by the command line options.  */
+    char *trace_filename;
+    char *histmap_filename;
+    bool nobuf;
+    bool noappend;
+    bool history;
+    uint8_t kind;
+    uint64_t tracefile_limit;
+
+    /* Target configuration */
+    bool is_32bit;
+    bool big_endian;
 };
 
 /*
@@ -106,8 +142,9 @@ struct trace_entry64 {
 
 extern int tracefile_enabled;
 
-void exec_trace_init(const char *optarg);
+void exec_trace_opts_parse(const char *optarg);
 void exec_trace_limit(const char *optarg);
+void exec_trace_init(void);
 void exec_trace_cleanup(void);
 void exec_trace_push_entry(void);
 void exec_trace_special(uint16_t subop, uint32_t data);

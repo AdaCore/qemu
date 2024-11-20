@@ -3302,7 +3302,8 @@ void tcg_gen_exit_tb(const TranslationBlock *tb, unsigned idx)
     uintptr_t val = (uintptr_t)tcg_splitwx_to_rx((void *)tb) + idx;
 
     if (tb == NULL) {
-        tcg_debug_assert(idx == 0);
+        /* Ignore TB_EXIT_NOPATCH */
+        tcg_debug_assert((idx & ~TB_EXIT_NOPATCH) == 0);
     } else {
         if (idx | TB_EXIT_NOPATCH) {
             /* This is allowed to happen with a number unlike
