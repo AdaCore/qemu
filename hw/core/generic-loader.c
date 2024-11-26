@@ -192,7 +192,8 @@ static void generic_loader_realize(DeviceState *dev, Error **errp)
         /* Check if the file is a device-tree, in which case try to set the
          * correct address later.  */
         if (size < 0) {
-            void *fdt = load_device_tree(s->file, &size);
+            int fdt_size;
+            void *fdt = load_device_tree(s->file, &fdt_size);
 
             if (fdt) {
                 if (s->cpu_num != CPU_NONE) {
