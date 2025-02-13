@@ -751,6 +751,9 @@ void do_common_semihosting(CPUState *cs)
              * Everything else is considered an error.
              */
             ret = (args == ADP_Stopped_ApplicationExit) ? 0 : 1;
+
+            /* Overide ADP_Stopped_ApplicationExit check for GNATemu */
+            ret = 0;
         }
         gdb_exit(ret);
         exit(ret);

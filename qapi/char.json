@@ -233,10 +233,13 @@
 # @device: The name of the special file for the device, i.e.
 #     /dev/ttyS0 on Unix or COM1: on Windows
 #
+# @server: create server socket (default: true)
+#
 # Since: 1.4
 ##
 { 'struct': 'ChardevHostdev',
-  'data': { 'device': 'str' },
+  'data': { 'device': 'str',
+            '*server': 'bool' },
   'base': 'ChardevCommon' }
 
 ##
@@ -282,6 +285,10 @@
 #     mutually exclusive with @reconnect.
 #     (default: 0) (Since: 9.2)
 #
+# @timeout: make several attemps to connect (1 every seconds for N
+#     seconds) instead of failing directly if the connection is
+#     refused
+#
 # Features:
 #
 # @deprecated: Member @reconnect is deprecated.  Use @reconnect-ms
@@ -300,7 +307,8 @@
             '*tn3270': 'bool',
             '*websocket': 'bool',
             '*reconnect': { 'type': 'int', 'features': [ 'deprecated' ] },
-            '*reconnect-ms': 'int' },
+            '*reconnect-ms': 'int',
+            '*timeout': 'int' },
   'base': 'ChardevCommon' }
 
 ##

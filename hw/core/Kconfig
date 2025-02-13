@@ -16,6 +16,7 @@ config FITLOADER
 config GENERIC_LOADER
     bool
     default y
+    depends on DEVICE_TREE
 
 config GUEST_LOADER
     bool

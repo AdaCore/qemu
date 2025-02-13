@@ -1,3 +1,9 @@
+config ZYNQ_DDRC
+    bool
+
+config XLNX_CRL
+    bool
+
 config APPLESMC
     bool
     depends on ISA_BUS
@@ -103,6 +109,9 @@ config STM32L4X5_RCC
     bool
 
 config MIPS_ITU
+    bool
+
+config	FMAN_V3
     bool
 
 config MPS2_FPGAIO

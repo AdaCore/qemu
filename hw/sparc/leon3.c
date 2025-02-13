@@ -41,11 +41,16 @@
 #include "hw/loader.h"
 #include "elf.h"
 #include "trace.h"
+#include "exec/address-spaces.h"
+#include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
 
 #include "hw/timer/grlib_gptimer.h"
 #include "hw/char/grlib_uart.h"
 #include "hw/intc/grlib_irqmp.h"
 #include "hw/misc/grlib_ahb_apb_pnp.h"
+
+#define MAX_IRQ (16)
 
 /* Default system clock.  */
 #define CPU_CLK (40 * 1000 * 1000)
@@ -63,10 +68,50 @@
 
 #define LEON3_TIMER_OFFSET (0x80000300)
 #define LEON3_TIMER_IRQ    (6)
-#define LEON3_TIMER_COUNT  (2)
+#define LEON3_TIMER_COUNT  (4)
 
 #define LEON3_APB_PNP_OFFSET (0x800FF000)
 #define LEON3_AHB_PNP_OFFSET (0xFFFFF000)
+
+/*
+ * In order to make some aspect of this board configurable this device is
+ * created in order to add some properties to the machine.
+ */
+#define TYPE_LEON3_CONF "leon3-conf"
+#define LEON3_CONF(obj) OBJECT_CHECK(Leon3ConfState, (obj), TYPE_LEON3_CONF)
+
+typedef struct Leon3ConfState {
+    DeviceState parent;
+
+    uint32_t gptimer_irq_base;
+} Leon3ConfState;
+
+static Property leon3_conf_properties[] = {
+    DEFINE_PROP_UINT32("gptimer-irq-base", Leon3ConfState, gptimer_irq_base,
+                       LEON3_TIMER_IRQ),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
+static void leon3_conf_class_init(ObjectClass *oc, void *data)
+{
+    DeviceClass *dc = DEVICE_CLASS(oc);
+
+    device_class_set_props(dc, leon3_conf_properties);
+}
+
+static const TypeInfo leon3_conf_info = {
+    .name          = TYPE_LEON3_CONF,
+    .parent        = TYPE_DEVICE,
+    .instance_size = sizeof(Leon3ConfState),
+    .class_init    = leon3_conf_class_init,
+};
+
+static void leon3_conf_register_types(void)
+{
+    type_register_static(&leon3_conf_info);
+}
+
+type_init(leon3_conf_register_types)
 
 typedef struct ResetData {
     struct CPUResetData {
@@ -272,6 +317,11 @@ static void leon3_generic_hw_init(MachineState *machine)
     int i;
     AHBPnp *ahb_pnp;
     APBPnp *apb_pnp;
+    qemu_irq *gnatbus_irqs;
+    Leon3ConfState *leon3_conf = LEON3_CONF(object_new(TYPE_LEON3_CONF));
+    /* This must be realized in order to have the options value set. */
+    object_property_set_bool(OBJECT(leon3_conf), "realized", true,
+                             &error_fatal);
 
     reset_info = g_malloc0(sizeof(ResetData));
 
@@ -408,7 +458,7 @@ static void leon3_generic_hw_init(MachineState *machine)
     dev = qdev_new(TYPE_GRLIB_GPTIMER);
     qdev_prop_set_uint32(dev, "nr-timers", LEON3_TIMER_COUNT);
     qdev_prop_set_uint32(dev, "frequency", CPU_CLK);
-    qdev_prop_set_uint32(dev, "irq-line", LEON3_TIMER_IRQ);
+    qdev_prop_set_uint32(dev, "irq-line", leon3_conf->gptimer_irq_base);
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
 
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, LEON3_TIMER_OFFSET);
@@ -431,6 +481,19 @@ static void leon3_generic_hw_init(MachineState *machine)
     grlib_apb_pnp_add_entry(apb_pnp, LEON3_UART_OFFSET, 0xFFF,
                             GRLIB_VENDOR_GAISLER, GRLIB_APBUART_DEV, 1,
                             LEON3_UART_IRQ, GRLIB_APBIO_AREA);
+
+    /* gnatbus IRQs */
+    gnatbus_irqs = qemu_allocate_irqs(NULL, NULL, MAX_IRQ);
+
+    for (i = 0; i < MAX_IRQ; i++) {
+        gnatbus_irqs[i] = qdev_get_gpio_in(irqmpdev, i);
+    }
+    /* HostFS */
+    hostfs_create(0x80001000, get_system_memory());
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(gnatbus_irqs, MAX_IRQ);
+    gnatbus_device_init();
 }
 
 static void leon3_generic_machine_init(MachineClass *mc)

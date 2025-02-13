@@ -64,3 +64,5 @@ subdir('sparc')
 subdir('sparc64')
 subdir('tricore')
 subdir('xtensa')
+
+subdir('adacore')

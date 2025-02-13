@@ -53,6 +53,8 @@
 #include "hw/intc/sifive_plic.h"
 #include "sysemu/device_tree.h"
 #include "sysemu/sysemu.h"
+#include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
 
 /*
  * The BIOS image used by this machine is called Hart Software Services (HSS).
@@ -88,6 +90,7 @@
 static const MemMapEntry microchip_pfsoc_memmap[] = {
     [MICROCHIP_PFSOC_RSVD0] =           {        0x0,        0x100 },
     [MICROCHIP_PFSOC_DEBUG] =           {      0x100,        0xf00 },
+    [MICROCHIP_PFSOC_HOSTFS] =          {   0x101000,       0x1000 },
     [MICROCHIP_PFSOC_E51_DTIM] =        {  0x1000000,       0x2000 },
     [MICROCHIP_PFSOC_BUSERR_UNIT0] =    {  0x1700000,       0x1000 },
     [MICROCHIP_PFSOC_BUSERR_UNIT1] =    {  0x1701000,       0x1000 },
@@ -140,7 +143,6 @@ static const MemMapEntry microchip_pfsoc_memmap[] = {
     [MICROCHIP_PFSOC_DRAM_LO_ALIAS] =   { 0xc0000000,   0x40000000 },
     [MICROCHIP_PFSOC_DRAM_HI] =       { 0x1000000000,          0x0 },
     [MICROCHIP_PFSOC_DRAM_HI_ALIAS] = { 0x1400000000,          0x0 },
-
 };
 
 static void microchip_pfsoc_soc_instance_init(Object *obj)
@@ -149,7 +151,7 @@ static void microchip_pfsoc_soc_instance_init(Object *obj)
     MicrochipPFSoCState *s = MICROCHIP_PFSOC(obj);
 
     object_initialize_child(obj, "e-cluster", &s->e_cluster, TYPE_CPU_CLUSTER);
-    qdev_prop_set_uint32(DEVICE(&s->e_cluster), "cluster-id", 0);
+    qdev_prop_set_uint32(DEVICE(&s->e_cluster), "cluster-id", 1);
 
     object_initialize_child(OBJECT(&s->e_cluster), "e-cpus", &s->e_cpus,
                             TYPE_RISCV_HART_ARRAY);
@@ -160,7 +162,7 @@ static void microchip_pfsoc_soc_instance_init(Object *obj)
     qdev_prop_set_uint64(DEVICE(&s->e_cpus), "resetvec", RESET_VECTOR);
 
     object_initialize_child(obj, "u-cluster", &s->u_cluster, TYPE_CPU_CLUSTER);
-    qdev_prop_set_uint32(DEVICE(&s->u_cluster), "cluster-id", 1);
+    qdev_prop_set_uint32(DEVICE(&s->u_cluster), "cluster-id", 0);
 
     object_initialize_child(OBJECT(&s->u_cluster), "u-cpus", &s->u_cpus,
                             TYPE_RISCV_HART_ARRAY);
@@ -188,6 +190,10 @@ static void microchip_pfsoc_soc_instance_init(Object *obj)
                             TYPE_CADENCE_SDHCI);
 
     object_initialize_child(obj, "ioscb", &s->ioscb, TYPE_MCHP_PFSOC_IOSCB);
+
+    object_initialize_child(obj, "gpio0", &s->gpio0, TYPE_PSE_GPIO);
+    object_initialize_child(obj, "gpio1", &s->gpio1, TYPE_PSE_GPIO);
+    object_initialize_child(obj, "gpio2", &s->gpio2, TYPE_PSE_GPIO);
 }
 
 static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
@@ -203,6 +209,7 @@ static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
     MemoryRegion *qspi_xip_mem = g_new(MemoryRegion, 1);
     char *plic_hart_config;
     int i;
+    qemu_irq *cpu_irqs;
 
     sysbus_realize(SYS_BUS_DEVICE(&s->e_cpus), &error_abort);
     sysbus_realize(SYS_BUS_DEVICE(&s->u_cpus), &error_abort);
@@ -430,15 +437,23 @@ static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
         qdev_get_gpio_in(DEVICE(s->plic), MICROCHIP_PFSOC_GEM1_IRQ));
 
     /* GPIOs */
-    create_unimplemented_device("microchip.pfsoc.gpio0",
-        memmap[MICROCHIP_PFSOC_GPIO0].base,
-        memmap[MICROCHIP_PFSOC_GPIO0].size);
-    create_unimplemented_device("microchip.pfsoc.gpio1",
-        memmap[MICROCHIP_PFSOC_GPIO1].base,
-        memmap[MICROCHIP_PFSOC_GPIO1].size);
-    create_unimplemented_device("microchip.pfsoc.gpio2",
-        memmap[MICROCHIP_PFSOC_GPIO2].base,
-        memmap[MICROCHIP_PFSOC_GPIO2].size);
+    sysbus_realize(SYS_BUS_DEVICE(&s->gpio0), errp);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gpio0), 0,
+                    memmap[MICROCHIP_PFSOC_GPIO0].base);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->gpio0), 0,
+        qdev_get_gpio_in(DEVICE(s->plic), MICROCHIP_PFSOC_GPIO0_IRQ));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->gpio1), errp);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gpio1), 0,
+                    memmap[MICROCHIP_PFSOC_GPIO1].base);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->gpio1), 0,
+        qdev_get_gpio_in(DEVICE(s->plic), MICROCHIP_PFSOC_GPIO1_IRQ));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->gpio2), errp);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gpio2), 0,
+                    memmap[MICROCHIP_PFSOC_GPIO2].base);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->gpio2), 0,
+        qdev_get_gpio_in(DEVICE(s->plic), MICROCHIP_PFSOC_GPIO2_IRQ));
 
     /* eNVM */
     memory_region_init_rom(envm_data, OBJECT(dev), "microchip.pfsoc.envm.data",
@@ -477,6 +492,18 @@ static void microchip_pfsoc_soc_realize(DeviceState *dev, Error **errp)
     memory_region_add_subregion(system_memory,
                                 memmap[MICROCHIP_PFSOC_QSPI_XIP].base,
                                 qspi_xip_mem);
+
+    /* Initialize the GnatBus Master */
+    cpu_irqs = qemu_allocate_irqs(NULL, NULL,
+                                  MICROCHIP_PFSOC_PLIC_NUM_SOURCES);
+    for (i = 0; i < MICROCHIP_PFSOC_PLIC_NUM_SOURCES; i++) {
+        cpu_irqs[i] = qdev_get_gpio_in(DEVICE(s->plic), i);
+    }
+    gnatbus_master_init(cpu_irqs, MICROCHIP_PFSOC_PLIC_NUM_SOURCES);
+    gnatbus_device_init();
+
+    /* HostFS */
+    hostfs_create(memmap[MICROCHIP_PFSOC_HOSTFS].base, get_system_memory());
 }
 
 static void microchip_pfsoc_soc_class_init(ObjectClass *oc, void *data)
@@ -566,6 +593,20 @@ static void microchip_icicle_kit_machine_init(MachineState *machine)
     memory_region_add_subregion(system_memory,
                                 memmap[MICROCHIP_PFSOC_DRAM_HI_ALIAS].base,
                                 mem_high_alias);
+
+    /* Try to load an elf file, and point the reset vector to
+     * it's entry point.  */
+    if (machine->kernel_filename) {
+        uint64_t kernel_entry = riscv_load_kernel(machine, &s->soc.u_cpus,
+                                                  0, false, NULL);
+
+        /* load the reset vector */
+        riscv_setup_rom_reset_vec(machine, &s->soc.u_cpus,
+                                  memmap[MICROCHIP_PFSOC_DRAM_LO].base,
+                                  memmap[MICROCHIP_PFSOC_ENVM_DATA].base,
+                                  memmap[MICROCHIP_PFSOC_ENVM_DATA].size,
+                                  kernel_entry, 0);
+    }
 
     /* Attach an SD card */
     if (dinfo) {
