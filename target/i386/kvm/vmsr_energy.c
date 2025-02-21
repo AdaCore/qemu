@@ -72,7 +72,8 @@ QIOChannelSocket *vmsr_open_socket(const char *path)
     qio_channel_set_name(QIO_CHANNEL(sioc), "vmsr-helper");
     qio_channel_socket_connect_sync(sioc,
                                     &saddr,
-                                    &local_err);
+                                    &local_err,
+                                    0);
     if (local_err) {
         /* Close socket. */
         qio_channel_close(QIO_CHANNEL(sioc), NULL);
