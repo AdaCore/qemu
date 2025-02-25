@@ -174,11 +174,10 @@ sifive_uart_write(void *opaque, hwaddr addr,
 {
     SiFiveUARTState *s = opaque;
     uint32_t value = val64;
-    uint8_t ch = value;
 
     switch (addr) {
     case SIFIVE_UART_TXFIFO:
-        sifive_uart_write_tx_fifo(s, &ch, 1);
+        sifive_uart_write_tx_fifo(s, (uint8_t *) &value, 1);
         return;
     case SIFIVE_UART_IE:
         s->ie = val64;
