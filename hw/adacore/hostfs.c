@@ -191,6 +191,10 @@ static uint64_t do_syscall(hostfs *hfs)
         addr = arg2;
         plen = arg3;
 
+        if (!plen) {
+            return 0;
+        }
+
         /* Convert guest buffer to host buffer */
         buf = cpu_physical_memory_map(addr, &plen, true /* is_write */);
         ret = read(arg1, buf, arg3);
@@ -206,6 +210,10 @@ static uint64_t do_syscall(hostfs *hfs)
     case HOSTFS_SYSCALL_WRITE:
         addr = arg2;
         plen = arg3;
+
+        if (!plen) {
+            return 0;
+        }
 
         /* Convert guest buffer to host buffer */
         buf = cpu_physical_memory_map(addr, &plen, false /* is_write */);
