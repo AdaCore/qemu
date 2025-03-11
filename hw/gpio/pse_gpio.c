@@ -18,60 +18,45 @@
 #include "migration/vmstate.h"
 #include "trace.h"
 
-static void update_output_irq(PSEGPIOState *s)
+static bool pse_gpio_evaluate_irq(bool ival, bool prev_ival, uint32_t config)
 {
-    uint32_t any = 0;
-    uint32_t type;
-    bool     enabled;
-    bool     rise_pending;
-    bool     fall_pending;
-    bool     low_pending;
-    bool     high_pending;
-    bool     pending;
+    uint32_t type = (config & PSE_GPIO_CONFIG_TYPE_MASK) >> 5;
+    bool enabled = (config & PSE_GPIO_CONFIG_EN_INT) != 0;
+    bool pending;
 
-    for (int i = 0; i < PSE_GPIO_PINS; i++) {
-        enabled = (s->config[i] & PSE_GPIO_CONFIG_EN_INT) != 0;
-        type = (s->config[i] & PSE_GPIO_CONFIG_TYPE_MASK) >> 5;
-
-        rise_pending = extract32(s->rise_pending, i, 1);
-        fall_pending = extract32(s->fall_pending, i, 1);
-        high_pending = extract32(s->high_pending, i, 1);
-        low_pending  = extract32(s->low_pending, i, 1);
-
-        switch (type) {
-        case 0: // High
-            pending = high_pending;
-            break;
-        case 1: // Low
-            pending = low_pending;
-            break;
-        case 2: // Rise
-            pending = rise_pending;
-            break;
-        case 3: // Fall
-            pending = fall_pending;
-            break;
-        case 4: // Rise or Fall
-            pending = rise_pending || fall_pending;
-            break;
-        default :
-            pending = false;
-            break;
-        }
-        if (pending && enabled) {
-            any = deposit32(any, i, 1, 1);
-        }
+    if (!enabled) {
+        return false;
     }
 
-    trace_pse_gpio_update_output_irq(any);
-    qemu_set_irq(s->irq, any != 0);
+    switch (type) {
+    case 0: // High
+        pending = ival;
+        break;
+    case 1: // Low
+        pending = !ival;
+        break;
+    case 2: // Rise
+        pending = ival && !prev_ival;
+        break;
+    case 3: // Fall
+        pending = !ival && prev_ival;
+        break;
+    case 4: // Rise or Fall
+        pending = ival != prev_ival;
+        break;
+    default :
+        pending = false;
+        break;
+    }
+
+    return pending;
 }
 
-static void update_state(PSEGPIOState *s)
+static void pse_gpio_update_state(PSEGPIOState *s)
 {
     size_t i;
     bool prev_ival, in, in_mask, output_en, input_en, actual_value, ival, oval,
-        gpout, rise_pending, fall_pending, low_pending, high_pending;
+        gpout, rise_pending, fall_pending, low_pending, high_pending, any_pending;
 
     for (i = 0; i < PSE_GPIO_PINS; i++) {
         prev_ival = extract32(s->value, i, 1);
@@ -123,11 +108,16 @@ static void update_state(PSEGPIOState *s)
         s->fall_pending = deposit32(s->fall_pending, i, 1,
                                     (!ival && prev_ival) || fall_pending);
 
+        /* Should an IRQ be triggered */
+        any_pending |= pse_gpio_evaluate_irq(ival, prev_ival, s->config[i]);
+
         /* Update value */
         s->value = deposit32(s->value, i, 1, ival);
     }
+
     trace_pse_gpio_output_state(s->value);
-    update_output_irq(s);
+    trace_pse_gpio_update_output_irq(any_pending);
+    qemu_set_irq(s->irq, any_pending != 0);
 }
 
 static uint64_t pse_gpio_read(void *opaque, hwaddr offset, unsigned int size)
@@ -211,7 +201,7 @@ static void pse_gpio_write(void *opaque, hwaddr offset,
                       __func__, offset);
     }
 
-    update_state(s);
+    pse_gpio_update_state(s);
 }
 
 static const MemoryRegionOps gpio_ops = {
@@ -235,7 +225,7 @@ static void pse_gpio_set(void *opaque, int line, int value)
         s->in = deposit32(s->in, line, 1, value != 0);
     }
 
-    update_state(s);
+    pse_gpio_update_state(s);
 }
 
 static void pse_gpio_reset(DeviceState *dev)
