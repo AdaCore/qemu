@@ -190,7 +190,11 @@ static void bcm2838_peripherals_realize(DeviceState *dev, Error **errp)
         &s_base->peri_mr, GPIO_OFFSET,
         sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->gpio), 0));
 
-    object_property_add_alias(OBJECT(s), "sd-bus", OBJECT(&s->gpio), "sd-bus");
+    /* XXX : Hack to get QNX to see the SD card.
+     * The wrong SD controller seems connected to the card by default, changing
+     * it to the one we use on a real board.
+     */
+    object_property_add_alias(OBJECT(s), "sd-bus", OBJECT(&s->emmc2), "sd-bus");
 
     /* BCM2838 RPiVid ASB must be mapped to prevent kernel crash */
     create_unimp(s_base, &s->asb, "bcm2838-asb", BRDG_OFFSET, 0x24);
