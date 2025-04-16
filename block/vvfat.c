@@ -2618,7 +2618,7 @@ commit_one_file(BDRVVVFATState* s, int dir_index, uint32_t offset)
         }
 
         if (rest_size != s->cluster_size) {
-            mapping_t *mapping = find_mapping_for_cluster(s, c);
+            mapping = find_mapping_for_cluster(s, c);
             assert (mapping);
             if (!mapping->info.file.last_cluster_data)
                 mapping->info.file.last_cluster_data=malloc (s->cluster_size);
