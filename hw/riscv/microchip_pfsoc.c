@@ -682,9 +682,6 @@ static void microchip_icicle_kit_machine_init(MachineState *machine)
                                                    machine, &boot_info);
             riscv_load_fdt(fdt_load_addr, machine->fdt);
         } else {
-            warn_report_once("The QEMU microchip-icicle-kit machine does not "
-                             "generate a device tree, so no device tree is "
-                             "being provided to the guest.");
             fdt_load_addr = 0;
         }
 
