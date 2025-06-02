@@ -455,7 +455,8 @@ static void zynqmp_ttc_realize(DeviceState *dev, Error **errp)
     int i;
 
     for (i = 0; i < 3; ++i) {
-        cadence_timer_init(133000000, &s->timer[i]);
+        /* By default, ZynqMP TTC has a 100MHz frequency. */
+        cadence_timer_init(100000000, &s->timer[i]);
         sysbus_init_irq(SYS_BUS_DEVICE(dev), &s->timer[i].irq);
         s->timer[i].reg_is_32bits = 1;
     }
