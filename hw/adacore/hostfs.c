@@ -209,7 +209,12 @@ static uint64_t do_syscall(hostfs *hfs)
         ret = open(buf, arg2, arg3);
         cpu_physical_memory_unmap(buf, plen, false /* is_write */, plen);
 
-        if ((int)ret != -1)
+        if ((int)ret == -1)
+        {
+            qemu_log_mask(LOG_GUEST_ERROR, "hostfs open failed with error: %s\n",
+                          strerror(errno));
+        }
+        else
         {
             int32_t current_fd = hfs->next_guest_fd;
             open_file *file = g_malloc(sizeof(open_file));
@@ -259,8 +264,10 @@ static uint64_t do_syscall(hostfs *hfs)
         ret = read(arg1, buf, arg3);
         cpu_physical_memory_unmap(buf, plen, false /* is_write */, plen);
 
-        if ((int)ret == -1) {
-            perror("hostfs");
+        if ((int)ret == -1)
+        {
+            qemu_log_mask(LOG_GUEST_ERROR, "hostfs read failed with error: %s\n",
+                          strerror(errno));
         }
 
         trace_hostfs_read(arg1, buf, arg3, ret);
@@ -286,8 +293,10 @@ static uint64_t do_syscall(hostfs *hfs)
         ret = write(arg1, buf, arg3);
         cpu_physical_memory_unmap(buf, plen, false /* is_write */, plen);
 
-        if ((int)ret == -1) {
-            perror("hostfs");
+        if ((int)ret == -1)
+        {
+            qemu_log_mask(LOG_GUEST_ERROR, "hostfs write failed with error: %s\n",
+                          strerror(errno));
         }
 
         trace_hostfs_write(arg1, buf, arg3, ret);
@@ -303,6 +312,13 @@ static uint64_t do_syscall(hostfs *hfs)
         arg1 = current_file->host_fd;
 
         ret = close(arg1);
+
+        if ((int)ret == -1)
+        {
+            qemu_log_mask(LOG_GUEST_ERROR, "hostfs close failed with error: %s\n",
+                          strerror(errno));
+        }
+
         trace_hostfs_close(arg1, ret);
 
         QLIST_REMOVE(current_file, next);
@@ -319,6 +335,12 @@ static uint64_t do_syscall(hostfs *hfs)
         ret = unlink(buf);
         cpu_physical_memory_unmap(buf, plen, false /* is_write */, plen);
 
+        if ((int)ret == -1)
+        {
+            qemu_log_mask(LOG_GUEST_ERROR, "hostfs unlink failed with error: %s\n",
+                          strerror(errno));
+        }
+
         trace_hostfs_unlink(arg1, ret);
         return ret;
         break;
@@ -331,6 +353,13 @@ static uint64_t do_syscall(hostfs *hfs)
         arg1 = current_file->host_fd;
 
         ret = lseek((int)arg1, (int)arg2, (int)arg3);
+
+        if ((off_t)ret == -1)
+        {
+            qemu_log_mask(LOG_GUEST_ERROR, "hostfs lseek failed with error: %s\n",
+                          strerror(errno));
+        }
+
         trace_hostfs_lseek((int)arg1, (int)arg2, (int)arg3, ret);
         return ret;
         break;
