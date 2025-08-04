@@ -32,6 +32,9 @@
 #include "trace.h"
 #include "hw/adacore/hostfs.h"
 #include "qapi/error.h"
+#include "qemu/queue.h"
+#include "migration/vmstate.h"
+#include "qemu/log.h"
 
 /* #define DEBUG_HOSTFS */
 
@@ -86,6 +89,10 @@ typedef struct hostfs {
     MemoryRegion  io_area;
 
     hostfs_Register regs[REG_NUMBER];
+
+    QLIST_HEAD(, open_file) open_files_qlist;
+
+    int32_t next_guest_fd;
 } hostfs;
 
 #define TYPE_HOSTFS_DEVICE "hostfs"
@@ -110,6 +117,16 @@ typedef struct hostfs {
 #define HOSTFS_O_TRUNC  (1 << 5)
 #define HOSTFS_O_BINARY (1 << 6)
 #define HOSTFS_O_EXCL   (1 << 7)
+
+typedef struct open_file {
+    int32_t guest_fd;
+    uint64_t host_fd;
+    uint32_t flags;
+    uint64_t mode;
+    uint8_t filename[1024];
+    off_t offset;
+    QLIST_ENTRY(open_file) next;
+} open_file;
 
 static uint32_t open_flags(uint32_t hostfs_flags)
 {
@@ -145,6 +162,24 @@ static uint32_t open_flags(uint32_t hostfs_flags)
     return ret;
 }
 
+static open_file* get_file_from_guest_fd(uint64_t fd, hostfs *hfs){
+    open_file *current_file;
+
+    /* This search could be faster by using for example a GHashTable structure,
+        but there is no VMState to migrate it easily, and we shouldn't have too
+        many opened files at the same time. */
+    QLIST_FOREACH(current_file, &hfs->open_files_qlist, next)
+    {
+        if (current_file->guest_fd == fd)
+        {
+            return current_file;
+        }
+    }
+    qemu_log_mask(LOG_GUEST_ERROR, "hostfs error, invalid guest file descriptor\n");
+
+    return NULL;
+}
+
 static uint64_t do_syscall(hostfs *hfs)
 {
     uint64_t ID = hfs->regs[HOSTFS_SYSCALL_ID].value;
@@ -155,8 +190,10 @@ static uint64_t do_syscall(hostfs *hfs)
     uint64_t arg5 = hfs->regs[HOSTFS_ARG5].value;
     uint64_t ret = 0;
     char *buf = NULL;
+    char temp_buffer[1024];
     hwaddr addr;
     hwaddr plen;
+    open_file *current_file;
 
     trace_hostfs_do_syscall(ID, arg1, arg2, arg3, arg4, arg5);
 
@@ -168,8 +205,35 @@ static uint64_t do_syscall(hostfs *hfs)
 
         /* Convert guest buffer to host buffer */
         buf = cpu_physical_memory_map(addr, &plen, false /* is_write */);
+        memcpy(temp_buffer, buf, plen);
         ret = open(buf, arg2, arg3);
         cpu_physical_memory_unmap(buf, plen, false /* is_write */, plen);
+
+        if ((int)ret != -1)
+        {
+            int32_t current_fd = hfs->next_guest_fd;
+            open_file *file = g_malloc(sizeof(open_file));
+
+            file->flags = arg2;
+            file->mode = arg3;
+            file->host_fd = ret;
+
+            if (current_fd < INT32_MAX)
+            {
+                hfs->next_guest_fd = current_fd + 1;
+            }
+            else
+            {
+                qemu_log_mask(LOG_GUEST_ERROR,
+                              "Maximum number of guest file descriptors reached");
+            }
+            file->guest_fd = current_fd;
+            ret = current_fd;
+
+            memcpy(file->filename, temp_buffer, plen);
+
+            QLIST_INSERT_HEAD(&hfs->open_files_qlist, file, next);
+        }
 
         trace_hostfs_open(buf, arg2, arg3, ret);
 
@@ -182,6 +246,13 @@ static uint64_t do_syscall(hostfs *hfs)
         if (!plen) {
             return 0;
         }
+
+        /* Get the host FD from the abstract guest FD */
+        current_file = get_file_from_guest_fd(arg1, hfs);
+        if (current_file == NULL){
+            return -1;
+        }
+        arg1 = current_file->host_fd;
 
         /* Convert guest buffer to host buffer */
         buf = cpu_physical_memory_map(addr, &plen, true /* is_write */);
@@ -205,6 +276,13 @@ static uint64_t do_syscall(hostfs *hfs)
             return 0;
         }
 
+        /* Get the host FD from the abstract guest FD */
+        current_file = get_file_from_guest_fd(arg1, hfs);
+        if (current_file == NULL){
+            return -1;
+        }
+        arg1 = current_file->host_fd;
+
         /* Convert guest buffer to host buffer */
         buf = cpu_physical_memory_map(addr, &plen, false /* is_write */);
         ret = write(arg1, buf, arg3);
@@ -221,6 +299,13 @@ static uint64_t do_syscall(hostfs *hfs)
         return ret;
         break;
     case HOSTFS_SYSCALL_CLOSE:
+        /* Get the host FD from the abstract guest FD */
+        current_file = get_file_from_guest_fd(arg1, hfs);
+        if (current_file == NULL){
+            return -1;
+        }
+        arg1 = current_file->host_fd;
+
         ret = close(arg1);
 
         if ((int)ret == -1)
@@ -230,6 +315,10 @@ static uint64_t do_syscall(hostfs *hfs)
         }
 
         trace_hostfs_close(arg1, ret);
+
+        QLIST_REMOVE(current_file, next);
+        g_free(current_file);
+
         return ret;
         break;
     case HOSTFS_SYSCALL_UNLINK:
@@ -251,6 +340,13 @@ static uint64_t do_syscall(hostfs *hfs)
         return ret;
         break;
     case HOSTFS_SYSCALL_LSEEK:
+        /* Get the host FD from the abstract guest FD */
+        current_file = get_file_from_guest_fd(arg1, hfs);
+        if (current_file == NULL){
+            return -1;
+        }
+        arg1 = current_file->host_fd;
+
         ret = lseek((int)arg1, (int)arg2, (int)arg3);
 
         if ((off_t)ret == -1)
@@ -423,6 +519,14 @@ static void hostfs_reset(DeviceState *d)
         hfs->regs[reg_index].desc   = hostfs_registers_def[i].desc;
         hfs->regs[reg_index].value  = hostfs_registers_def[i].reset;
     }
+
+    /* Free migration-related structures */
+    open_file *current_file, *tmp;
+    QLIST_FOREACH_SAFE(current_file, &hfs->open_files_qlist, next, tmp)
+    {
+        QLIST_REMOVE(current_file, next);
+        g_free(current_file);
+    }
 }
 
 static void hostfs_realize(DeviceState *dev, Error **errp)
@@ -435,12 +539,117 @@ static void hostfs_realize(DeviceState *dev, Error **errp)
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &hfs->io_area);
 }
 
+static int hostfs_pre_save(void *opaque){
+    /* Save the offset associated to each FD */
+    off_t ret_offset;
+    hostfs *hfs = opaque;
+    open_file *current_file;
+
+    QLIST_FOREACH(current_file, &hfs->open_files_qlist, next)
+    {
+        /* Get the current offset */
+        ret_offset = lseek(current_file->host_fd, 0, SEEK_CUR);
+
+        if (ret_offset == -1){
+            qemu_log_mask(LOG_GUEST_ERROR,
+                          "hostfs unable to get the offset of file '%s' during"
+                          "migration.\n"
+                          "lseek failed with error: %s\n",
+                          current_file->filename,
+                          strerror(errno));
+            return -1;
+        }
+        current_file->offset = (int64_t) ret_offset;
+    }
+
+    return 0;
+}
+
+static int hostfs_post_load(void *opaque, int version_id)
+{
+    hostfs *hfs = opaque;
+    open_file *current_file;
+
+    /* Open again files that were open when the migration was launched */
+    QLIST_FOREACH(current_file, &hfs->open_files_qlist, next)
+    {
+        char *filename = current_file->filename;
+        uint32_t flags = current_file->flags;
+        uint64_t mode = current_file->mode;
+        uint64_t ret = 0;
+        off_t ret_offset;
+
+        /* Files opened here should already exist, so the potential O_CREAT, O_EXCL
+           and O_TRUNC flags have to be removed */
+        flags &= ~(O_CREAT | O_EXCL | O_TRUNC);
+
+        ret = open(filename, flags, mode);
+        trace_hostfs_post_migration_open(filename, flags, mode, ret);
+
+        if ((int)ret == -1)
+        {
+            qemu_log_mask(LOG_GUEST_ERROR,
+                          "hostfs unable to reopen file '%s' during migration.\n"
+                          "open failed with error: %s\n",
+                          filename,
+                          strerror(errno));
+            return -1;
+        }
+
+        current_file->host_fd = ret;
+
+        /* Set the offset associated to the FD */
+        ret_offset = lseek(current_file->host_fd, current_file->offset, SEEK_SET);
+
+        if (ret_offset != current_file->offset)
+        {
+            qemu_log_mask(LOG_GUEST_ERROR,
+                          "hostfs unable to set correct offset for file '%s' during"
+                          " migration.\nlseek failed with error: %s\n",
+                          filename,
+                          strerror(errno));
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static const VMStateDescription vmstate_open_file = {
+    .name = "open_file",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .fields = (const VMStateField[]){
+        VMSTATE_INT32(guest_fd, open_file),
+        VMSTATE_UINT64(host_fd, open_file),
+        VMSTATE_UINT32(flags, open_file),
+        VMSTATE_UINT64(mode, open_file),
+        VMSTATE_BUFFER(filename, open_file),
+        VMSTATE_INT64(offset, open_file),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
+static const VMStateDescription vmstate_hostfs = {
+    .name = "hostfs",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .pre_save = hostfs_pre_save,
+    .post_load = hostfs_post_load,
+    .fields = (const VMStateField[]){
+        VMSTATE_QLIST_V(open_files_qlist, hostfs, 1, vmstate_open_file, open_file, next),
+        VMSTATE_INT32(next_guest_fd, hostfs),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 static void hostfs_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->realize = hostfs_realize;
     device_class_set_legacy_reset(dc, hostfs_reset);
+    dc->vmsd = &vmstate_hostfs;
 }
 
 static TypeInfo hostfs_info = {
@@ -470,5 +679,10 @@ DeviceState *hostfs_create(hwaddr base, MemoryRegion *mr)
     sbdev->mmio[0].addr = base;
     memory_region_add_subregion(mr, base, sbdev->mmio[0].memory);
 
+    hostfs *hfs = QEMU_HOSTFS_DEVICE(dev);
+    QLIST_INIT(&hfs->open_files_qlist);
+
+    /* Don't use low FD values to avoid conflicts */
+    hfs->next_guest_fd = 32;
     return dev;
 }
