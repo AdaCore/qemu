@@ -972,7 +972,7 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
       .access = PL0_R, .accessfn = access_tdra,
       .type = ARM_CP_CONST | ARM_CP_NO_GDB, .resetvalue = 0 },
     { .name = "DBGDTR", .cp = 14, .crn = 0, .crm = 5, .opc1 = 0, .opc2 = 0,
-      .access = PL0_RW, .resetvalue = 0,
+      .access = PL0_RW, .type = ARM_CP_NO_RAW, .resetvalue = 0,
       .writefn = dbgdtr_write,
       .readfn = dbgdtr_read },
     /* Monitor debug system control register; the 32-bit alias is DBGDSCRext. */
