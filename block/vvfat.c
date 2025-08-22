@@ -1092,6 +1092,11 @@ static QemuOptsList runtime_opts = {
             .type = QEMU_OPT_SIZE,
             .help = "Virtual disk size"
         },
+        {
+            .name = "no-mbr",
+            .type = QEMU_OPT_BOOL,
+            .help = "Do not add a Master Boot Record on this disk",
+        },
         { /* end of list */ }
     },
 };
@@ -1102,6 +1107,7 @@ static void vvfat_parse_filename(const char *filename, QDict *options,
     int fat_type = 0;
     bool floppy = false;
     bool rw = false;
+    bool no_mbr = false;
     int i;
 
     if (!strstart(filename, "fat:", NULL)) {
@@ -1126,6 +1132,10 @@ static void vvfat_parse_filename(const char *filename, QDict *options,
         rw = true;
     }
 
+    if (strstr(filename, ":no-mbr:")) {
+        no_mbr = true;
+    }
+
     /* Get the directory name without options */
     i = strrchr(filename, ':') - filename;
     assert(i >= 3);
@@ -1141,6 +1151,7 @@ static void vvfat_parse_filename(const char *filename, QDict *options,
     qdict_put_int(options, "fat-type", fat_type);
     qdict_put_bool(options, "floppy", floppy);
     qdict_put_bool(options, "rw", rw);
+    qdict_put_bool(options, "no-mbr", no_mbr);
 }
 
 static void vvfat_get_size_paremeters(uint64_t size, BDRVVVFATState *s, bool floppy,
@@ -1321,7 +1332,7 @@ static int vvfat_open(BlockDriverState *bs, QDict *options, int flags,
 
     vvfat_get_size_paremeters(size, s, floppy, errp);
 
-    if (!floppy) {
+    if (!floppy && !qemu_opt_get_bool(opts, "no-mbr", false)) {
         /* We have an MBR in this case, it stay zero otherwise.. */
         s->offset_to_bootsector = 0x3f;
     }
