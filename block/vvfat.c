@@ -1844,6 +1844,20 @@ typedef enum {
      USED_DIRECTORY = 1, USED_FILE = 2, USED_ANY = 3, USED_ALLOCATED = 4
 } used_t;
 
+static inline bool has_matching_rename_commit(array_t *commits,
+        uint32_t cluster, const char *path)
+{
+    for (unsigned int idx = 0; idx < commits->next ; idx++) {
+        commit_t *commit = (commit_t *) array_get(commits, idx);
+        if (commit->action == ACTION_RENAME
+            && cluster == commit->param.rename.cluster
+            && strcmp(path, commit->path)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*
  * get_cluster_count_for_direntry() not only determines how many clusters
  * are occupied by direntry, but also if it was renamed or modified.
@@ -1896,18 +1910,42 @@ get_cluster_count_for_direntry(BDRVVVFATState* s, direntry_t* direntry, const ch
         mapping = find_mapping_for_cluster(s, cluster_num);
 
         if (mapping) {
-            const char* basename;
+            const char *basename = get_basename(mapping->path);
+            direntry_t *d;
+            /*
+             * When processing renames, there are two direntries involved :
+             * - the direntry of the original file, before the rename
+             * - the direntry of the renamed file, using the mapping of the
+             *   original file but with the renamed path
+             *
+             * 1) When handling the rename direntry, checking that mapping->mode
+             * has the flag MODE_DELETED will fail if the original direntry has
+             * already been handled as the MODE_DELETED will already have been
+             * unset.
+             *
+             * 2) The same happens if the rename direntry appears first. The
+             * assert will fail when asserting that the mapping->mode of the
+             * original direntry has the flag MODE_DELETED.
+             *
+             * For the first case, we do not check that MODE_DELETED has been
+             * set when scheduling a rename.
+             *
+             * To handle the second case, when we find a mapping that does not
+             * have the MODE_DELETED enabled, we need to check that an existing
+             * rename commit exists and matches the cluster_num.
+             *
+             */
+            if (strcmp(basename, basename2)) {
+                schedule_rename(s, cluster_num, g_strdup(path));
+            } else {
+                assert(mapping->mode & MODE_DELETED
+                    || has_matching_rename_commit(&(s->commits),
+                                                    cluster_num, basename));
+            }
 
-            assert(mapping->mode & MODE_DELETED);
             mapping->mode &= ~MODE_DELETED;
 
-            basename = get_basename(mapping->path);
-
             assert(mapping->mode & MODE_NORMAL);
-
-            /* rename */
-            if (strcmp(basename, basename2))
-                schedule_rename(s, cluster_num, g_strdup(path));
         } else if (is_file(direntry))
             /* new file */
             schedule_new_file(s, g_strdup(path), cluster_num);

@@ -28,6 +28,8 @@
 #include "system/replay.h"
 #include "system/system.h"
 
+#include "adacore/qemu-traces.h"
+
 #ifdef CONFIG_SDL
 /*
  * SDL insists on wrapping the main() function with its own implementation on
@@ -52,6 +54,17 @@ static void *qemu_default_main(void *opaque)
     bql_unlock();
     replay_mutex_unlock();
 
+    /* Threads are not exited correctly on Windows.
+     * Since we didn't find the bug yet lets kill the process at the end
+     * to avoid deadlock in Windows DLLs.
+     */
+#if defined(_WIN32)
+            exec_trace_cleanup();
+    DWORD pid = GetCurrentProcessId();
+    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS,
+                                  false, pid);
+    TerminateProcess(hProcess, status);
+#endif /* WIN32 */
     exit(status);
 }
 

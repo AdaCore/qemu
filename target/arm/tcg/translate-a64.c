@@ -25,6 +25,8 @@
 #include "semihosting/semihost.h"
 #include "cpregs.h"
 
+#include "adacore/qemu-traces.h"
+
 static TCGv_i64 cpu_X[32];
 static TCGv_i64 cpu_gcspr[4];
 static TCGv_i64 cpu_pc;
@@ -528,6 +530,25 @@ static inline bool use_goto_tb(DisasContext *s, uint64_t dest)
     return translator_use_goto_tb(&s->base, dest);
 }
 
+static inline void gen_goto_ptr(DisasContext *s, int tb_slot_idx)
+{
+    if (unlikely(tracefile_enabled)) {
+        tcg_gen_exit_tb(s->base.tb, TB_EXIT_NOPATCH | tb_slot_idx);
+    } else {
+        tcg_gen_lookup_and_goto_ptr();
+    }
+}
+
+static inline void gen_exit_tb(const TranslationBlock *tb, int tb_slot_idx)
+{
+    if (unlikely(tracefile_enabled)) {
+        tcg_gen_exit_tb(tb, TB_EXIT_NOPATCH | tb_slot_idx);
+    } else {
+        tcg_gen_exit_tb(tb, tb_slot_idx);
+    }
+}
+
+
 static void gen_goto_tb(DisasContext *s, unsigned tb_slot_idx, int64_t diff)
 {
     if (use_goto_tb(s, s->pc_curr + diff)) {
@@ -546,14 +567,14 @@ static void gen_goto_tb(DisasContext *s, unsigned tb_slot_idx, int64_t diff)
             tcg_gen_goto_tb(tb_slot_idx);
             gen_a64_update_pc(s, diff);
         }
-        tcg_gen_exit_tb(s->base.tb, tb_slot_idx);
+        gen_exit_tb(s->base.tb, tb_slot_idx);
         s->base.is_jmp = DISAS_NORETURN;
     } else {
         gen_a64_update_pc(s, diff);
         if (s->ss_active) {
             gen_step_complete_exception(s);
         } else {
-            tcg_gen_lookup_and_goto_ptr();
+            gen_goto_ptr(s, tb_slot_idx);
             s->base.is_jmp = DISAS_NORETURN;
         }
     }
@@ -1724,9 +1745,9 @@ static bool trans_CBZ(DisasContext *s, arg_cbz *a)
     match = gen_disas_label(s);
     tcg_gen_brcondi_i64(a->nz ? TCG_COND_NE : TCG_COND_EQ,
                         tcg_cmp, 0, match.label);
-    gen_goto_tb(s, 0, 4);
+    gen_goto_tb(s, 1, 4);
     set_disas_label(s, match);
-    gen_goto_tb(s, 1, a->imm);
+    gen_goto_tb(s, 0, a->imm);
     return true;
 }
 
@@ -1743,9 +1764,9 @@ static bool trans_TBZ(DisasContext *s, arg_tbz *a)
     match = gen_disas_label(s);
     tcg_gen_brcondi_i64(a->nz ? TCG_COND_NE : TCG_COND_EQ,
                         tcg_cmp, 0, match.label);
-    gen_goto_tb(s, 0, 4);
+    gen_goto_tb(s, 1, 4);
     set_disas_label(s, match);
-    gen_goto_tb(s, 1, a->imm);
+    gen_goto_tb(s, 0, a->imm);
     return true;
 }
 
@@ -1760,9 +1781,9 @@ static bool trans_B_cond(DisasContext *s, arg_B_cond *a)
         /* genuinely conditional branches */
         DisasLabel match = gen_disas_label(s);
         arm_gen_test_cc(a->cond, match.label);
-        gen_goto_tb(s, 0, 4);
+        gen_goto_tb(s, 1, 4);
         set_disas_label(s, match);
-        gen_goto_tb(s, 1, a->imm);
+        gen_goto_tb(s, 0, a->imm);
     } else {
         /* 0xe and 0xf are both "always" conditions */
         gen_goto_tb(s, 0, a->imm);
@@ -10900,13 +10921,13 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             gen_a64_update_pc(dc, 4);
             /* fall through */
         case DISAS_EXIT:
-            tcg_gen_exit_tb(NULL, 0);
+            gen_exit_tb(NULL, 0);
             break;
         case DISAS_UPDATE_NOCHAIN:
             gen_a64_update_pc(dc, 4);
             /* fall through */
         case DISAS_JUMP:
-            tcg_gen_lookup_and_goto_ptr();
+            gen_goto_ptr(dc, 0);
             break;
         case DISAS_NORETURN:
         case DISAS_SWI:
@@ -10930,7 +10951,7 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
              * The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(NULL, 0);
+            gen_exit_tb(NULL, 0);
             break;
         }
     }

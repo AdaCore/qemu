@@ -28,7 +28,7 @@ QEMUFile *cpr_transfer_output(MigrationChannel *channel, Error **errp)
         QIOChannel *ioc = QIO_CHANNEL(sioc);
         SocketAddress *saddr = &addr->u.socket;
 
-        if (qio_channel_socket_connect_sync(sioc, saddr, errp) < 0) {
+        if (qio_channel_socket_connect_sync(sioc, saddr, errp, 0) < 0) {
             return NULL;
         }
         trace_cpr_transfer_output(addr->u.socket.u.q_unix.path);

@@ -455,10 +455,6 @@ endif
 
 qemu_common_flags = qemu_isa_flags + qemu_common_flags
 
-if get_option('prefer_static')
-  qemu_ldflags += get_option('b_pie') ? '-static-pie' : '-static'
-endif
-
 # Meson currently only handles pie as a boolean for now, so if the user
 # has explicitly disabled PIE we need to extend our cflags.
 #
@@ -823,9 +819,9 @@ endif
 # Host-specific libraries and flags #
 #####################################
 
-libm = cc.find_library('m', required: false)
+libm = cc.find_library('m', required: false, static: false)
 threads = dependency('threads')
-util = cc.find_library('util', required: false)
+util = cc.find_library('util', required: false, static: false)
 winmm = []
 socket = []
 version_res = []
@@ -853,6 +849,10 @@ if host_os == 'windows'
                                       depend_files: files('pc-bios/qemu-nsis.ico'),
                                       include_directories: include_directories('.'))
   host_dsosuf = '.dll'
+  # Threads are supported natively with GNAT on Windows.
+  # Thus, avoid using meson 'threads' dependency which will add
+  # '-pthread' flag.
+  threads = declare_dependency()
 elif host_os == 'darwin'
   coref = dependency('appleframeworks', modules: 'CoreFoundation')
   iokit = dependency('appleframeworks', modules: 'IOKit', required: false)
@@ -3625,6 +3625,7 @@ if have_system
     'ebpf',
     'hw/9pfs',
     'hw/acpi',
+    'hw/adacore',
     'hw/adc',
     'hw/alpha',
     'hw/arm',
@@ -3842,6 +3843,7 @@ user_ss.add(files('cpu-target.c'))
 system_ss.add(files('cpu-target.c'))
 
 subdir('system')
+specific_ss.add(files('qemu-traces.c'))
 
 # Work around a gcc bug/misfeature wherein constant propagation looks
 # through an alias:

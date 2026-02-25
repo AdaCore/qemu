@@ -46,6 +46,7 @@
 #include "accel/tcg/cpu-ops.h"
 #include "internal-common.h"
 
+#include "adacore/qemu-traces.h"
 
 struct TCGState {
     AccelState parent_obj;
@@ -124,7 +125,7 @@ static int tcg_init_machine(AccelState *as, MachineState *ms)
          * there is one remaining limitation to check:
          *   - The guest can't be oversized (e.g. 64 bit guest on 32 bit host)
          */
-        if (mttcg_supported && !icount_enabled()) {
+        if (mttcg_supported && !icount_enabled() && !tracefile_enabled) {
             s->mttcg_enabled = ON_OFF_AUTO_ON;
             max_threads = ms->smp.max_cpus;
         } else {
@@ -182,6 +183,8 @@ static void tcg_set_thread(Object *obj, const char *value, Error **errp)
     if (strcmp(value, "multi") == 0) {
         if (icount_enabled()) {
             error_setg(errp, "No MTTCG when icount is enabled");
+        } else if (tracefile_enabled) {
+            error_setg(errp, "No MTTCG when traces are enabled");
         } else {
             s->mttcg_enabled = ON_OFF_AUTO_ON;
         }

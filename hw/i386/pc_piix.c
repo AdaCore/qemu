@@ -66,6 +66,13 @@
 #include "hw/i386/acpi-build.h"
 #include "target/i386/cpu.h"
 
+#include "hw/adacore/gnat-bus.h"
+#include "hw/adacore/hostfs.h"
+
+#define HOSTFS_START (0xf3082000)
+#define PARAMS_ADDR  (0xf3080000)
+#define PARAMS_SIZE  (0x01000)
+
 #define XEN_IOAPIC_NUM_PIRQS 128ULL
 
 static GlobalProperty pc_piix_compat_defaults[] = {
@@ -113,6 +120,8 @@ static void pc_init1(MachineState *machine, const char *pci_type)
     GSIState *gsi_state;
     MemoryRegion *ram_memory;
     MemoryRegion *pci_memory = NULL;
+    MemoryRegion *params;
+    const char *kernel_cmdline;
     ram_addr_t lowmem;
     uint64_t hole64_size = 0;
     PCIDevice *pci_dev;
@@ -120,6 +129,18 @@ static void pc_init1(MachineState *machine, const char *pci_type)
     size_t i;
 
     assert(pcmc->pci_enabled);
+
+    /* Here are the HostFS and parameters */
+    params = g_new(MemoryRegion, 1);
+    memory_region_init_ram(params, NULL, "params", PARAMS_SIZE,
+                           &error_fatal);
+    memory_region_add_subregion(get_system_memory(), PARAMS_ADDR, params);
+    /* HostFS */
+    hostfs_create(HOSTFS_START, get_system_memory());
+    kernel_cmdline = machine->kernel_cmdline ? machine->kernel_cmdline : "";
+    cpu_physical_memory_write(PARAMS_ADDR, kernel_cmdline,
+                              strlen(kernel_cmdline) + 1);
+    memory_region_set_readonly(params, true);
 
     /*
      * Calculate ram split, for memory below and above 4G.  It's a bit
@@ -297,6 +318,10 @@ static void pc_init1(MachineState *machine, const char *pci_type)
                          !MACHINE_CLASS(pcmc)->no_floppy, 0x4);
 
     pc_nic_init(pcmc, isa_bus, pcms->pcibus);
+
+    /* Initialize the GnatBus Master */
+    gnatbus_master_init(x86ms->gsi, IOAPIC_NUM_PINS);
+    gnatbus_device_init();
 
     if (piix4_pm) {
         smi_irq = qemu_allocate_irq(pc_acpi_smi_interrupt, first_cpu, 0);

@@ -110,7 +110,7 @@ static int pr_manager_helper_initialize(PRManagerHelper *pr_mgr,
 
     assert(!pr_mgr->ioc);
     qio_channel_set_name(QIO_CHANNEL(sioc), "pr-manager-helper");
-    r = qio_channel_socket_connect_sync(sioc, &saddr, errp);
+    r = qio_channel_socket_connect_sync(sioc, &saddr, errp, 0);
     g_free(path);
     if (r < 0) {
         object_unref(OBJECT(sioc));

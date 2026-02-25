@@ -1031,15 +1031,24 @@ void x86_bios_rom_init(X86MachineState *x86ms, const char *default_firmware,
     char *filename;
     int bios_size;
     ssize_t ret;
+    int no_bios;
 
     /* BIOS load */
     bios_name = MACHINE(x86ms)->firmware ?: default_firmware;
-    filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
-    if (filename) {
-        bios_size = get_image_size(filename, NULL);
+    no_bios = !strcmp("-", bios_name);
+    if (no_bios) {
+        /* No bios, simulate a 256KB ram / rom instead.  */
+        filename = NULL;
+        bios_size = 256 * 1024;
     } else {
-        bios_size = -1;
+        filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+        if (filename) {
+            bios_size = get_image_size(filename, NULL);
+        } else {
+            bios_size = -1;
+        }
     }
+
     if (bios_size <= 0 ||
         (bios_size % 65536) != 0) {
         goto bios_error;
@@ -1065,14 +1074,17 @@ void x86_bios_rom_init(X86MachineState *x86ms, const char *default_firmware,
         void *ptr = memory_region_get_ram_ptr(&x86ms->bios);
         load_image_size(filename, ptr, bios_size);
         x86_firmware_configure(0x100000000ULL - bios_size, ptr, bios_size);
+        g_free(filename);
     } else {
         memory_region_set_readonly(&x86ms->bios, !isapc_ram_fw);
-        ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size), -1);
-        if (ret != 0) {
-            goto bios_error;
+        if (!no_bios) {
+            ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size), -1);
+            if (ret != 0) {
+                goto bios_error;
+            }
+            g_free(filename);
         }
     }
-    g_free(filename);
 
     if (!machine_require_guest_memfd(MACHINE(x86ms))) {
         /* map the last 128KB of the BIOS in ISA space */

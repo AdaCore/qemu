@@ -25,9 +25,7 @@
 #include "hw/ide/ahci-sysbus.h"
 #include "hw/sd/sdhci.h"
 #include "hw/ssi/xilinx_spips.h"
-#include "hw/dma/xlnx_dpdma.h"
 #include "hw/dma/xlnx-zdma.h"
-#include "hw/display/xlnx_dp.h"
 #include "hw/intc/xlnx-zynqmp-ipi.h"
 #include "hw/rtc/xlnx-zynqmp-rtc.h"
 #include "hw/cpu/cluster.h"
@@ -43,6 +41,7 @@
 #include "hw/timer/cadence_ttc.h"
 #include "hw/usb/hcd-dwc3.h"
 #include "hw/core/split-irq.h"
+#include "hw/misc/xlnx_crl.h"
 
 #define TYPE_XLNX_ZYNQMP "xlnx-zynqmp"
 OBJECT_DECLARE_SIMPLE_TYPE(XlnxZynqMPState, XLNX_ZYNQMP)
@@ -128,8 +127,6 @@ struct XlnxZynqMPState {
     SDHCIState sdhci[XLNX_ZYNQMP_NUM_SDHCI];
     XilinxSPIPS spi[XLNX_ZYNQMP_NUM_SPIS];
     XlnxZynqMPQSPIPS qspi;
-    XlnxDPState dp;
-    XlnxDPDMAState dpdma;
     XlnxZynqMPIPI ipi;
     XlnxZynqMPRTC rtc;
     XlnxZDMA gdma[XLNX_ZYNQMP_NUM_GDMA_CH];
@@ -140,6 +137,7 @@ struct XlnxZynqMPState {
     XlnxZynqMPCRF crf;
     CadenceTTCState ttc[XLNX_ZYNQMP_NUM_TTC];
     USBDWC3 usb[XLNX_ZYNQMP_NUM_USB];
+    XlnxCRL crl;
 
     char *boot_cpu;
     ARMCPU *boot_cpu_ptr;
@@ -151,6 +149,8 @@ struct XlnxZynqMPState {
 
     /* CAN bus. */
     CanBusState *canbus[XLNX_ZYNQMP_NUM_CAN];
+    /* GTIMER scale */
+    uint32_t gtimer_scale;
 };
 
 #endif
