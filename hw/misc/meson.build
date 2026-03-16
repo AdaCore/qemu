@@ -1,5 +1,6 @@
 system_ss.add(when: 'CONFIG_ZYNQ_DDRC', if_true: files('xilinx_ddrc.c'))
 system_ss.add(when: 'CONFIG_XLNX_CRL', if_true: files('xlnx_crl.c'))
+system_ss.add(when: 'CONFIG_AM64XX_CTRL', if_true: files('am64xx_ctrl.c'))
 system_ss.add(when: 'CONFIG_APPLESMC', if_true: files('applesmc.c'))
 system_ss.add(when: 'CONFIG_EDU', if_true: files('edu.c'))
 system_ss.add(when: 'CONFIG_FW_CFG_DMA', if_true: files('vmcoreinfo.c'))
