@@ -4,6 +4,9 @@ config ZYNQ_DDRC
 config XLNX_CRL
     bool
 
+config AM64XX_CTRL
+    bool
+
 config APPLESMC
     bool
     depends on ISA_BUS

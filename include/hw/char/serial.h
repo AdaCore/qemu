@@ -76,6 +76,10 @@ struct SerialState {
 
     QEMUTimer *modem_status_poll;
     MemoryRegion io;
+
+    /* Pointer to the reset function to ease resets within decendent devices
+       emulation. */
+    void (*reset_fn)(void*);
 };
 typedef struct SerialState SerialState;
 

@@ -38,6 +38,19 @@ config ARM_VIRT
     select ACPI_CXL
     select ACPI_HMAT
 
+config AM64XX
+    bool
+    default y
+    depends on TCG && ARM
+    select SERIAL_TL16C750
+    select AM64XX_CTRL
+
+config AM6422
+    bool
+    default y
+    depends on TCG && ARM
+    select AM64XX
+
 config CUBIEBOARD
     bool
     default y

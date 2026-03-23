@@ -37,6 +37,10 @@ config SERIAL_PCI_MULTI
     depends on PCI
     select SERIAL
 
+config SERIAL_TL16C750
+    bool
+    select SERIAL
+
 config VIRTIO_SERIAL
     bool
     default y
