@@ -463,7 +463,11 @@ if have_system or have_tools
   pixman = dependency('pixman-1', required: have_system, version:'>=0.21.8',
                       method: 'pkg-config', kwargs: static_kwargs)
 endif
-zlib = dependency('zlib', required: true, kwargs: static_kwargs)
+if 'CONFIG_STATIC_ZLIB' in config_host
+  zlib = dependency('zlib', required: true, static: true)
+else
+  zlib = dependency('zlib', required: true)
+endif
 
 libaio = not_found
 if not get_option('linux_aio').auto() or have_block
@@ -2312,7 +2316,7 @@ capstone_opt = get_option('capstone')
 if capstone_opt in ['enabled', 'auto', 'system']
   have_internal = fs.exists(meson.current_source_dir() / 'capstone/Makefile')
   capstone = dependency('capstone', version: '>=4.0',
-                        kwargs: static_kwargs, method: 'pkg-config',
+                        kwargs: static_kwargs, static: true, method: 'pkg-config',
                         required: capstone_opt == 'system' or
                                   capstone_opt == 'enabled' and not have_internal)
 
@@ -2528,7 +2532,7 @@ if have_system
   fdt_opt = get_option('fdt')
   if fdt_opt in ['enabled', 'auto', 'system']
     have_internal = fs.exists(meson.current_source_dir() / 'dtc/libfdt/Makefile.libfdt')
-    fdt = cc.find_library('fdt', kwargs: static_kwargs,
+    fdt = cc.find_library('fdt', kwargs: static_kwargs, static: true,
                           required: fdt_opt == 'system' or
                                     fdt_opt == 'enabled' and not have_internal)
     if fdt.found() and cc.links('''
@@ -2735,6 +2739,7 @@ if have_system
     'hw/9pfs',
     'hw/acpi',
     'hw/adc',
+    'hw/adacore',
     'hw/alpha',
     'hw/arm',
     'hw/audio',

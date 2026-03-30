@@ -3,6 +3,7 @@
 if targetos == 'windows'
   subdir_done()
 endif
+subdir_done()
 
 fpcflags = [
   # softfloat defines

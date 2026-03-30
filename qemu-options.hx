@@ -613,6 +613,17 @@ SRST
     enabled and the guest startup RAM will never increase.
 ERST
 
+DEF("add-memory", HAS_ARG, QEMU_OPTION_add_memory,
+    "-add-memory name=memory_name,size=memory_size,addr=memory_addr"
+    "[,read-only=on|off]\n"
+    "                Add a memory bank to the address space",
+    QEMU_ARCH_ALL)
+SRST
+``-add-memory name=memory_name,size=memory_size,addr=memory_addr\
+[,read-only=on|off]``
+    Add a memory bank to the address space.
+ERST
+
 DEF("mem-path", HAS_ARG, QEMU_OPTION_mempath,
     "-mem-path FILE  provide backing storage for guest RAM\n", QEMU_ARCH_ALL)
 SRST
@@ -5545,6 +5556,43 @@ SRST
             (qemu) qom-set /objects/iothread1 poll-max-ns 100000
 ERST
 
+
+DEF("rlimit", HAS_ARG, QEMU_OPTION_rlimit, \
+    "-rlimit time(in second)\n"
+    "                Set maximum execution time before QEMU stops with an\n"
+    "                error message.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-rlimit time(in second)``
+    Set maximum execution time before QEMU stops with an error message.
+ERST
+
+DEF("monitor-cmd", HAS_ARG, QEMU_OPTION_monitor_cmd, \
+    "-monitor-cmd command\n"
+    "                Print the output of a monitor command and close QEMU\n",
+    QEMU_ARCH_ALL)
+SRST
+``-monitor-cmd command``
+    Print the output of a monitor command and close QEMU.
+ERST
+
+DEF("gnatbus", HAS_ARG, QEMU_OPTION_gnatbus, \
+    "-gnatbus device_host:device_port[,device_host:device_port]\n"
+    "                Connect GnatBus Devices.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-gnatbus socket:device_host:device_port``
+    Connect a GnatBus Device
+ERST
+
+DEF("gnatbus-timeout", HAS_ARG, QEMU_OPTION_gnatbus_timeout, \
+    "-gnatbus-timeout value\n"
+    "                Timeout to connect GNATBus devices.\n",
+    QEMU_ARCH_ALL)
+SRST
+``-gnatbus-timeout value``
+    Timeout to connect GNATBus devices.
+ERST
 
 HXCOMM This is the last statement. Insert new options before this line!
 

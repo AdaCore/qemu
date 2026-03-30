@@ -250,6 +250,7 @@ stack_protector=""
 safe_stack=""
 use_containers="yes"
 gdb_bin=$(command -v "gdb-multiarch" || command -v "gdb")
+git_submodules=""
 
 if test -e "$source_path/.git"
 then
@@ -325,6 +326,7 @@ pie=""
 trace_backends="log"
 trace_file="trace"
 opengl="$default_feature"
+keycodemapdb="yes"
 coroutine=""
 tls_priority="NORMAL"
 plugins="$default_feature"
@@ -334,6 +336,9 @@ meson_args=""
 ninja=""
 gio="$default_feature"
 skip_meson=no
+static_glib="no"
+static_pixman="no"
+static_zlib="no"
 
 # The following Meson options are handled manually (still they
 # are included in the automatically generated help message)
@@ -1023,6 +1028,8 @@ for opt do
   ;;
   --enable-capstone=*) capstone="$optarg"
   ;;
+  --disable-keycodemapdb) keycodemapdb="no"
+  ;;
   --with-git=*) git="$optarg"
   ;;
   --with-git-submodules=*)
@@ -1049,6 +1056,14 @@ for opt do
   --enable-gio) gio=yes
   ;;
   --disable-gio) gio=no
+  ;;
+  --static-glib) static_glib="yes"
+  ;;
+  --static-pixman) static_pixman="yes"
+  ;;
+  --static-zlib) static_zlib="yes"
+  ;;
+  --disable-gio) gio="no"
   ;;
   # backwards compatibility options
   --enable-trace-backend=*) meson_option_parse "--enable-trace-backends=$optarg" "$optarg"
@@ -1129,9 +1144,80 @@ local_statedir="${local_statedir:-$prefix/var}"
 firmwarepath="${firmwarepath:-$datadir/qemu-firmware}"
 localedir="${localedir:-$datadir/locale}"
 
+# Sanity check that we are not trying to enable --static-xxx and -static
+# at the same time.
+if test "$static" = "yes"; then
+    if test "$static_glib" = "yes"; then
+        echo "ERROR: --static and --static-glib are not compatible"
+        exit 1
+    fi
+    if test "$static_pixman" = "yes"; then
+        echo "ERROR: --static and --static-pixman are not compatible"
+        exit 1
+    fi
+    if test "$static_zlib" = "yes"; then
+        echo "ERROR: --static and --static-zlib are not compatible"
+        exit 1
+    fi
+fi
+
 if eval test -z "\${cross_cc_$cpu}"; then
     eval "cross_cc_${cpu}=\$cc"
     cross_cc_vars="$cross_cc_vars cross_cc_${cpu}"
+fi
+
+case "$cpu" in
+    ppc)
+           CPU_CFLAGS="-m32"
+           QEMU_LDFLAGS="-m32 $QEMU_LDFLAGS"
+           ;;
+    ppc64)
+           CPU_CFLAGS="-m64"
+           QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
+           ;;
+    sparc)
+           CPU_CFLAGS="-m32 -mv8plus -mcpu=ultrasparc"
+           QEMU_LDFLAGS="-m32 -mv8plus $QEMU_LDFLAGS"
+           ;;
+    sparc64)
+           CPU_CFLAGS="-m64 -mcpu=ultrasparc"
+           QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
+           ;;
+    s390)
+           CPU_CFLAGS="-m31"
+           QEMU_LDFLAGS="-m31 $QEMU_LDFLAGS"
+           ;;
+    s390x)
+           CPU_CFLAGS="-m64"
+           QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
+           ;;
+    i386)
+           CPU_CFLAGS="-m32"
+           QEMU_LDFLAGS="-m32 $QEMU_LDFLAGS"
+           ;;
+    x86_64)
+           # ??? Only extremely old AMD cpus do not have cmpxchg16b.
+           # If we truly care, we should simply detect this case at
+           # runtime and generate the fallback to serial emulation.
+           CPU_CFLAGS="-m64 -mcx16"
+           QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
+           ;;
+    x32)
+           CPU_CFLAGS="-mx32"
+           QEMU_LDFLAGS="-mx32 $QEMU_LDFLAGS"
+           ;;
+    # No special flags required for other host CPUs
+esac
+
+eval "cross_cc_${cpu}=\$host_cc"
+cross_cc_vars="$cross_cc_vars cross_cc_${cpu}"
+QEMU_CFLAGS="$CPU_CFLAGS $QEMU_CFLAGS"
+
+# For user-mode emulation the host arch has to be one we explicitly
+# support, even if we're using TCI.
+if [ "$ARCH" = "unknown" ]; then
+  bsd_user="no"
+  linux_user="no"
 fi
 
 default_target_list=""
@@ -1282,6 +1368,12 @@ cat << EOF
 NOTE: The object files are built at the place where configure is launched
 EOF
 exit 0
+fi
+
+# Add keycodemapdb submodule
+if test "$keycodemapdb" = "yes"
+then
+    git_submodules="${git_submodules} ui/keycodemapdb"
 fi
 
 # Remove old dependency files to make sure that they get properly regenerated
@@ -2187,35 +2279,65 @@ elif test "$plugins" = "yes"; then
     glib_modules="$glib_modules gmodule-no-export-2.0"
 fi
 
+# This workaround is required due to a bug in pkg-config file for glib as it
+# doesn't define GLIB_STATIC_COMPILATION for pkg-config --static
+
+if test "$static" = yes && test "$mingw32" = yes; then
+    QEMU_CFLAGS="-DGLIB_STATIC_COMPILATION $QEMU_CFLAGS"
+fi
+
+glib_libs=''
 for i in $glib_modules; do
     if $pkg_config --atleast-version=$glib_req_ver $i; then
-        glib_cflags=$($pkg_config --cflags $i)
-        glib_libs=$($pkg_config --libs $i)
+        if test "$static_glib" != "no" ; then
+            glib_cflags=$($pkg_config --static --cflags $i)
+            glib_libs="$glib_libs $($pkg_config --static --libs $i)"
+        else
+            glib_cflags=$($pkg_config --cflags $i)
+            glib_libs="$glib_libs $($pkg_config --libs $i)"
+        fi
+        QEMU_CFLAGS="$glib_cflags $QEMU_CFLAGS"
     else
         error_exit "glib-$glib_req_ver $i is required to compile QEMU"
     fi
 done
 
-# This workaround is required due to a bug in pkg-config file for glib as it
-# doesn't define GLIB_STATIC_COMPILATION for pkg-config --static
-
-if test "$static" = yes && test "$mingw32" = yes; then
-    glib_cflags="-DGLIB_STATIC_COMPILATION $glib_cflags"
+# This second workaround is required because of the missing libiconv link
+# in case of a static glib.
+if test "$static_glib" != "no" -a "$mingw32" = yes; then
+    LIBS="-Wl,-Bstatic -liconv -Wl,-Bdynamic $LIBS"
 fi
 
-if ! test "$gio" = "no"; then
-    pass=no
-    if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
-        gio_cflags=$($pkg_config --cflags gio-2.0)
-        gio_libs=$($pkg_config --libs gio-2.0)
-        gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
-        if ! has "$gdbus_codegen"; then
-            gdbus_codegen=
+glib_fixed_lib=''
+# Dirty workaround to only link glib libraries statically and not the
+# system one included by pkg-config.
+if test "$static_glib" != "no" ; then
+    for i in $glib_libs; do
+        if test "$i" != "-lrt" -a "$i" != "-lole32" ; then
+            glib_fixed_lib="$glib_fixed_lib -Wl,-Bstatic $i -Wl,-Bdynamic"
+        else
+            glib_fixed_lib="$glib_fixed_lib $i"
         fi
-        # Check that the libraries actually work -- Ubuntu 18.04 ships
-        # with pkg-config --static --libs data for gio-2.0 that is missing
-        # -lblkid and will give a link error.
-        cat > $TMPC <<EOF
+    done
+    LIBS="$glib_fixed_lib $LIBS"
+    libs_qga="$glib_fixed_lib $libs_qga"
+else
+    LIBS="$glib_libs $LIBS"
+    libs_qga="$glib_libs $libs_qga"
+fi
+
+if test "$gio" != "no" ; then
+  if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
+      gio_cflags=$($pkg_config --cflags gio-2.0)
+      gio_libs=$($pkg_config --libs gio-2.0)
+      gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
+      if [ ! -x "$gdbus_codegen" ]; then
+          gdbus_codegen=
+      fi
+      # Check that the libraries actually work -- Ubuntu 18.04 ships
+      # with pkg-config --static --libs data for gio-2.0 that is missing
+      # -lblkid and will give a link error.
+      cat > $TMPC <<EOF
 #include <gio/gio.h>
 int main(void)
 {
@@ -2223,27 +2345,32 @@ int main(void)
     return 0;
 }
 EOF
-        if compile_prog "$gio_cflags" "$gio_libs" ; then
-            pass=yes
-        else
-            pass=no
-        fi
+      if compile_prog "$gio_cflags" "$gio_libs" ; then
+          gio=yes
+      else
+          gio=no
+      fi
+  else
+      gio=no
+  fi
+fi
 
-        if test "$pass" = "yes" &&
-            $pkg_config --atleast-version=$glib_req_ver gio-unix-2.0; then
-            gio_cflags="$gio_cflags $($pkg_config --cflags gio-unix-2.0)"
-            gio_libs="$gio_libs $($pkg_config --libs gio-unix-2.0)"
-        fi
-    fi
-
-    if test "$pass" = "no"; then
-        if test "$gio" = "yes"; then
-            feature_not_found "gio" "Install libgio >= 2.0"
-        else
-            gio=no
+if test "$gio" != "no" ; then
+    if $pkg_config --atleast-version=$glib_req_ver gio-2.0; then
+        gio=yes
+        gio_cflags=$($pkg_config --cflags gio-2.0)
+        gio_libs=$($pkg_config --libs gio-2.0)
+        gdbus_codegen=$($pkg_config --variable=gdbus_codegen gio-2.0)
+        if [ ! -x "$gdbus_codegen" ]; then
+            gdbus_codegen=
         fi
     else
-        gio=yes
+        gio=no
+    fi
+
+    if $pkg_config --atleast-version=$glib_req_ver gio-unix-2.0; then
+        gio_cflags="$gio_cflags $($pkg_config --cflags gio-unix-2.0)"
+        gio_libs="$gio_libs $($pkg_config --libs gio-unix-2.0)"
     fi
 fi
 
@@ -2304,6 +2431,23 @@ if test "$modules" = yes; then
     if test "$shacmd" = ""; then
         error_exit "one of the checksum commands is required to enable modules: $shacmd_probe"
     fi
+fi
+
+##########################################
+# pixman support probe
+
+if test "$want_tools" = "no" && test "$softmmu" = "no"; then
+  pixman_cflags=
+  pixman_libs=
+elif $pkg_config --atleast-version=0.21.8 pixman-1 > /dev/null 2>&1; then
+  pixman_cflags=$($pkg_config --cflags pixman-1)
+  pixman_libs=$($pkg_config --libs pixman-1)
+  if test "$static_pixman" != "no"; then
+    pixman_libs="-Wl,-Bstatic $pixman_libs -Wl,-Bdynamic"
+  fi
+else
+  error_exit "pixman >= 0.21.8 not present." \
+      "Please install the pixman devel package."
 fi
 
 ##########################################
@@ -2852,6 +2996,9 @@ if test "$solaris" = "yes" ; then
 fi
 if test "$static" = "yes" ; then
   echo "CONFIG_STATIC=y" >> $config_host_mak
+fi
+if test "$static_zlib" = "yes" ; then
+  echo "CONFIG_STATIC_ZLIB=y" >> $config_host_mak
 fi
 echo "CONFIG_BDRV_RW_WHITELIST=$block_drv_rw_whitelist" >> $config_host_mak
 echo "CONFIG_BDRV_RO_WHITELIST=$block_drv_ro_whitelist" >> $config_host_mak

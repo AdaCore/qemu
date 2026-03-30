@@ -6,6 +6,12 @@
 #include "qemu/thread.h"
 #include "qom/object.h"
 
+/* Included for the SocketChardev struct definition */
+#include "io/channel.h"
+#include "io/channel-socket.h"
+#include "io/net-listener.h"
+#include "crypto/tlscreds.h"
+
 #define IAC_EOR 239
 #define IAC_SE 240
 #define IAC_NOP 241
