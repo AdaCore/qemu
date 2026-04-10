@@ -26,8 +26,6 @@
 #include "hw/char/sifive_uart.h"
 #include "hw/qdev-properties-system.h"
 
-#define TX_INTERRUPT_TRIGGER_DELAY_NS 100
-
 /* Returns the state of the IP (interrupt pending) register */
 static uint32_t sifive_uart_ip(SiFiveUARTState *s)
 {
@@ -109,8 +107,6 @@ static gboolean sifive_uart_xmit(void *do_not_use, GIOCondition cond,
 static void sifive_uart_write_tx_fifo(SiFiveUARTState *s, const uint8_t *buf,
                                       int size)
 {
-    uint64_t current_time = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
-
     if (size > fifo8_num_free(&s->tx_fifo)) {
         size = fifo8_num_free(&s->tx_fifo);
         qemu_log_mask(LOG_GUEST_ERROR, "sifive_uart: TX FIFO overflow.\n");
@@ -124,10 +120,7 @@ static void sifive_uart_write_tx_fifo(SiFiveUARTState *s, const uint8_t *buf,
         s->txfifo |= SIFIVE_UART_TXFIFO_FULL;
     }
 
-    if (!timer_pending(s->fifo_trigger_handle)) {
-        timer_mod(s->fifo_trigger_handle, current_time +
-                      TX_INTERRUPT_TRIGGER_DELAY_NS);
-    }
+    sifive_uart_xmit(NULL, G_IO_OUT, s);
 }
 
 static uint64_t
@@ -194,13 +187,6 @@ sifive_uart_write(void *opaque, hwaddr addr,
     }
     qemu_log_mask(LOG_GUEST_ERROR, "%s: bad write: addr=0x%x v=0x%x\n",
                   __func__, (int)addr, (int)value);
-}
-
-static void fifo_trigger_update(void *opaque)
-{
-    SiFiveUARTState *s = opaque;
-
-    sifive_uart_xmit(NULL, G_IO_OUT, s);
 }
 
 static const MemoryRegionOps sifive_uart_ops = {
@@ -283,9 +269,6 @@ static void sifive_uart_realize(DeviceState *dev, Error **errp)
 
     fifo8_create(&s->tx_fifo, SIFIVE_UART_TX_FIFO_SIZE);
 
-    s->fifo_trigger_handle = timer_new_ns(QEMU_CLOCK_VIRTUAL,
-                                          fifo_trigger_update, s);
-
     if (qemu_chr_fe_backend_connected(&s->chr)) {
         qemu_chr_fe_set_handlers(&s->chr, sifive_uart_can_rx, sifive_uart_rx,
                                  sifive_uart_event, sifive_uart_be_change, s,
@@ -297,7 +280,6 @@ static void sifive_uart_realize(DeviceState *dev, Error **errp)
 static void sifive_uart_unrealize(DeviceState *dev)
 {
     SiFiveUARTState *s = SIFIVE_UART(dev);
-
     fifo8_destroy(&s->tx_fifo);
 }
 
@@ -322,7 +304,6 @@ static const VMStateDescription vmstate_sifive_uart = {
         VMSTATE_UINT32(div, SiFiveUARTState),
         VMSTATE_UINT32(txfifo, SiFiveUARTState),
         VMSTATE_FIFO8(tx_fifo, SiFiveUARTState),
-        VMSTATE_TIMER_PTR(fifo_trigger_handle, SiFiveUARTState),
         VMSTATE_END_OF_LIST()
     },
 };
