@@ -881,6 +881,21 @@ void qemu_put_counted_string(QEMUFile *f, const char *str)
  */
 bool qemu_file_set_blocking(QEMUFile *f, bool block, Error **errp)
 {
+#ifdef WIN32
+    if (object_dynamic_cast(OBJECT(f->ioc), TYPE_QIO_CHANNEL_FILE)) {
+        QIOChannelFile *fioc = QIO_CHANNEL_FILE(f->ioc);
+        HANDLE h = (HANDLE)_get_osfhandle(fioc->fd);
+
+        /*
+        * For regular files, data is always immediately available or at EOF. The
+        * blocking mode is therefore not relevant, and reporting the request as
+        * successful is accurate.
+        */
+        if (h != INVALID_HANDLE_VALUE && GetFileType(h) == FILE_TYPE_DISK) {
+            return true;
+        }
+    }
+#endif
     return qio_channel_set_blocking(f->ioc, block, errp);
 }
 
